@@ -556,266 +556,166 @@ button, a, div[role="button"] {
 </div>
     </div>
 
-    <div v-if="tab === 'profile'">
-        <div style="text-align:center; margin-bottom: 30px;">
-            <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
-            <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">{{user.first_name || 'Клиент'}}</div>
-            <button @click="openSupport" class="cat-tab" style="margin-top:15px; width:100%;">НАПИСАТЬ В ПОДДЕРЖКУ</button>
-        </div>
-
-       <div v-if="!isAdmin">
-    <h3 class="brand-name" style="font-size: 14px; margin-bottom: 15px;">МОИ ЗАКАЗЫ</h3>
-    
-    <div v-if="myOrders.length === 0" style="padding:20px; text-align:center; font-size:12px; color: var(--gray);">
-        У вас пока нет заказов
+   <div v-if="tab === 'profile'">
+    <div style="text-align:center; margin-bottom: 30px;">
+        <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
+        <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">{{user.first_name || 'Клиент'}}</div>
+        <button @click="openSupport" class="cat-tab" style="margin-top:15px; width:100%;">НАПИСАТЬ В ПОДДЕРЖКУ</button>
     </div>
 
-    <div v-for="o in myOrders" :key="o.id" class="order-card" style="background: var(--light); padding: 15px; border-radius: 12px; margin-bottom: 10px;">
-        <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-weight:800; font-size:12px; letter-spacing: 0.5px;">ЗАКАЗ №{{o.order_id}}</span>
-            
-            <span style="font-weight:800; font-size:14px;">{{ o.order_total || o.total }} ₽</span>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div :class="['status-badge', o.status === 'Доставлен' ? 'status-ready' : 'status-process']" style="font-size: 10px; margin-top: 0;">
-                {{o.status || 'В обработке'}}
-            </div>
-            <div style="font-size:10px; color:gray; font-weight: 600;">{{o.date}}</div>
-        </div>
-    </div>
-</div>
-
-        <div v-if="isAdmin" class="admin-section">
-            <h2 class="brand-name" style="font-size: 14px; margin-bottom: 20px;">АДМИН-ПАНЕЛЬ</h2>
-     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
-             <div style="background: var(--light); color: var(--dark); padding: 16px; border-radius: 15px;">
-            <div style="font-size: 9px; font-weight: 800; opacity: 0.6; letter-spacing: 1px; margin-bottom: 5px;">СЕГОДНЯ</div>
-            <div style="font-size: 18px; font-weight: 800;">{{ stats.todayRev.toLocaleString() }} ₽</div>
-            <div style="font-size: 10px; opacity: 0.8;">{{ stats.todayCount }} зак.</div>
-           </div>
-
-            <div style="background: var(--light); color: var(--dark); padding: 16px; border-radius: 15px;">
-             <div style="font-size: 9px; font-weight: 800; color: var(--gray); letter-spacing: 1px; margin-bottom: 5px;">МЕСЯЦ</div>
-            <div style="font-size: 18px; font-weight: 800;">{{ stats.monthRev.toLocaleString() }} ₽</div>
-            <div style="font-size: 10px; color: var(--gray);">{{ stats.monthCount }} зак.</div>
-            </div>
-
-            <div style="grid-column: span 2; background: #fff; padding: 16px; border-radius: 15px; border: 1px solid var(--light); display: flex; justify-content: space-between; align-items: center;">
-             <div>
-            <div style="font-size: 9px; font-weight: 800; color: var(--gray); letter-spacing: 1px;">ОБЩАЯ ВЫРУЧКА</div>
-            <div style="font-size: 20px; font-weight: 800;">{{ stats.allRev.toLocaleString() }} ₽</div>
-             </div>
-             <div style="text-align: right;">
-            <div style="font-size: 9px; font-weight: 800; color: var(--gray); letter-spacing: 1px;">ВСЕГО ЗАКАЗОВ</div>
-             <div style="font-size: 20px; font-weight: 800;">{{ stats.allCount }}</div>
-             </div>
-         </div>
-    </div>
-
-    <div style="background: #fff; padding: 15px; border-radius: 20px; border: 1px solid #eee; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-         <div style="font-size: 10px; font-weight: 800; color: var(--gray); letter-spacing: 1px; margin-bottom: 15px;">ДИНАМИКА ЗАКАЗОВ (7 ДНЕЙ)</div>
-        <canvas id="orderChart" style="max-height: 200px;"></canvas>
-    </div>
-            
-            <div class="field">
-                <label>ДОБАВИТЬ КАТЕГОРИЮ</label>
-                <div style="display:flex; gap:10px;">
-                    <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
-                    <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
-                </div>
-                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
-                    <span v-for="c in categories" :key="c.id" class="sale-badge" @click="manageCategory('del', c.id)">{{c.name}} ✕</span>
-                </div>
-            </div>
-
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-
-            <div class="field">
-                <label>ТОВАР: НАЗВАНИЕ</label>
-                <input v-model="newP.title" class="input-admin">
-            </div>
-            <div class="field">
-                <label>ОПИСАНИЕ</label>
-                <textarea v-model="newP.desc" class="input-admin" style="height:80px;"></textarea>
-            </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <div class="field">
-                    <label>ЦЕНА (₽)</label>
-                    <input v-model="newP.price" type="number" class="input-admin">
-                </div>
-                <div class="field">
-                    <label>СТАРАЯ ЦЕНА (SALE)</label>
-                    <input v-model="newP.oldPrice" type="number" class="input-admin">
-                </div>
-            </div>
-            <div class="field">
-                <label>КАТЕГОРИЯ</label>
-                <select v-model="newP.category" class="input-admin">
-                    <option v-for="c in categories" :value="c.name">{{c.name}}</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>РАЗМЕРЫ (ЧЕРЕЗ ЗАПЯТУЮ)</label>
-                <input v-model="newP.sizes" class="input-admin" placeholder="42, 44, 46">
-            </div>
-            <div class="field">
-                <label>ЦВЕТ</label>
-                <input v-model="newP.color" class="input-admin">
-            </div>
-            <div class="field">
-    <label>ФОТО (МОЖНО НЕСКОЛЬКО)</label>
-    <input type="file" multiple @change="handleFiles" class="input-admin" style="padding: 8px;">
-</div>
-
-<div class="preview-container" v-if="newP.localFiles && newP.localFiles.length > 0">
-    <div v-for="(item, index) in newP.localFiles" :key="index" class="preview-card">
-        <img :src="item.preview" />
-        <div class="remove-preview-btn" @click="removePhoto(index)">×</div>
-    </div>
-</div>
-    
-            </div>
-
-            <button class="btn-black" style="width:100%; margin-top:10px;" @click="saveProduct" :disabled="loading">
-                {{ loading ? 'ЗАГРУЗКА...' : (editId ? 'СОХРАНИТЬ ИЗМЕНЕНИЯ' : 'ОПУБЛИКОВАТЬ ТОВАР') }}
-            </button>
-            <button v-if="editId" class="cat-tab" style="width:100%; margin-top:5px;" @click="cancelEdit">ОТМЕНА</button>
-
-            <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
-               <div @click="showProductList = !showProductList" 
-                  style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                  <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">📦 СПИСОК ТОВАРОВ ({{ products.length }})</span>
-                  <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
-             </div>
-
-             <div v-if="showProductList" style="padding: 5px; max-height: 400px; overflow-y: auto; background: #fff;">
-
-
-
-              <div v-for="p in products" :key="p.id" 
-     style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;"
-     :style="{ opacity: p.hidden ? '0.5' : '1' }">
-    <div style="display: flex; gap: 15px; align-items: start;">
-        <img :src="p.images && p.images[0] ? p.images[0] : 'https://via.placeholder.com/60x80?text=No+Photo'" 
-             style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; background: #eee;">
+    <div v-if="!isAdmin">
+        <h3 class="brand-name" style="font-size: 14px; margin-bottom: 15px;">МОИ ЗАКАЗЫ</h3>
         
-        <div style="flex: 1;">
-            <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">
-                {{ p.title || p.name }} 
-                <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span>
-            </div>
-            <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">Цвет: {{ p.color || '—' }}</div>
-            
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <div v-for="s in (Array.isArray(p.sizes) ? p.sizes : String(p.sizes || '').split(',').filter(x => x))" :key="s" 
-                     style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 4px 8px; border-radius: 4px;">
-                    <span style="font-size: 12px; font-weight: 600;" 
-                          :style="{ color: p.hiddenSizes?.includes(s.trim()) ? '#ccc' : '#000', textDecoration: p.hiddenSizes?.includes(s.trim()) ? 'line-through' : 'none' }">
-                        {{ s.trim() }}
-                    </span>
-                    <button @click="toggleSizeVisibility(p, s.trim())" 
-                            :style="{ 
-                                border: 'none', 
-                                background: 'none', 
-                                fontSize: '10px', 
-                                fontWeight: '800', 
-                                color: p.hiddenSizes?.includes(s.trim()) ? '#34c759' : '#ff3b30',
-                                textTransform: 'uppercase',
-                                cursor: 'pointer'
-                            }">
-                        {{ p.hiddenSizes?.includes(s.trim()) ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
-                    </button>
-                </div>
-            </div>
+        <div v-if="myOrders.length === 0" style="padding:20px; text-align:center; font-size:12px; color: var(--gray);">
+            У вас пока нет заказов
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 15px;">
-            <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
-            
-            <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
+        <div v-for="o in myOrders" :key="o.id" class="order-card" style="background: var(--light); padding: 15px; border-radius: 12px; margin-bottom: 10px;">
+            <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-weight:800; font-size:12px; letter-spacing: 0.5px;">ЗАКАЗ №{{o.order_id}}</span>
+                <span style="font-weight:800; font-size:14px;">{{ o.order_total || o.total }} ₽</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div :class="['status-badge', o.status === 'Доставлен' ? 'status-ready' : 'status-process']" style="font-size: 10px; margin-top: 0;">
+                    {{o.status || 'В обработке'}}
+                </div>
+                <div style="font-size:10px; color:gray; font-weight: 600;">{{o.date}}</div>
+            </div>
         </div>
-    </div>
-</div>
+    </div> <div v-if="isAdmin" class="admin-section">
+        <h2 class="brand-name" style="font-size: 14px; margin-bottom: 20px;">АДМИН-ПАНЕЛЬ</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
+             <div style="background: var(--light); color: var(--dark); padding: 16px; border-radius: 15px;">
+                <div style="font-size: 9px; font-weight: 800; opacity: 0.6; letter-spacing: 1px; margin-bottom: 5px;">СЕГОДНЯ</div>
+                <div style="font-size: 18px; font-weight: 800;">{{ stats.todayRev.toLocaleString() }} ₽</div>
+                <div style="font-size: 10px; opacity: 0.8;">{{ stats.todayCount }} зак.</div>
              </div>
-
-           <hr style="margin: 6px 0; border: none; border-top: 2px solid #000;">   
-
-            <h3 class="brand-name" style="font-size:12px; margin-top:2px;">ЗАКАЗЫ ({{allOrders.length}}) | ВЫРУЧКА: {{revenue}} ₽</h3>
-            <div v-for="o in allOrders" :key="o.id" 
-                class="order-card" 
-                 style="background: #ffffff; 
-                  border-radius: 20px; 
-                  padding: 16px; 
-                  margin-bottom: 20px; 
-                  box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
-                  border: 1px solid rgba(0,0,0,0.03);">
-
-               
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-        <div>
-            <div style="font-weight: 800; font-size: 16px; display: block;">#{{ o.order_id }}</div>
+             <div style="background: var(--light); color: var(--dark); padding: 16px; border-radius: 15px;">
+                <div style="font-size: 9px; font-weight: 800; color: var(--gray); letter-spacing: 1px; margin-bottom: 5px;">МЕСЯЦ</div>
+                <div style="font-size: 18px; font-weight: 800;">{{ stats.monthRev.toLocaleString() }} ₽</div>
+                <div style="font-size: 10px; color: var(--gray);">{{ stats.monthCount }} зак.</div>
+             </div>
+             <div style="grid-column: span 2; background: #fff; padding: 16px; border-radius: 15px; border: 1px solid var(--light); display: flex; justify-content: space-between; align-items: center;">
+                 <div>
+                    <div style="font-size: 9px; font-weight: 800; color: var(--gray); letter-spacing: 1px;">ОБЩАЯ ВЫРУЧКА</div>
+                    <div style="font-size: 20px; font-weight: 800;">{{ stats.allRev.toLocaleString() }} ₽</div>
+                 </div>
+                 <div style="text-align: right;">
+                    <div style="font-size: 9px; font-weight: 800; color: var(--gray); letter-spacing: 1px;">ВСЕГО ЗАКАЗОВ</div>
+                    <div style="font-size: 20px; font-weight: 800;">{{ stats.allCount }}</div>
+                 </div>
+             </div>
         </div>
 
-        <div @click="deleteOrder(o.id); vib()"
-             style="color: #ff3b30; font-size: 10px; font-weight: 800; cursor: pointer; border: 1.5px solid #ff3b30; padding: 4px 8px; border-radius: 8px; text-transform: uppercase;">
-            УДАЛИТЬ 🗑
+        <div style="background: #fff; padding: 15px; border-radius: 20px; border: 1px solid #eee; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+             <div style="font-size: 10px; font-weight: 800; color: var(--gray); letter-spacing: 1px; margin-bottom: 15px;">ДИНАМИКА ЗАКАЗОВ (7 ДНЕЙ)</div>
+            <canvas id="orderChart" style="max-height: 200px;"></canvas>
         </div>
-    </div>
+        
+        <div class="field">
+            <label>ДОБАВИТЬ КАТЕГОРИЮ</label>
+            <div style="display:flex; gap:10px;">
+                <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
+                <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                <span v-for="c in categories" :key="c.id" class="sale-badge" @click="manageCategory('del', c.id)">{{c.name}} ✕</span>
+            </div>
+        </div>
 
-    <div style="font-size: 13px; color: #000; margin-bottom: 12px; line-height: 1.4;">
-        <div style="margin-bottom: 2px;">👤 <b>{{ o.customer_name }}</b></div>
-        <div style="margin-bottom: 2px;">📞 <span style="color: #007aff;">{{ o.customer_phone }}</span></div>
-        <div style="color: #8e8e93; font-size: 12px;">📍 {{ o.address }} ({{ o.delivery || o.delivery_type }})</div>
-    </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-    <div style="background: #f2f2f7; padding: 10px; border-radius: 12px; margin-bottom: 15px;">
-        <div v-if="o.items && o.items.length > 0">
-            <div v-for="item in o.items" :key="item.id" style="font-size: 12px; margin-bottom: 6px; border-bottom: 1px solid #e5e5ea; padding-bottom: 4px; color: #000;">
-                <div style="font-weight: 700;">{{ item.title }} — {{ item.count || 1 }} шт.</div>
-                <div style="font-size: 11px; color: #8e8e93;">
-                    🎨 Цвет: {{ item.color || '-' }} | 📏 Разм: {{ item.size || item.selSize || '-' }}
+        <div class="field"><label>ТОВАР: НАЗВАНИЕ</label><input v-model="newP.title" class="input-admin"></div>
+        <div class="field"><label>ОПИСАНИЕ</label><textarea v-model="newP.desc" class="input-admin" style="height:80px;"></textarea></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="field"><label>ЦЕНА (₽)</label><input v-model="newP.price" type="number" class="input-admin"></div>
+            <div class="field"><label>СТАРАЯ ЦЕНА (SALE)</label><input v-model="newP.oldPrice" type="number" class="input-admin"></div>
+        </div>
+        <div class="field"><label>КАТЕГОРИЯ</label>
+            <select v-model="newP.category" class="input-admin"><option v-for="c in categories" :value="c.name">{{c.name}}</option></select>
+        </div>
+        <div class="field"><label>РАЗМЕРЫ (ЧЕРЕЗ ЗАПЯТУЮ)</label><input v-model="newP.sizes" class="input-admin" placeholder="42, 44, 46"></div>
+        <div class="field"><label>ЦВЕТ</label><input v-model="newP.color" class="input-admin"></div>
+        <div class="field">
+            <label>ФОТО (МОЖНО НЕСКОЛЬКО)</label>
+            <input type="file" multiple @change="handleFiles" class="input-admin" style="padding: 8px;">
+        </div>
+        <div class="preview-container" v-if="newP.localFiles && newP.localFiles.length > 0">
+            <div v-for="(item, index) in newP.localFiles" :key="index" class="preview-card">
+                <img :src="item.preview" />
+                <div class="remove-preview-btn" @click="removePhoto(index)">×</div>
+            </div>
+        </div>
+
+        <button class="btn-black" style="width:100%; margin-top:10px;" @click="saveProduct" :disabled="loading">
+            {{ loading ? 'ЗАГРУЗКА...' : (editId ? 'СОХРАНИТЬ ИЗМЕНЕНИЯ' : 'ОПУБЛИКОВАТЬ ТОВАР') }}
+        </button>
+        <button v-if="editId" class="cat-tab" style="width:100%; margin-top:5px;" @click="cancelEdit">ОТМЕНА</button>
+
+        <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
+            <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">📦 СПИСОК ТОВАРОВ ({{ products.length }})</span>
+                <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
+            </div>
+            <div v-if="showProductList" style="padding: 5px; max-height: 400px; overflow-y: auto; background: #fff;">
+                <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
+                    <div style="display: flex; gap: 15px; align-items: start;">
+                        <img :src="p.images && p.images[0] ? p.images[0] : 'https://via.placeholder.com/60x80?text=No+Photo'" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; background: #eee;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">{{ p.title || p.name }} <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span></div>
+                            <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">Цвет: {{ p.color || '—' }}</div>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <div v-for="s in (Array.isArray(p.sizes) ? p.sizes : String(p.sizes || '').split(',').filter(x => x))" :key="s" style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 4px 8px; border-radius: 4px;">
+                                    <span style="font-size: 12px; font-weight: 600;" :style="{ color: p.hiddenSizes?.includes(s.trim()) ? '#ccc' : '#000', textDecoration: p.hiddenSizes?.includes(s.trim()) ? 'line-through' : 'none' }">{{ s.trim() }}</span>
+                                    <button @click="toggleSizeVisibility(p, s.trim())" :style="{ border: 'none', background: 'none', fontSize: '10px', fontWeight: '800', color: p.hiddenSizes?.includes(s.trim()) ? '#34c759' : '#ff3b30', textTransform: 'uppercase', cursor: 'pointer' }">
+                                        {{ p.hiddenSizes?.includes(s.trim()) ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
+                            <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div v-else style="font-size: 12px; white-space: pre-wrap;">{{ o.items_text }}</div>
-    </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <span style="font-size: 11px; font-weight: 700; color: #8e8e93;">ИТОГО К ОПЛАТЕ</span>
-        <span style="font-size: 18px; font-weight: 800;">{{ o.order_total }} ₽</span>
-    </div>
-
-    <div style="display: flex; gap: 8px;">
-        <button @click="updateStatus(o, 'Отправлен')" 
-                :disabled="o.status === 'Отправлен' || o.status === 'Доставлен' || o.isUpdating"
-                :style="{
-                    flex: '1', height: '46px', borderRadius: '12px', border: 'none', fontSize: '10px', fontWeight: '800',
-                    background: (o.status === 'Отправлен' || o.status === 'Доставлен') ? '#34c759' : '#ff3b30',
-                    color: '#fff'
-                }">
-            {{ (o.status === 'Отправлен' || o.status === 'Доставлен') ? 'ОТПРАВЛЕНО ✅' : 'ОТПРАВИТЬ' }}
-        </button>
-
-        <button @click="updateStatus(o, 'Доставлен')" 
-                :disabled="o.status === 'Доставлен' || o.isUpdating"
-                :style="{
-                    flex: '1', height: '46px', borderRadius: '12px', border: 'none', fontSize: '10px', fontWeight: '800',
-                    background: o.status === 'Доставлен' ? '#34c759' : '#ff3b30',
-                    color: '#fff'
-                }">
-            {{ o.status === 'Доставлен' ? 'ДОСТАВЛЕНО ✅' : 'ДОСТАВИТЬ' }}
-        </button>
-
-        <button @click="printOrder(o)" 
-                style="width: 46px; height: 46px; border-radius: 12px; border: 1px solid #eee; background: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center;">
-            📄
-        </button>
-    </div>
-    </div>      
-    </div>
-    </div>
-</main>
+        <hr style="margin: 20px 0; border: none; border-top: 2px solid #000;">   
+        <h3 class="brand-name" style="font-size:12px; margin-top:2px;">ЗАКАЗЫ ({{allOrders.length}}) | ВЫРУЧКА: {{revenue}} ₽</h3>
+        
+        <div v-for="o in allOrders" :key="o.id" class="order-card" style="background: #ffffff; border-radius: 20px; padding: 16px; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div><div style="font-weight: 800; font-size: 16px; display: block;">#{{ o.order_id }}</div></div>
+                <div @click="deleteOrder(o.id); vib()" style="color: #ff3b30; font-size: 10px; font-weight: 800; cursor: pointer; border: 1.5px solid #ff3b30; padding: 4px 8px; border-radius: 8px; text-transform: uppercase;">УДАЛИТЬ 🗑</div>
+            </div>
+            <div style="font-size: 13px; color: #000; margin-bottom: 12px; line-height: 1.4;">
+                <div style="margin-bottom: 2px;">👤 <b>{{ o.customer_name }}</b></div>
+                <div style="margin-bottom: 2px;">📞 <span style="color: #007aff;">{{ o.customer_phone }}</span></div>
+                <div style="color: #8e8e93; font-size: 12px;">📍 {{ o.address }} ({{ o.delivery || o.delivery_type }})</div>
+            </div>
+            <div style="background: #f2f2f7; padding: 10px; border-radius: 12px; margin-bottom: 15px;">
+                <div v-if="o.items && o.items.length > 0">
+                    <div v-for="item in o.items" :key="item.id" style="font-size: 12px; margin-bottom: 6px; border-bottom: 1px solid #e5e5ea; padding-bottom: 4px; color: #000;">
+                        <div style="font-weight: 700;">{{ item.title }} — {{ item.count || 1 }} шт.</div>
+                        <div style="font-size: 11px; color: #8e8e93;">🎨 Цвет: {{ item.color || '-' }} | 📏 Разм: {{ item.size || item.selSize || '-' }}</div>
+                    </div>
+                </div>
+                <div v-else style="font-size: 12px; white-space: pre-wrap;">{{ o.items_text }}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 11px; font-weight: 700; color: #8e8e93;">ИТОГО К ОПЛАТЕ</span>
+                <span style="font-size: 18px; font-weight: 800;">{{ o.order_total }} ₽</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button @click="updateStatus(o, 'Отправлен')" :disabled="o.status === 'Отправлен' || o.status === 'Доставлен' || o.isUpdating" :style="{ flex: '1', height: '46px', borderRadius: '12px', border: 'none', fontSize: '10px', fontWeight: '800', background: (o.status === 'Отправлен' || o.status === 'Доставлен') ? '#34c759' : '#ff3b30', color: '#fff' }">{{ (o.status === 'Отправлен' || o.status === 'Доставлен') ? 'ОТПРАВЛЕНО ✅' : 'ОТПРАВИТЬ' }}</button>
+                <button @click="updateStatus(o, 'Доставлен')" :disabled="o.status === 'Доставлен' || o.isUpdating" :style="{ flex: '1', height: '46px', borderRadius: '12px', border: 'none', fontSize: '10px', fontWeight: '800', background: o.status === 'Доставлен' ? '#34c759' : '#ff3b30', color: '#fff' }">{{ o.status === 'Доставлен' ? 'ДОСТАВЛЕНО ✅' : 'ДОСТАВИТЬ' }}</button>
+                <button @click="printOrder(o)" style="width: 46px; height: 46px; border-radius: 12px; border: 1px solid #eee; background: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center;">📄</button>
+            </div>
+        </div>      
+    </div> </div> </main>
 
     <div v-if="selP" class="modal" style="z-index: 5000;">
         <button class="close-modal" @click="selP = null">✕</button>
