@@ -824,7 +824,7 @@ Vue.createApp({
             
             user: {},
             isAdmin: false,
-            adminId: 1485431104,
+            adminIds: [1485431104, 5189266423],
             
             selP: null,
             deliv: '',
@@ -1545,7 +1545,8 @@ async manageCategory(action, id) {
 
         // 7. Отправляем в Telegram
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
-        const chatId = '1485431104'; 
+        // ПРАВИЛЬНО
+        const adminIds = [1485431104, 5189266423];
 
         // Экранируем никнейм, чтобы Markdown не выдавал ошибку
         const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
@@ -1869,7 +1870,7 @@ updateChart() {
     this.user = tg.initDataUnsafe?.user || { id: 1485431104, first_name: 'Admin_Test' };
     
     // Принудительная проверка админа
-    this.isAdmin = Number(this.user.id) === this.adminId;
+    this.isAdmin = this.adminIds.includes(Number(this.user.id));
     console.log("Admin Status:", this.isAdmin, "User ID:", this.user.id);
 
     // Улучшенная функция инициализации данных
