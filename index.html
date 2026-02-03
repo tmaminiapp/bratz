@@ -367,8 +367,7 @@ button, a, div[role="button"] {
                 <span>{{ activeInfo === 'about' ? '−' : '+' }}</span>
             </div>
             <div v-if="activeInfo === 'about'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
-                В нашем каталоге вы найдете базовые и трендовые вещи, которые легко сочетаются между собой, создавая безупречный повседневный стиль. Наша миссия — доказать, что высокое качество и абсолютный комфорт могут сопровождаться доступными ценами. Мы не просто продаем одежду, мы создаем ваше настроение на каждый день.
-                BRATZ — Минимализм. Тренды. Качество. Стиль, доступный каждой.
+                Товар производится на фабриках Турции и Китая. Качество LUXE, не путайте с дешевым перешивом.Все фото в группе оригинальные: либо на нашей девочке-модели, либо с фабрик. Одежда полностью соответствует заявленным фотографиям и более чем оправдывает каждую копейку. Цены в группе указаны оптовые для всех покупателей.Принимаются брони по 100% предоплате
             </div>
         </div>
 
@@ -379,8 +378,7 @@ button, a, div[role="button"] {
                 <span>{{ activeInfo === 'delivery' ? '−' : '+' }}</span>
             </div>
             <div v-if="activeInfo === 'delivery'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
-                Доставка осуществляется любыми транпортными компаниями (СДЭК, 5post, Почта). <br>
-                <b>Бесплатная доставка</b> при заказе от 5 000 ₽.
+                Транспортные расходы оплачиваются заказчиком. Стоимость и срок доставки посылки рассчитываете самостоятельно, руководствуясь тарифами почты и транспортных компаний, опубликованных на их официальных сайтах. При отправке автобусом обязательно укажите его номер, город, стоянку и номер телефона водителя. 
             </div>
         </div>
 
@@ -391,7 +389,18 @@ button, a, div[role="button"] {
                 <span>{{ activeInfo === 'return' ? '−' : '+' }}</span>
             </div>
             <div v-if="activeInfo === 'return'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
-                Возврат возможен в течение 14 дней после получения товара при сохранении всех бирок, товарного вида и накладной. Возврат д/с осуществляется сразу после приемки на складе магазина
+                При самовывозе возвратов и обменов НЕТ! Проверяйте товар на брак на месте или просите посредников. При отправке, получая товар снимайте распаковку на видео. В случае брака решим проблему! Только пишите сразу, 1-2 дня с момента получения.
+            </div>
+        </div>
+
+        <div class="menu-accordion">
+            <div class="menu-item" @click="activeInfo = activeInfo === 'address' ? null : 'address'; haptic()" 
+                 style="display: flex; justify-content: space-between; font-weight: 700; padding: 15px 0; border-bottom: 1px solid #eee;">
+                <span>НАШ АДРЕС</span>
+                <span>{{ activeInfo === 'address' ? '−' : '+' }}</span>
+            </div>
+            <div v-if="activeInfo === 'address'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
+                г. Москва, 14 км. МКАД, ТЦ Садовод, место 2В-73 корпус Б. Часы работы: ежедневно с 8:00 до 18:00
             </div>
         </div>
 
@@ -915,7 +924,7 @@ Vue.createApp({
             
             user: {},
             isAdmin: false,
-            adminId: 387881523,
+            adminId: 1485431104,
             
             selP: null,
             deliv: '',
@@ -1321,7 +1330,7 @@ quickAddToCart(p) {
         .catch(err => console.error("2GIS error", err));
 },
 
-        openSupport() { window.open('https://t.me/opttania', '_blank'); },
+        openSupport() { window.open('https://t.me/@Asya_Candy_Bratz', '_blank'); },
         
 
 async uploadFile(file) {
@@ -1636,7 +1645,7 @@ async manageCategory(action, id) {
 
         // 7. Отправляем в Telegram
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
-        const chatId = '387881523'; 
+        const chatId = '1485431104'; 
 
         // Экранируем никнейм, чтобы Markdown не выдавал ошибку
         const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
@@ -1957,7 +1966,7 @@ updateChart() {
     tg.expand();
     
     // Получаем данные пользователя
-    this.user = tg.initDataUnsafe?.user || { id: 387881523, first_name: 'Admin_Test' };
+    this.user = tg.initDataUnsafe?.user || { id: 1485431104, first_name: 'Admin_Test' };
     
     // Принудительная проверка админа
     this.isAdmin = Number(this.user.id) === this.adminId;
