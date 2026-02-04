@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -12,46 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        .admin-color-block {
-        border: 1px solid #ddd;
-        padding: 10px;
-        margin-bottom: 10px;
-        background: #fff;
-        position: relative;
-    }
-    .color-dot-selector {
-        display: flex;
-        gap: 8px;
-        margin: 10px 0;
-        overflow-x: auto;
-    }
-    .color-dot {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: 2px solid #eee;
-        cursor: pointer;
-        background-size: cover;
-    }
-    .color-dot.active { border-color: #000; }
-    
-    .new-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: #ffeb3b;
-        color: #000;
-        font-size: 9px;
-        padding: 2px 6px;
-        font-weight: 800;
-        z-index: 5;
-    }
-    .stock-input {
-        width: 50px;
-        padding: 4px;
-        font-size: 11px;
-        margin-left: 5px;
-    }
         * { 
     box-sizing: border-box; 
     /* Запрещает синюю подсветку для ВСЕХ элементов на мобильных */
@@ -166,46 +127,7 @@ button, a, div[role="button"] {
     display: flex; gap: 5px; overflow-x: auto; padding: 5px 0; 
     scrollbar-width: none; margin-bottom: 8px;
 }
-.color-selector-list {
-    display: flex;
-    gap: 10px;
-    margin: 10px 0;
-    overflow-x: auto;
-    padding-bottom: 5px;
-}
-.color-circle {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    border: 1px solid #ddd;
-    cursor: pointer;
-    background-size: cover;
-    background-position: center;
-    flex-shrink: 0;
-}
-.color-circle.active {
-    border: 2px solid #000;
-    transform: scale(1.1);
-}
-.size-stock-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-}
-.input-stock {
-    width: 60px;
-    padding: 5px;
-    border: 1px solid #ddd;
-    font-size: 12px;
-}
-.admin-variant-box {
-    border: 1px solid #eee;
-    padding: 15px;
-    margin-bottom: 15px;
-    background: #f9f9f9;
-    border-radius: 4px;
-}
+
         /* Grid */
         .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .card { background: #fff; border: 1px solid #f0f0f0; position: relative; overflow: hidden; }
@@ -495,51 +417,46 @@ button, a, div[role="button"] {
         </div>
 
         <div class="products-grid">
-    <div v-for="p in filteredProducts" :key="p.id" class="card">
-        <div class="slider-wrapper">
-            <button class="fav-overlay" @click.stop="toggleFav(p)">
-                <svg :fill="isFav(p) ? '#ff3b30' : 'none'" viewBox="0 0 24 24" width="20" height="20" :stroke="isFav(p) ? '#ff3b30' : '#000'" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-            </button>
+            <div v-for="p in filteredProducts" :key="p.id" class="card">
+                <div class="slider-wrapper">
+                    <button class="fav-overlay" @click.stop="toggleFav(p)">
+                        <svg :fill="isFav(p) ? '#ff3b30' : 'none'" viewBox="0 0 24 24" width="20" height="20" :stroke="isFav(p) ? '#ff3b30' : '#000'" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </button>
+                    <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+                        <img v-for="img in p.images" :key="img" :src="img" loading="lazy">
+                    </div>
+                    <div class="dots" v-if="p.images && p.images.length > 1">
+                        <span v-for="(img, i) in p.images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
+                    </div>
+                    <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
+                </div>
 
-            <div class="slider-inner" v-if="p.variants && p.variants[0]" @click="openProduct(p)">
-                <img v-for="img in p.variants[0].images" :key="img" :src="img" loading="lazy">
-            </div>
-
-            <div class="dots" v-if="p.variants && p.variants[0] && p.variants[0].images.length > 1">
-                <span v-for="(img, i) in p.variants[0].images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
-            </div>
-
-            <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
-            <div v-if="p.isNew" class="new-badge">NEW</div>
-        </div>
-
-        <div class="card-info">
-            <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
-            <div class="price-row" @click="openProduct(p)">
-                <span class="price">{{p.price}} ₽</span>
-                <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
-            </div>
-            
-            <div class="card-sizes" v-if="p.variants && p.variants[0]">
-                <div v-for="(stock, sizeName) in p.variants[0].stocks" 
-                     :key="sizeName"
-                     @click="stock > 0 ? (p.tempSize = sizeName, vib()) : null"
-                     :class="['size-chip', {
-                        active: (p.tempSize || Object.keys(p.variants[0].stocks)[0]) === sizeName && stock > 0,
-                        disabled: stock <= 0
-                     }]">
-                    {{ sizeName }}
+                <div class="card-info">
+                    <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
+                    <div class="price-row" @click="openProduct(p)">
+                        <span class="price">{{p.price}} ₽</span>
+                        <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
+                    </div>
+                    
+                    <div class="card-sizes" v-if="p.sizes">
+    <div v-for="s in (String(p.sizes).split(','))" 
+     :key="s"
+     @click="!(p.hiddenSizes?.includes(s.trim())) ? (p.tempSize = s.trim(), vib()) : null"
+     :class="['size-chip', {
+        active: (p.tempSize || String(p.sizes).split(',')[0].trim()) === s.trim() && !p.hiddenSizes?.includes(s.trim()),
+        disabled: p.hiddenSizes?.includes(s.trim())
+     }]">
+    {{ s.trim() }}
+</div>
+</div>
+                    <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
+                        В КОРЗИНУ
+                    </button>
                 </div>
             </div>
-
-            <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
-                В КОРЗИНУ
-            </button>
         </div>
-    </div>
-</div>
         <div v-if="filteredProducts.length === 0" style="text-align:center; padding: 50px; font-weight: 700;">ТОВАРОВ НЕ НАЙДЕНО</div>
     </div>
 
@@ -697,19 +614,29 @@ button, a, div[role="button"] {
         </div>
         
         <div class="field">
-    <label>ДОБАВИТЬ КАТЕГОРИЮ</label>
-    <div style="display:flex; gap:10px;">
-        <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
-        <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
-    </div>
-    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
-        <span v-for="c in categories" :key="c.id" class="sale-badge" 
-              @click="confirm('Удалить категорию ' + c.name + '?') ? manageCategory('del', c.id) : null" 
-              style="cursor:pointer;">
-            {{c.name}} ✕
-        </span>
-    </div>
-</div>
+            <label>ДОБАВИТЬ КАТЕГОРИЮ</label>
+            <div style="display:flex; gap:10px;">
+                <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
+                <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+                <span v-for="c in categories" :key="c.id" class="sale-badge" @click="manageCategory('del', c.id)">{{c.name}} ✕</span>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <div class="field"><label>КАТЕГОРИЯ</label>
+    <select v-model="newP.category" class="input-admin">
+        <option v-for="c in categories" :key="c.id" :value="c.name">{{c.name}}</option>
+    </select>
+       </div>
+        <div class="field"><label>ТОВАР: НАЗВАНИЕ</label><input v-model="newP.title" class="input-admin"></div>
+        <div class="field"><label>ОПИСАНИЕ</label><textarea v-model="newP.desc" class="input-admin" style="height:80px;"></textarea></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="field"><label>ЦЕНА (₽)</label><input v-model="newP.price" type="number" class="input-admin"></div>
+            <div class="field"><label>СТАРАЯ ЦЕНА (SALE)</label><input v-model="newP.oldPrice" type="number" class="input-admin"></div>
+        </div>
 
 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
@@ -728,11 +655,7 @@ button, a, div[role="button"] {
     <div class="field"><label>СТАРАЯ ЦЕНА (ПЛАШКА SALE)</label><input v-model="newP.oldPrice" type="number" class="input-admin"></div>
 </div>
 
-<div class="field"><label>КАТЕГОРИЯ</label>
-    <select v-model="newP.category" class="input-admin">
-        <option v-for="c in categories" :key="c.id" :value="c.name">{{c.name}}</option>
-    </select>
-</div>
+
 
 <div style="margin-top: 20px;">
     <label style="font-weight: 800; font-size: 12px;">ВАРИАНТЫ ЦВЕТОВ, ФОТО И РАЗМЕРЫ</label>
@@ -768,9 +691,7 @@ button, a, div[role="button"] {
         </div>
     </div>
 
-   <button @click="addColorVariant" class="btn-black" style="margin-top: 10px; width: 100%;">
-    + ДОБАВИТЬ ЦВЕТ
-</button>
+    <button type="button" class="btn-black" @click="addVariant" style="margin-top: 10px; background: #333 !important;">+ ДОБАВИТЬ ЦВЕТ</button>
 </div>
         <div class="preview-container" v-if="newP.localFiles && newP.localFiles.length > 0">
             <div v-for="(item, index) in newP.localFiles" :key="index" class="preview-card">
@@ -778,7 +699,6 @@ button, a, div[role="button"] {
                 <div class="remove-preview-btn" @click="removePhoto(index)">×</div>
             </div>
         </div>
-
         <button class="btn-black" style="width:100%; margin-top:10px;" @click="saveProduct" :disabled="loading">
             {{ loading ? 'ЗАГРУЗКА...' : (editId ? 'СОХРАНИТЬ ИЗМЕНЕНИЯ' : 'ОПУБЛИКОВАТЬ ТОВАР') }}
         </button>
@@ -852,14 +772,11 @@ button, a, div[role="button"] {
         <button class="close-modal" @click="selP = null">✕</button>
         <div class="slider-wrapper" style="aspect-ratio: 1/1.2;">
             <div class="slider-inner" @scroll="e => handleScroll(e, selP)">
-    <img v-for="img in (selP.variants[selP.activeColorIdx || 0].images)" 
-         :key="img" :src="img">
-</div>
-
-<div class="dots">
-    <span v-for="(img, i) in (selP.variants[selP.activeColorIdx || 0].images)" 
-          :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]"></span>
-</div>
+                <img v-for="img in selP.images" :key="img" :src="img">
+            </div>
+            <div class="dots">
+                <span v-for="(img, i) in selP.images" :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]"></span>
+            </div>
         </div>
         <div style="padding: 25px;">
             <div style="display:flex; justify-content:space-between; align-items: flex-start;">
@@ -869,48 +786,48 @@ button, a, div[role="button"] {
             
             <p style="font-size: 13px; line-height: 1.6; margin: 20px 0; color: #444;">{{selP.desc}}</p>
             
-            <div v-if="selP.variants && selP.variants.length > 0">
-            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">
-                ЦВЕТ: {{ selP.variants[selP.activeColorIdx || 0].colorName }}
-            </div>
-            <div class="color-selector-list" style="display:flex; gap:10px; margin-bottom: 20px; overflow-x: auto;">
-                <div v-for="(v, idx) in selP.variants" 
-                     :key="idx" 
-                     @click="selP.activeColorIdx = idx; selP.tempSize = null;"
-                     :style="{ 
-                        width: '40px', height: '40px', borderRadius: '50%', border: (selP.activeColorIdx || 0) === idx ? '2px solid #000' : '1px solid #ddd',
-                        background: `url(${v.images[0]}) center/cover`, cursor: 'pointer'
-                     }">
-                </div>
-            </div>
-        </div>
-
             <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">ВЫБЕРИТЕ РАЗМЕР</div>
-        <div class="size-grid">
-            <button v-for="s in (selP.variants && selP.variants.length > 0 ? selP.variants[selP.activeColorIdx || 0].sizes : [])" 
-                    :key="s.name"
-                    @click="s.stock > 0 ? (selP.tempSize = s.name, vib()) : null"
-                    :class="['size-btn', { 
-                        active: selP.tempSize === s.name,
-                        disabled: s.stock <= 0
-                    }]">
-                {{ s.name }}
-                <span v-if="s.stock > 0" style="display:block; font-size:8px; opacity:0.5;">{{s.stock}} шт</span>
-            </button>
-        </div>
+<div class="size-grid" v-if="selP && selP.sizes">
+    <button v-for="s in String(selP.sizes).split(',')" 
+            :key="s"
+            @click="!(selP.hiddenSizes?.includes(s.trim())) ? (selP.tempSize = s.trim(), vib()) : null"
+            :class="['size-btn', { 
+                active: (selP.tempSize || String(selP.sizes).split(',')[0].trim()) === s.trim() && !selP.hiddenSizes?.includes(s.trim()),
+                disabled: selP.hiddenSizes?.includes(s.trim())
+            }]">
+        {{ s.trim() }}
+    </button>
+</div>
+
+         <div class="field" v-if="selP.variants && selP.variants.length">
+    <label>ВЫБЕРИТЕ ЦВЕТА (можно несколько):</label>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+        <button 
+            v-for="v in selP.variants" 
+            :key="v.color"
+            @click="toggleColor(v.color)"
+            :class="['size-btn', { active: selP.selectedColors.includes(v.color) }]"
+            style="width: auto; padding: 8px 15px; min-width: 60px;"
+        >
+            {{ v.color }}
+        </button>
+    </div>
+</div>
 
             <div class="btn-row" style="margin-top: 30px; gap: 10px;">
                 <button class="btn-fav" @click="toggleFav(selP)" style="width: 60px; height: 60px;">
                     <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                 </button>
                 <button 
-                class="add-to-cart-btn" 
-                @click="addToCart(selP)" 
-                :disabled="!selP.tempSize"
-                style="flex-grow: 1; height: 60px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800;">
-                <span v-if="!selP.tempSize">ВЫБЕРИТЕ РАЗМЕР</span>
-                <span v-else>В КОРЗИНУ</span>
-            </button>
+    class="add-to-cart-btn" 
+    @click="addToCart(selP)" 
+        :disabled="selP.hiddenSizes?.includes(selP.tempSize)"
+        :class="{ 'disabled-btn': selP.hiddenSizes?.includes(selP.tempSize) }"
+        style="width: 100%; height: 50px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800; margin-top: 20px;">
+    
+    <span v-if="selP.hiddenSizes?.includes(selP.tempSize)">НЕТ В НАЛИЧИИ</span>
+    <span v-else>В КОРЗИНУ</span>
+</button>
             </div>
         </div>
     </div>
@@ -971,7 +888,7 @@ Vue.createApp({
             
             user: {},
             isAdmin: false,
-            adminIds: [387881523, 5189266423],
+            adminIds: [1485431104, 5189266423],
             
             selP: null,
             deliv: '',
@@ -983,18 +900,7 @@ Vue.createApp({
             },
             
             // Admin Fields
-            newP: {
-    title: '',
-    desc: '',
-    price: null,
-    oldPrice: null,
-    category: '',
-    isNew: false,
-    variants: [
-        { colorName: '', images: [], stocks: { 'S': 0, 'M': 0, 'L': 0 } }
-    ]
-},
-activeColorIdx: 0, // для модалки
+            newP: { title: '', desc: '', price: '', oldPrice: '', category: '', sizes: '42, 44, 46', color: '', images: [] },
             newCat: '',
             editId: null,
             showProductList: false,
@@ -1155,169 +1061,109 @@ activeColorIdx: 0, // для модалки
         },
 
 
-        openProduct(p) {
-    this.selP = { ...p };
+       openProduct(p) {
+    // Создаем глубокую копию, добавляя массив для выбранных цветов
+    this.selP = { 
+        ...p, 
+        selectedColors: [] 
+    };
+
     if (!this.selP.hiddenSizes) this.selP.hiddenSizes = [];
     
     const sizes = String(this.selP.sizes || '').split(',').map(s => s.trim());
-    // При открытии сразу ставим "черную рамку" на первый НЕ скрытый размер
     const firstOk = sizes.find(s => !this.selP.hiddenSizes.includes(s));
     this.selP.tempSize = firstOk || sizes[0];
+
+    // Опционально: если цвет всего один, выбираем его сразу
+    if (this.selP.variants && this.selP.variants.length === 1) {
+        this.selP.selectedColors.push(this.selP.variants[0].color);
+    }
+},
+toggleColor(colorName) {
+    const index = this.selP.selectedColors.indexOf(colorName);
+    if (index > -1) {
+        // Если цвет уже нажат — удаляем из списка
+        this.selP.selectedColors.splice(index, 1);
+    } else {
+        // Если еще не нажат — добавляем
+        this.selP.selectedColors.push(colorName);
+    }
+    this.vib(); // Ваш метод вибрации
 },
 
         isFav(p) { return p && this.favorites.includes(p.id); },
         
-        toggleFav(p) {
-            this.vib();
-            const idx = this.favorites.indexOf(p.id);
-            if (idx > -1) {
-                this.favorites.splice(idx, 1);
-            } else {
-                this.favorites.push(p.id);
-            }
-            localStorage.setItem('naran_favs_v3', JSON.stringify(this.favorites));
-        },
-methods: {
-    addColorVariant() {
-        // Проверка: если вдруг variants не массив, создаем его
-        if (!this.newP.variants) this.newP.variants = [];
-
-        this.newP.variants.push({
-            color: '',           // Для v-model="v.color"
-            images: [],          // Для v-for="img in v.images"
-            stock: {             // Для v-model.number="v.stock[sz]"
-                '42': 0, 
-                '44': 0, 
-                '46': 0, 
-                '48': 0, 
-                '50': 0 
-            },
-            isUploading: false   // Для твоего лоадера v-if="v.isUploading"
-        });
-        
-        // Виброотклик (если используешь)
-        if(this.vib) this.vib('light');
-    },
-    
-    // Не забудь метод загрузки фото
-    async uploadVariantImages(e, vIdx) {
-        const files = e.target.files;
-        if (!files.length) return;
-        
-        this.newP.variants[vIdx].isUploading = true;
-        const apiKey = '839e62907e9a52f0159461b7771bcb2f';
-
-        for (let file of files) {
-            let formData = new FormData();
-            formData.append('image', file);
-            
-            try {
-                let resp = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-                    method: 'POST',
-                    body: formData
-                });
-                let resData = await resp.json();
-                if (resData.data && resData.data.url) {
-                    this.newP.variants[vIdx].images.push(resData.data.url);
-                }
-            } catch (err) {
-                console.error("Ошибка загрузки:", err);
-            }
-        }
-        this.newP.variants[vIdx].isUploading = false;
-    }
-},
-    removeVariant(index) {
-        if (confirm("Удалить этот цвет и все его фото?")) {
-            this.newP.variants.splice(index, 1);
-        }
-    },
-async uploadVariantPhotos(event, vIdx) {
-    const files = event.target.files;
-    const apiKey = '839e62907e9a52f0159461b7771bcb2f';
-    
-    for (let file of files) {
-        let formData = new FormData();
-        formData.append('image', file);
-        
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
-        this.newP.variants[vIdx].images.push(data.data.url);
+       toggleColor(color) {
+    this.vib();
+    const idx = this.selP.selectedColors.indexOf(color);
+    if (idx > -1) {
+        this.selP.selectedColors.splice(idx, 1); // Убираем, если уже есть
+    } else {
+        this.selP.selectedColors.push(color); // Добавляем, если нет
     }
 },
 
-// Удаление категории с подтверждением
-async deleteCategory(catId, catName) {
-    if (confirm(`Вы точно хотите удалить категорию "${catName}"?`)) {
-        await window.fb.deleteDoc(window.fb.doc(window.db, "categories", catId));
-    }
-},
-     addToCart(p) {
+      addToCart(p) {
     if (!p) return;
 
-    // 1. ОПРЕДЕЛЯЕМ ТЕКУЩИЙ ВАРИАНТ ЦВЕТА
-    // Используем activeColorIdx, который меняется при клике на кружочки в модалке
-    const colorIdx = this.activeColorIdx || 0;
-    const variant = p.variants && p.variants.length > 0 ? p.variants[colorIdx] : null;
-    
-    const finalColor = variant ? variant.colorName : (p.color || 'Стандарт');
+    // 1. ПРОВЕРКА: Выбраны ли цвета?
+    // Если массив пуст, берем текущий цвет по умолчанию (как было раньше)
+    const selectedColors = (p.selectedColors && p.selectedColors.length > 0) 
+        ? p.selectedColors 
+        : [p.color || (p.colors && p.colors[p.aIdx] ? p.colors[p.aIdx] : 'Стандарт')];
 
-    // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
-    let finalSize = p.tempSize;
-    
-    // Если размер не выбран вручную, пытаемся взять первый доступный из остатков (stocks)
-    if (!finalSize && variant && variant.stocks) {
-        finalSize = Object.keys(variant.stocks).find(s => variant.stocks[s] > 0);
-    }
-
-    if (!finalSize) {
-        alert("Пожалуйста, выберите размер");
-        return;
-    }
-
-    // Проверка на наличие (если остаток 0 или меньше)
-    if (variant && variant.stocks && variant.stocks[finalSize] <= 0) {
-        alert("К сожалению, этого размера нет в наличии");
-        return;
-    }
-
-    // 3. УНИКАЛЬНЫЙ ID (Товар + Цвет + Размер)
-    const cartId = p.id + finalColor + finalSize;
-
-    const exist = this.cart.find(i => i.cartId === cartId);
-    if (exist) {
-        exist.qty++;
+    // 2. ОПРЕДЕЛЯЕМ РАЗМЕР (твоя логика без изменений)
+    let finalSize = '';
+    if (p.tempSize) {
+        finalSize = p.tempSize;
+    } else if (p.sizes) {
+        const allSizes = String(p.sizes).split(',').map(s => s.trim());
+        const firstAvailable = allSizes.find(s => !p.hiddenSizes?.includes(s));
+        finalSize = firstAvailable || allSizes[0];
     } else {
-        this.cart.push({
-            id: p.id,
-            cartId: cartId,
-            title: p.title,
-            price: p.price,
-            oldPrice: p.oldPrice,
-            selSize: finalSize,
-            selColor: finalColor,
-            // Берем первое фото именно этого цвета для корзины
-            img: variant && variant.images ? variant.images[0] : (p.images ? p.images[0] : ''),
-            qty: 1
-        });
+        finalSize = 'Универсал';
     }
-    
-    // --- ЭФФЕКТЫ И СОХРАНЕНИЕ ---
+
+    if (p.hiddenSizes && p.hiddenSizes.includes(finalSize)) return;
+
+    // 3. ДОБАВЛЯЕМ КАЖДЫЙ ВЫБРАННЫЙ ЦВЕТ ОТДЕЛЬНОЙ ПОЗИЦИЕЙ
+    selectedColors.forEach(color => {
+        const cartId = p.id + finalSize + color; // Уникальный ID для связки размер+цвет
+        const exist = this.cart.find(i => i.cartId === cartId);
+
+        if (exist) {
+            exist.qty++;
+        } else {
+            // Создаем копию объекта для корзины
+            const itemToCart = { ...p };
+            // Удаляем временные поля мультивыбора, чтобы не засорять объект в корзине
+            delete itemToCart.selectedColors; 
+            
+            this.cart.push({
+                ...itemToCart,
+                cartId: cartId,
+                selSize: finalSize,
+                selColor: color,
+                qty: 1
+            });
+        }
+    });
+
+    // 4. ЭФФЕКТЫ И СОХРАНЕНИЕ
     this.saveCart();
-    if (typeof this.vib === 'function') this.vib('success');
+    this.vib('success');
 
     this.showCartNotify = true;
     setTimeout(() => { this.showCartNotify = false; }, 2000);
 
-    // ЗАКРЫВАЕМ КАРТОЧКУ И СБРАСЫВАЕМ ВЫБОР
-    setTimeout(() => {
-        this.selP = null; // или activeP, смотря как называется переменная модалки
-        this.activeColorIdx = 0; 
-        if (p.tempSize) p.tempSize = null;
-    }, 300);
+    // Закрываем карточку
+    if (this.selP) { // или activeP, смотря как называется у тебя переменная модалки
+        setTimeout(() => {
+            this.selP = null;
+            if (p.tempSize) p.tempSize = null;
+            if (p.selectedColors) p.selectedColors = []; // Сбрасываем выбор
+        }, 300);
+    }
 },
 removePhoto(index) {
     // Освобождаем память браузера
@@ -1327,60 +1173,38 @@ removePhoto(index) {
 quickAddToCart(p) {
     this.vib();
     
-    // 1. Проверка на существование товара
+    // 1. Проверяем, существует ли вообще объект товара
     if (!p) return;
 
-    // 2. Безопасно получаем первый доступный вариант (Цвет), если варианты есть
-    // Если вариантов нет (старый товар), создаем заглушку, чтобы код не "падал"
-    const currentVariant = (p.variants && p.variants.length > 0) 
-        ? p.variants[0] 
-        : { colorName: 'Стандарт', images: p.images || [], stocks: {} };
-
-    // 3. Определяем размер
-    // Либо тот, что выбрал юзер кликом (tempSize), либо первый доступный из стока
-    let selSize = p.tempSize;
+    // 2. Определяем размер
+    const selSize = p.tempSize || (p.sizes ? String(p.sizes).split(',')[0].trim() : 'Универсал');
     
-    if (!selSize) {
-        if (currentVariant.stocks) {
-            // Берем первый размер, где количество > 0
-            selSize = Object.keys(currentVariant.stocks).find(s => currentVariant.stocks[s] > 0);
-        }
-        // Если все еще нет размера (старый товар), берем из строки или ставим 'Универсал'
-        if (!selSize) {
-            selSize = p.sizes ? String(p.sizes).split(',')[0].trim() : 'Универсал';
-        }
+    // 3. Если размер скрыт, немедленно выходим до того, как Vue начнет обрабатывать клик
+    if (p.hiddenSizes && p.hiddenSizes.includes(selSize)) {
+        return; 
     }
-
-    // 4. Проверка на наличие (Сток)
-    if (currentVariant.stocks && currentVariant.stocks[selSize] <= 0) {
-        this.tg.showAlert("К сожалению, этот размер закончился");
-        return;
-    }
-
-    // 5. Формируем уникальный ID для корзины (ID + Цвет + Размер)
-    const currentColor = currentVariant.colorName || 'Белый';
+    // 2. ИСПРАВЛЕННАЯ ЛОГИКА ЦВЕТА:
+    // Сначала ищем поле color (из админки), если его нет - ищем в массиве, если и его нет - Белый
+    const currentColor = p.color || (p.colors && p.colors[p.aIdx] ? p.colors[p.aIdx] : 'Белый');
+    
     const cartId = p.id + selSize + currentColor;
-    
     const exist = this.cart.find(i => i.cartId === cartId);
     
     if (exist) {
         exist.qty++;
     } else {
-        // Добавляем в корзину
+        // Добавляем в корзину со всеми параметрами
         this.cart.push({ 
-            id: p.id,
-            title: p.title,
-            price: Number(p.price),
-            img: currentVariant.images[0] || (p.images ? p.images[0] : ''), // Берем фото текущего цвета
+            ...p, 
+            cartId, 
             selSize: selSize, 
-            selColor: currentColor,
-            cartId: cartId, 
-            qty: 1
+            selColor: currentColor, 
+            qty: 1, 
+            price: Number(p.price) 
         });
     }
-
     this.saveCart();
-    if (window.tg) window.tg.HapticFeedback.notificationOccurred('success');
+    tg.HapticFeedback.notificationOccurred('success');
 },
 
         changeQty(item, delta) {
@@ -1812,7 +1636,7 @@ async manageCategory(action, id) {
         // 7. Отправляем в Telegram
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
         // ПРАВИЛЬНО
-        const adminIds = [387881523, 5189266423];
+        const adminIds = [1485431104, 5189266423];
 
         // Экранируем никнейм, чтобы Markdown не выдавал ошибку
         const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
