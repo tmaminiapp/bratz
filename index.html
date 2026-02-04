@@ -19,43 +19,6 @@
     -webkit-tap-highlight-color: transparent !important; 
     -webkit-touch-callout: none;
          }
-         .badge-new {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: black;
-        color: white;
-        padding: 5px 12px;
-        font-size: 12px;
-        font-weight: bold;
-        border-radius: 20px;
-        z-index: 2;
-    }
-    .selection-container { margin: 15px 0; }
-    .selection-label { font-weight: bold; margin-bottom: 8px; font-size: 14px; }
-    .options-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
-    
-    .opt-btn {
-        border: 1px solid #ddd;
-        background: white;
-        padding: 8px 15px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .opt-btn.active {
-        background: black;
-        color: white;
-        border-color: black;
-    }
-
-    /* Админка: блок добавления цветов */
-    .admin-color-item {
-        border: 1px dashed #ccc;
-        padding: 10px;
-        margin-bottom: 10px;
-        border-radius: 8px;
-    }
 
 button, a, div[role="button"] {
     outline: none !important;
@@ -118,20 +81,7 @@ button, a, div[role="button"] {
             color: var(--dark); 
             overflow-x: hidden; 
         }
-.color-chip {
-    padding: 8px 16px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background: white;
-    font-weight: 600;
-    font-size: 12px;
-    transition: 0.3s;
-}
-.color-chip.active {
-    background: black;
-    color: white;
-    border-color: black;
-}
+
         /* Header & Search */
         .header { 
             background: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; 
@@ -469,55 +419,42 @@ button, a, div[role="button"] {
         <div class="products-grid">
             <div v-for="p in filteredProducts" :key="p.id" class="card">
                 <div class="slider-wrapper">
-                    <div v-if="p.isNew" class="badge-new" style="position:absolute; top:10px; right:10px; background:black; color:white; padding:4px 10px; font-size:9px; font-weight:800; z-index:5;">NEW</div>
-                    <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
-
                     <button class="fav-overlay" @click.stop="toggleFav(p)">
                         <svg :fill="isFav(p) ? '#ff3b30' : 'none'" viewBox="0 0 24 24" width="20" height="20" :stroke="isFav(p) ? '#ff3b30' : '#000'" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                     </button>
-
                     <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-                        <template v-if="p.variants && p.variants.length > 0">
-                            <img v-for="(v, idx) in p.variants" :key="idx" :src="v.image" loading="lazy">
-                        </template>
-                        <template v-else>
-                            <img v-for="img in p.images" :key="img" :src="img" loading="lazy">
-                        </template>
+                        <img v-for="img in p.images" :key="img" :src="img" loading="lazy">
                     </div>
-
-                    <div class="dots" v-if="(p.variants?.length || p.images?.length) > 1">
-                        <span v-for="(item, i) in (p.variants || p.images)" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
+                    <div class="dots" v-if="p.images && p.images.length > 1">
+                        <span v-for="(img, i) in p.images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
                     </div>
+                    <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
                 </div>
 
                 <div class="card-info">
-    <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
-    <div class="price-row" @click="openProduct(p)">
-        <span class="price">{{p.price}} ₽</span>
-        <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
-    </div>
-    
-    <div class="card-variant-name" style="font-size: 10px; color: #888; font-weight: 700; text-transform: uppercase; margin: 5px 0;">
-        {{ p.variants && p.variants.length > 0 ? p.variants[p.aIdx || 0].color : (p.color || 'Стандарт') }}
-    </div>
-
-    <div class="card-sizes" v-if="p.variants || p.sizes">
-        <div v-for="s in (p.variants && p.variants.length > 0 ? String(p.variants[0].sizes) : String(p.sizes)).split(',')" 
-             :key="s"
-             @click.stop="!(p.hiddenSizes?.includes(s.trim())) ? (p.tempSize = s.trim(), vib()) : null"
-             :class="['size-chip', {
-                active: (p.tempSize || (p.variants && p.variants.length > 0 ? String(p.variants[0].sizes).split(',')[0].trim() : String(p.sizes).split(',')[0].trim())) === s.trim() && !p.hiddenSizes?.includes(s.trim()),
-                disabled: p.hiddenSizes?.includes(s.trim())
-             }]">
-            {{ s.trim() }}
-        </div>
-    </div>
-    <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
-        В КОРЗИНУ
-    </button>
+                    <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
+                    <div class="price-row" @click="openProduct(p)">
+                        <span class="price">{{p.price}} ₽</span>
+                        <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
+                    </div>
+                    
+                    <div class="card-sizes" v-if="p.sizes">
+    <div v-for="s in (String(p.sizes).split(','))" 
+     :key="s"
+     @click="!(p.hiddenSizes?.includes(s.trim())) ? (p.tempSize = s.trim(), vib()) : null"
+     :class="['size-chip', {
+        active: (p.tempSize || String(p.sizes).split(',')[0].trim()) === s.trim() && !p.hiddenSizes?.includes(s.trim()),
+        disabled: p.hiddenSizes?.includes(s.trim())
+     }]">
+    {{ s.trim() }}
 </div>
+</div>
+                    <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
+                        В КОРЗИНУ
+                    </button>
+                </div>
             </div>
         </div>
         <div v-if="filteredProducts.length === 0" style="text-align:center; padding: 50px; font-weight: 700;">ТОВАРОВ НЕ НАЙДЕНО</div>
@@ -530,19 +467,16 @@ button, a, div[role="button"] {
         <div class="products-grid">
             <div v-for="p in favList" :key="p.id" class="card">
                 <div class="slider-wrapper">
-                    <div v-if="p.isNew" class="badge-new" style="position:absolute; top:10px; right:10px; background:black; color:white; padding:4px 10px; font-size:9px; font-weight:800; z-index:5;">NEW</div>
                     <button class="fav-overlay" @click.stop="toggleFav(p)">
-                        <svg fill="#ff3b30" viewBox="0 0 24 24" width="20" height="20" stroke="#ff3b30" stroke-width="2">
+                        <svg :fill="isFav(p) ? '#ff3b30' : 'none'" viewBox="0 0 24 24" width="20" height="20" :stroke="isFav(p) ? '#ff3b30' : '#000'" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                     </button>
                     <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-                        <template v-if="p.variants && p.variants.length > 0">
-                            <img v-for="(v, idx) in p.variants" :key="idx" :src="v.image" loading="lazy">
-                        </template>
-                        <template v-else>
-                            <img v-for="img in p.images" :key="img" :src="img" loading="lazy">
-                        </template>
+                        <img v-for="img in p.images" :key="img" :src="img" loading="lazy">
+                    </div>
+                    <div class="dots" v-if="p.images.length > 1">
+                        <span v-for="(img, i) in p.images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
                     </div>
                 </div>
 
@@ -551,105 +485,77 @@ button, a, div[role="button"] {
                     <div class="price-row" @click="openProduct(p)">
                         <span class="price">{{p.price}} ₽</span>
                     </div>
-                    <div class="card-sizes" v-if="p.variants || p.sizes">
-                        <div v-for="s in (p.variants && p.variants.length > 0 ? String(p.variants[0].sizes) : String(p.sizes)).split(',')" 
-                             :key="s"
-                             @click.stop="!(p.hiddenSizes?.includes(s.trim())) ? (p.tempSize = s.trim(), vib()) : null"
-                             :class="['size-chip', {
-                                active: p.tempSize === s.trim() && !p.hiddenSizes?.includes(s.trim())
-                             }]">
-                            {{ s.trim() }}
-                        </div>
-                    </div>
+                    <div class="card-sizes" v-if="p.sizes">
+    <div v-for="s in (String(p.sizes).split(','))" 
+         :key="s"
+         @click="!(p.hiddenSizes?.includes(s.trim())) ? (p.tempSize = s.trim(), vib()) : null"
+         :class="['size-chip', {
+            active: (p.tempSize || String(p.sizes).split(',')[0].trim()) === s.trim() && !p.hiddenSizes?.includes(s.trim()),
+            disabled: p.hiddenSizes?.includes(s.trim())
+         }]">
+        {{ s.trim() }}
+    </div>
+</div>
                     <button class="btn-black" style="width: 100%; margin-top: 5px;" @click.stop="quickAddToCart(p)">
                         В КОРЗИНУ
                     </button>
-                </div> 
-            </div> 
+                </div> </div> </div> </div> <div v-if="tab === 'cart'">
+        <h2 class="brand-name" style="font-size: 16px; margin-bottom: 20px;">КОРЗИНА</h2>
+<div v-if="cart.length === 0" style="text-align:center; padding: 50px;">ВАША КОРЗИНА ПУСТА</div>
+<div v-else>
+    <div v-for="item in cart" :key="item.cartId" class="cart-item">
+        <img :src="item.images[0]" class="cart-img" @click="openProduct(item)" style="cursor:pointer;">
+        <div style="flex:1;">
+            <div @click="openProduct(item)" style="cursor:pointer;">
+                <div style="font-weight:700; font-size:12px; text-transform:uppercase;">{{item.title}}</div>
+                <div style="font-size:10px; color:gray; margin: 4px 0;">РАЗМЕР: {{item.selSize}} | ЦВЕТ: {{item.selColor}}</div>
+                <div style="font-weight:800;">{{item.price}} ₽</div>
+            </div>
+            <div class="qty-controls">
+                <button class="qty-btn" @click="changeQty(item, -1)">-</button>
+                <span style="font-weight:700;">{{item.qty}}</span>
+                <button class="qty-btn" @click="changeQty(item, 1)">+</button>
+            </div>
         </div>
-     </div> 
-     
-     <div v-if="tab === 'cart'">
-    <h2 class="brand-name" style="font-size: 16px; margin-bottom: 20px;">КОРЗИНА</h2>
-    
-    <div v-if="cart.length === 0" style="text-align:center; padding: 50px;">
-        <div style="font-size: 40px; margin-bottom: 15px;">🛒</div>
-        <div style="font-weight: 700; color: #888;">ВАША КОРЗИНА ПУСТА</div>
+        <button @click="removeFromCart(item.cartId)" style="border:none; background:none; font-size: 18px;">✕</button>
     </div>
 
-    <div v-else>
-        <div v-for="item in cart" :key="item.cartId" class="cart-item" style="display: flex; gap: 12px; margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; align-items: center;">
-            <img :src="item.image || (item.images && item.images[0]) || 'placeholder.jpg'" 
-                 class="cart-img" 
-                 @click="openProduct(item)" 
-                 style="width: 70px; height: 90px; object-fit: cover; border-radius: 6px; cursor:pointer;">
-            
-            <div style="flex:1;">
-                <div @click="openProduct(item)" style="cursor:pointer;">
-                    <div style="font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing: 0.5px;">{{item.title}}</div>
-                    <div style="font-size:10px; color:#888; margin: 4px 0; font-weight: 600;">
-                        {{ item.selColor || 'Стандарт' }} / {{ item.selSize || 'Uni' }}
-                    </div>
-                    <div style="font-weight:800; font-size:14px;">{{ (item.price * item.qty).toLocaleString() }} ₽</div>
-                </div>
+    <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 800;">ИТОГО К ОПЛАТЕ:</span>
+            <span style="font-size: 18px; font-weight: 800;">{{ total().toLocaleString() }} ₽</span>
+        </div>
+    </div>
 
-                <div class="qty-controls" style="margin-top: 10px; display: flex; align-items: center; gap: 12px; background: #f5f5f5; width: fit-content; padding: 2px 8px; border-radius: 4px;">
-                    <button class="qty-btn" @click="changeQty(item, -1)" style="border:none; background:none; font-size: 16px; cursor:pointer; padding: 0 5px;">−</button>
-                    <span style="font-weight:800; font-size:13px; min-width: 15px; text-align: center;">{{item.qty}}</span>
-                    <button class="qty-btn" @click="changeQty(item, 1)" style="border:none; background:none; font-size: 16px; cursor:pointer; padding: 0 5px;">+</button>
-                </div>
-            </div>
-            <button @click="removeFromCart(item.cartId)" style="border:none; background:none; font-size: 18px; color: #ccc; padding: 10px;">✕</button>
+    <div style="margin-top: 30px;">
+        <div class="field">
+            <label>ВАШЕ ИМЯ</label>
+            <input v-model="form.name" class="input-admin" placeholder="ИМЯ">
+        </div>
+        <div class="field">
+            <label>ТЕЛЕФОН (10-11 ЦИФР)</label>
+            <input v-model="form.phone" class="input-admin" type="tel" placeholder="89000000000">
         </div>
 
-        <div style="margin-top: 20px; padding: 20px; background: #000; color: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; opacity: 0.7;">ИТОГО К ОПЛАТЕ:</span>
-                <span style="font-size: 20px; font-weight: 900;">{{ total().toLocaleString() }} ₽</span>
-            </div>
+        <label style="font-size:10px; font-weight:800;">СПОСОБ ДОСТАВКИ</label>
+        <div class="delivery-grid">
+            <button v-for="d in ['СДЭК', 'ПОЧТА', '5POST']" :key="d" @click="setDelivery(d)" :class="['cat-tab', {active: deliv === d}]">{{d}}</button>
         </div>
 
-        <div style="margin-top: 30px; background: #fafafa; padding: 20px; border-radius: 12px;">
-            <div class="field" style="margin-bottom: 15px;">
-                <label style="font-size: 9px; font-weight: 800; margin-bottom: 5px; display: block;">ВАШЕ ИМЯ</label>
-                <input v-model="form.name" class="input-admin" placeholder="КАК К ВАМ ОБРАЩАТЬСЯ?" style="width: 100%; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
-            </div>
-            
-            <div class="field" style="margin-bottom: 15px;">
-                <label style="font-size: 9px; font-weight: 800; margin-bottom: 5px; display: block;">ТЕЛЕФОН</label>
-                <input v-model="form.phone" class="input-admin" type="tel" placeholder="8 999 000 00 00" style="width: 100%; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
-            </div>
+        <div id="map" v-show="deliv"></div>
+        <div v-if="address" style="font-size:12px; font-weight:700; margin-bottom: 20px;">📍 {{address}}</div>
 
-            <label style="font-size:9px; font-weight:800; text-transform: uppercase; margin-bottom: 10px; display: block;">СПОСОБ ДОСТАВКИ</label>
-            <div class="delivery-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px;">
-                <button v-for="d in ['СДЭК', 'ПОЧТА', '5POST']" 
-                        :key="d" 
-                        @click="setDelivery(d)" 
-                        :class="['cat-tab', {active: deliv === d}]" 
-                        style="width: 100%; margin: 0; font-size: 10px; padding: 10px 0; border: 1px solid #ddd; border-radius: 6px; background: #fff;">
-                    {{d}}
-                </button>
-            </div>
-
-            <div id="map" v-show="deliv" style="height: 200px; background: #eee; margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd;"></div>
-            
-            <div v-if="address" style="font-size:11px; font-weight:700; margin-bottom: 20px; padding: 12px; background: #eef9ee; color: #2d5a2d; border-radius: 6px; border: 1px solid #c8e6c9;">
-                📍 {{address}}
-            </div>
-
-            <div style="font-size: 9px; color: #999; line-height: 1.4; margin-bottom: 20px; text-align: center;">
-                Нажимая кнопку, вы подтверждаете заказ и соглашаетесь с правилами сервиса.
-            </div>
-
-            <button class="btn-black" 
-                    :disabled="!form.name || !form.phone || !address"
-                    :style="{ opacity: (!form.name || !form.phone || !address) ? 0.5 : 1, width: '100%', height: '60px', borderRadius: '8px', fontSize: '14px', fontWeight: '800' }" 
-                    @click="checkout">
-                ОФОРМИТЬ ЗАКАЗ
-            </button>
+        <div style="font-size: 9px; color: var(--gray); line-height: 1.2; margin-bottom: 15px; text-align: center;">
+            Нажимая на кнопку, вы даете согласие на обработку персональных данных в соответствии с 152-Ф3 для оформления и доставки заказа.
         </div>
+
+        <button class="btn-black" style="width:100%; height:60px; font-size: 14px;" @click="checkout">
+            ОФОРМИТЬ ЗАКАЗ — {{ total().toLocaleString() }} ₽
+        </button>
     </div>
 </div>
+    </div>
+
    <div v-if="tab === 'profile'">
     <div style="text-align:center; margin-bottom: 30px;">
         <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
@@ -707,61 +613,64 @@ button, a, div[role="button"] {
             <canvas id="orderChart" style="max-height: 200px;"></canvas>
         </div>
         
-        <div class="field">
-            <label>ДОБАВИТЬ КАТЕГОРИЮ</label>
-            <div style="display:flex; gap:10px;">
-                <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
-                <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
-            </div>
-            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
-                <span v-for="c in categories" :key="c.id" class="sale-badge" @click="manageCategory('del', c.id)">{{c.name}} ✕</span>
-            </div>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-
-        <div class="field">
-    <label style="display:flex; align-items:center; gap:10px; background:#f9f9f9; padding:10px; border-radius:10px; cursor:pointer;">
-        <input type="checkbox" v-model="newP.isNew" style="width:18px; height:18px;">
-        <span style="font-weight:800; font-size:12px;">ПОМЕТИТЬ КАК "NEW"</span>
-    </label>
-       </div>
-
-        <div class="field"><label>ТОВАР: НАЗВАНИЕ</label><input v-model="newP.title" class="input-admin"></div>
-        <div class="field"><label>ОПИСАНИЕ</label><textarea v-model="newP.desc" class="input-admin" style="height:80px;"></textarea></div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div class="field"><label>ЦЕНА (₽)</label><input v-model="newP.price" type="number" class="input-admin"></div>
-            <div class="field"><label>СТАРАЯ ЦЕНА (SALE)</label><input v-model="newP.oldPrice" type="number" class="input-admin"></div>
-        </div>
-        <div class="field"><label>КАТЕГОРИЯ</label>
-            <select v-model="newP.category" class="input-admin"><option v-for="c in categories" :value="c.name">{{c.name}}</option></select>
-        </div>
-        <div style="margin-top:20px;">
-    <label style="font-weight:800; font-size:11px; color:#888;">ВАРИАНТЫ ЦВЕТОВ И ФОТО</label>
-    
-    <div v-for="(v, idx) in newP.variants" :key="idx" 
-         style="background:#fff; border:1px solid #eee; padding:15px; border-radius:12px; margin-bottom:10px;">
-        
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <span style="font-weight:800; font-size:10px;">ЦВЕТ #{{idx + 1}}</span>
-            <button v-if="newP.variants.length > 1" @click="newP.variants.splice(idx, 1)" style="color:red; border:none; background:none; font-size:10px; font-weight:800;">УДАЛИТЬ</button>
-        </div>
-
-        <input v-model="v.color" class="input-admin" placeholder="Название цвета (черный, красный...)" style="margin-bottom:10px;">
-        <input v-model="v.sizes" class="input-admin" placeholder="Размеры через запятую (S, M, L)" style="margin-bottom:10px;">
-        
-        <div class="field">
-            <label style="font-size:9px;">ФОТО ЦВЕТА</label>
-            <input type="file" @change="e => uploadVariantImg(e, idx)" class="input-admin" style="padding:5px;">
-        </div>
-        
-        <div v-if="v.image" style="margin-top:10px;">
-            <img :src="v.image" style="width:50px; height:70px; object-fit:cover; border-radius:4px;">
-        </div>
-        <div v-if="v.loading" style="font-size:10px; color:orange; font-weight:700;">ЗАГРУЗКА В IMGBB...</div>
+       <div class="field">
+    <label>КАТЕГОРИИ</label>
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <input v-model="newCatName" class="input-admin" placeholder="Новая категория">
+        <button class="btn-black" @click="addCategory">+</button>
     </div>
+    <div class="cat-list">
+        <span v-for="cat in categories" :key="cat.id" class="sale-badge">
+            {{ cat.name }} 
+            <span @click="confirmDeleteCat(cat)" style="cursor:pointer; margin-left:5px;">✕</span>
+        </span>
+    </div>
+</div>
 
-    <button class="btn-white" @click="newP.variants.push({color:'', sizes:'', image:'', loading:false})" style="width:100%; border:2px dashed #ccc;">
+<hr>
+
+<div class="field"><label>НАЗВАНИЕ</label><input v-model="newP.title" class="input-admin"></div>
+<div class="field"><label>ОПИСАНИЕ</label><textarea v-model="newP.desc" class="input-admin"></textarea></div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+    <div class="field"><label>ЦЕНА</label><input v-model="newP.price" type="number" class="input-admin"></div>
+    <div class="field"><label>СТАРАЯ ЦЕНА (SALE)</label><input v-model="newP.oldPrice" type="number" class="input-admin"></div>
+</div>
+
+<div class="field">
+    <label><input type="checkbox" v-model="newP.isNew"> ОТМЕТКА "NEW"</label>
+</div>
+
+<div class="admin-variants" style="background:#eee; padding:10px; margin-top:20px;">
+    <label>ВАРИАНТЫ ЦВЕТОВ</label>
+    <div v-for="(v, vIdx) in newP.variants" :key="vIdx" style="background:#fff; padding:10px; margin-bottom:10px; border:1px solid #ccc;">
+        <div style="display:flex; justify-content:space-between;">
+            <input v-model="v.color" placeholder="Название цвета (напр. Черный)" class="input-admin" style="width:70%">
+            <button @click="newP.variants.splice(vIdx, 1)" style="color:red">Удалить цвет</button>
+        </div>
+
+        <div class="field">
+            <label>ФОТО ЦВЕТА</label>
+            <input type="file" multiple @change="e => handleVariantFiles(e, vIdx)" class="input-admin">
+            <div class="preview-container">
+                <div v-for="(img, iIdx) in v.previews" :key="iIdx" class="preview-card">
+                    <img :src="img">
+                    <div class="remove-preview-btn" @click="v.previews.splice(iIdx, 1); v.files.splice(iIdx, 1)">×</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>РАЗМЕРЫ И КОЛИЧЕСТВО</label>
+            <div v-for="(sz, sIdx) in v.sizes" :key="sIdx" style="display:flex; gap:5px; margin-bottom:5px;">
+                <input v-model="sz.name" placeholder="Размер" style="width:50px;">
+                <input v-model.number="sz.stock" type="number" placeholder="Кол-во" style="width:70px;">
+                <button @click="v.sizes.splice(sIdx, 1)">✕</button>
+            </div>
+            <button @click="v.sizes.push({name: '', stock: 0})" style="font-size:10px;">+ Добавить размер</button>
+        </div>
+    </div>
+    <button class="btn-black" @click="newP.variants.push({color:'', files:[], previews:[], sizes:[]})">
         + ДОБАВИТЬ ЦВЕТ
     </button>
 </div>
@@ -841,85 +750,70 @@ button, a, div[role="button"] {
         </div>      
     </div> </div> </main>
 
-   <div v-if="selP" class="modal" style="z-index: 5000;">
-    <button class="close-modal" @click="selP = null">✕</button>
-    
-    <div class="slider-wrapper" style="aspect-ratio: 1/1.2; position: relative;">
-        <div v-if="selP.isNew" class="badge-new" style="background: black; color: white; padding: 5px 12px; font-weight: 800; border-radius: 4px;">NEW</div>
-
-        <div class="slider-inner" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory;">
-            <template v-if="selP.variants && selP.variants.length > 0">
-                <img v-for="img in selP.variants[selColIdx || 0].images" 
-                     :key="img" :src="img" 
-                     style="min-width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start;">
-            </template>
-            <template v-else>
-                <img v-for="img in selP.images" :key="img" :src="img" style="min-width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start;">
-            </template>
-        </div>
-    </div>
-
-    <div style="padding: 25px;">
-        <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-            <h2 class="brand-name" style="font-size: 18px; margin:0; text-transform: uppercase;">{{selP.title}}</h2>
-            <div class="price" style="font-size: 20px; font-weight: 800;">{{selP.price}} ₽</div>
-        </div>
-        
-        <p style="font-size: 13px; line-height: 1.6; margin: 15px 0; color: #444;">{{selP.desc}}</p>
-        
-        <div v-if="selP.variants && selP.variants.length > 0">
-            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">
-                ЦВЕТ: {{ selP.variants[selColIdx || 0].color }}
+    <div v-if="selP" class="modal" style="z-index: 5000;">
+        <button class="close-modal" @click="selP = null">✕</button>
+        <div class="slider-wrapper" style="aspect-ratio: 1/1.2;">
+            <div class="slider-inner" @scroll="e => handleScroll(e, selP)">
+                <img v-for="img in selP.images" :key="img" :src="img">
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
-                <button v-for="(v, idx) in selP.variants" 
-                        :key="idx"
-                        @click="selColIdx = idx; selP.tempSize = null; vib()"
-                        :class="['color-chip', { active: (selColIdx || 0) === idx }]"
-                        style="padding: 8px 15px; border: 1px solid #ddd; border-radius: 4px; background: #fff; font-size: 12px; font-weight: 700;">
-                    {{ v.color }}
+            <div class="dots">
+                <span v-for="(img, i) in selP.images" :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]"></span>
+            </div>
+        </div>
+        <div style="padding: 25px;">
+            <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                <h2 class="brand-name" style="font-size: 18px; margin:0;">{{selP.title}}</h2>
+                <div class="price" style="font-size: 20px;">{{selP.price}} ₽</div>
+            </div>
+            
+            <p style="font-size: 13px; line-height: 1.6; margin: 20px 0; color: #444;">{{selP.desc}}</p>
+            
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">ВЫБЕРИТЕ РАЗМЕР</div>
+<div class="size-grid" v-if="selP && selP.sizes">
+    <button v-for="s in String(selP.sizes).split(',')" 
+            :key="s"
+            @click="!(selP.hiddenSizes?.includes(s.trim())) ? (selP.tempSize = s.trim(), vib()) : null"
+            :class="['size-btn', { 
+                active: (selP.tempSize || String(selP.sizes).split(',')[0].trim()) === s.trim() && !selP.hiddenSizes?.includes(s.trim()),
+                disabled: selP.hiddenSizes?.includes(s.trim())
+            }]">
+        {{ s.trim() }}
+    </button>
+</div>
+
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase;">ЦВЕТ: {{selP.color}}</div>
+
+            <div class="btn-row" style="margin-top: 30px; gap: 10px;">
+                <button class="btn-fav" @click="toggleFav(selP)" style="width: 60px; height: 60px;">
+                    <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                 </button>
+                <button 
+    class="add-to-cart-btn" 
+    @click="addToCart(selP)" 
+        :disabled="selP.hiddenSizes?.includes(selP.tempSize)"
+        :class="{ 'disabled-btn': selP.hiddenSizes?.includes(selP.tempSize) }"
+        style="width: 100%; height: 50px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800; margin-top: 20px;">
+    
+    <span v-if="selP.hiddenSizes?.includes(selP.tempSize)">НЕТ В НАЛИЧИИ</span>
+    <span v-else>В КОРЗИНУ</span>
+</button>
             </div>
         </div>
-
-        <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">ВЫБЕРИТЕ РАЗМЕР</div>
-        <div class="size-grid" style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button v-for="s in (selP.variants && selP.variants.length > 0 ? String(selP.variants[selColIdx || 0].sizes) : String(selP.sizes)).split(',')" 
-                    :key="s"
-                    @click="!(selP.hiddenSizes?.includes(s.trim())) ? (selP.tempSize = s.trim(), vib()) : null"
-                    :class="['size-btn', { 
-                        active: selP.tempSize === s.trim(),
-                        disabled: selP.hiddenSizes?.includes(s.trim())
-                    }]">
-                {{ s.trim() }}
-            </button>
-        </div>
-
-        <div class="btn-row" style="margin-top: 30px; display: flex; gap: 10px;">
-            <button class="btn-fav" @click="toggleFav(selP)" style="width: 60px; height: 60px; border: 1px solid #eee; border-radius: 8px; background: #fff;">
-                <svg :fill="isFav(selP) ? '#ff3b30' : 'none'" viewBox="0 0 24 24" width="24" height="24" :stroke="isFav(selP) ? '#ff3b30' : '#000'" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-            </button>
-            <button class="add-to-cart-btn" 
-                    @click="addToCart(selP)" 
-                    :disabled="!selP.tempSize"
-                    style="flex: 1; height: 60px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800;">
-                {{ !selP.tempSize ? 'ВЫБЕРИТЕ РАЗМЕР' : 'В КОРЗИНУ' }}
-            </button>
-        </div>
     </div>
-</div> <nav class="bottom-nav">
+
+    <nav class="bottom-nav">
     <button v-for="btn in nav" :key="btn.id" 
         @click="setTab(btn.id)" 
-        :class="['nav-item', {active: tab === btn.id}]"> 
-        <div v-if="btn.id === 'cart' && cart.length > 0" class="badge">
+        :class="['nav-item', {active: tab === btn.id}]"> <div v-if="btn.id === 'cart' && cart.length > 0" class="badge">
             {{cart.length}}
         </div>
+        
         <svg v-html="btn.icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
         <span>{{btn.label}}</span>
     </button>
 </nav>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -963,7 +857,7 @@ Vue.createApp({
             
             user: {},
             isAdmin: false,
-            adminIds: [387881523, 5189266423],
+            adminIds: [1485431104, 5189266423],
             
             selP: null,
             deliv: '',
@@ -975,21 +869,7 @@ Vue.createApp({
             },
             
             // Admin Fields
-            newP: {
-    title: '',
-    desc: '',
-    price: null,
-    oldPrice: null,
-    category: '',
-    isNew: false, // ГАЛОЧКА ДЛЯ NEW
-    variants: [
-        { color: 'Белый', sizes: '', images: [], loading: false }
-    ],
-    images: [],
-    sizes: ''
-},
-selColIdx: 0,
-
+            newP: { title: '', desc: '', price: '', oldPrice: '', category: '', sizes: '42, 44, 46', color: '', images: [] },
             newCat: '',
             editId: null,
             showProductList: false,
@@ -1172,87 +1052,61 @@ selColIdx: 0,
             }
             localStorage.setItem('naran_favs_v3', JSON.stringify(this.favorites));
         },
-selectVariant(idx) {
-    this.selColIdx = idx;
-    this.vib(); // Твоя вибрация
-    // Сбрасываем размер при смене цвета, чтобы клиент выбрал заново
-    this.selP.tempSize = null; 
-},
-      addToCart(p) {
+
+       addToCart(p) {
     if (!p) return;
 
-    // 1. ОПРЕДЕЛЯЕМ ТЕКУЩИЙ ВАРИАНТ (ЦВЕТ)
-    const hasVariants = p.variants && p.variants.length > 0;
-    // Берем выбранный индекс или 0 по умолчанию
-    const vIdx = this.selColIdx || 0;
-    const currentVariant = hasVariants ? p.variants[vIdx] : null;
-
-    // 2. ОПРЕДЕЛЯЕМ ЦВЕТ И ФОТО (важно для отображения в корзине)
-    const finalColor = hasVariants 
-        ? (currentVariant.color || `Цвет ${vIdx + 1}`)
-        : (p.color || 'Стандарт');
-
-    // Берем первое фото из массива картинок варианта или общее фото товара
-    const finalImage = hasVariants && currentVariant.images && currentVariant.images.length > 0
-        ? currentVariant.images[0]
-        : (p.images && p.images[0] ? p.images[0] : '');
-
-    // 3. ОПРЕДЕЛЯЕМ РАЗМЕР
+    // 1. ОПРЕДЕЛЯЕМ РАЗМЕР (сохраняем твою логику)
     let finalSize = '';
     if (p.tempSize) {
         finalSize = p.tempSize;
-    } else {
-        // Логика авто-выбора первого доступного размера
-        const sizeSource = hasVariants ? (currentVariant.sizes || '') : (p.sizes || '');
-        const allSizes = String(sizeSource).split(',').map(s => s.trim()).filter(s => s !== '');
-        
+    } else if (p.sizes) {
+        const allSizes = String(p.sizes).split(',').map(s => s.trim());
         const firstAvailable = allSizes.find(s => !p.hiddenSizes?.includes(s));
-        finalSize = firstAvailable || allSizes[0] || 'Универсал';
+        finalSize = firstAvailable || allSizes[0];
+    } else {
+        finalSize = 'Универсал';
     }
 
-    // Проверка на наличие (если вдруг размер скрыт)
-    if (p.hiddenSizes && p.hiddenSizes.includes(finalSize)) {
-        this.vib('error');
-        return;
-    }
+    if (p.hiddenSizes && p.hiddenSizes.includes(finalSize)) return;
 
-    // 4. УНИКАЛЬНЫЙ ID (ID товара + Размер + Цвет)
-    const cartId = `${p.id}-${finalSize}-${finalColor}`;
+    // 2. ОПРЕДЕЛЯЕМ ЦВЕТ
+    const finalColor = p.color || (p.colors && p.colors[p.aIdx] ? p.colors[p.aIdx] : 'Белый');
 
-    // Ищем, есть ли такой товар уже в корзине
+    // 3. УНИКАЛЬНЫЙ ID
+    const cartId = p.id + finalSize + finalColor;
+
     const exist = this.cart.find(i => i.cartId === cartId);
-    
     if (exist) {
         exist.qty++;
     } else {
-        // Создаем чистую копию объекта, чтобы не было реактивных глюков
-        const productCopy = JSON.parse(JSON.stringify(p));
-        
         this.cart.push({
-            ...productCopy,
+            ...p,
             cartId: cartId,
             selSize: finalSize,
             selColor: finalColor,
-            image: finalImage, // Для отображения картинки именно этого цвета в корзине
-            qty: 1,
-            price: Number(p.price) || 0
+            qty: 1
         });
     }
     
-    // --- ЭФФЕКТЫ И ОЧИСТКА ---
+    // --- УЛУЧШЕНИЯ ДЛЯ "БЕСШОВНОСТИ" ---
+    
     this.saveCart();
-    this.vib('success');
+    this.vib('success'); // Используем успех для вибрации
 
+    // Показываем уведомление
     this.showCartNotify = true;
     setTimeout(() => { this.showCartNotify = false; }, 2000);
 
-    // Закрываем модалку и сбрасываем временные данные
-    setTimeout(() => {
-        this.selP = null; 
-        this.activeP = null;
-        this.selColIdx = 0; // Важно сбросить для следующего открытия товара
-        if (p.tempSize) p.tempSize = null; 
-    }, 200);
+    // ЗАКРЫВАЕМ КАРТОЧКУ (если она была открыта)
+    // Это позволит тебе сразу увидеть Избранное или Каталог под карточкой
+    if (this.activeP) {
+        setTimeout(() => {
+            this.activeP = null; 
+            // Очищаем временный размер для следующего открытия
+            if (p.tempSize) p.tempSize = null; 
+        }, 300); // Небольшая задержка, чтобы юзер увидел нажатие кнопки
+    }
 },
 removePhoto(index) {
     // Освобождаем память браузера
@@ -1260,94 +1114,42 @@ removePhoto(index) {
     this.newP.localFiles.splice(index, 1);
 },
 quickAddToCart(p) {
-    if (!p) return;
     this.vib();
-
-    // 1. ОПРЕДЕЛЯЕМ ВАРИАНТ (ЦВЕТ)
-    const hasVariants = p.variants && p.variants.length > 0;
-    const currentVariant = hasVariants ? p.variants[0] : null;
-
-    // 2. ОПРЕДЕЛЯЕМ ЦВЕТ И ФОТО
-    const currentColor = hasVariants 
-        ? (currentVariant.color || 'Цвет 1') 
-        : (p.color || 'Стандарт');
-
-    // Берем фото из варианта (первое из массива images или поле image) или из общего списка
-    const currentImage = hasVariants 
-        ? (currentVariant.images?.[0] || currentVariant.image || p.images?.[0]) 
-        : (p.images?.[0] || '');
-
-    // 3. УМНЫЙ ВЫБОР РАЗМЕРА
-    let selSize = '';
     
-    // Получаем массив всех размеров для этого товара/варианта
-    const rawSizes = hasVariants ? (currentVariant.sizes || '') : (p.sizes || '');
-    const sizesArray = String(rawSizes).split(',').map(s => s.trim()).filter(s => s !== '');
+    // 1. Проверяем, существует ли вообще объект товара
+    if (!p) return;
 
-    if (p.tempSize) {
-        selSize = p.tempSize;
-    } else {
-        // Ищем первый размер, который НЕ входит в скрытые
-        selSize = sizesArray.find(s => !p.hiddenSizes?.includes(s)) || sizesArray[0] || 'Универсал';
-    }
+    // 2. Определяем размер
+    const selSize = p.tempSize || (p.sizes ? String(p.sizes).split(',')[0].trim() : 'Универсал');
     
-    // 4. ФИНАЛЬНАЯ ПРОВЕРКА НА СКРЫТЫЙ РАЗМЕР
-    if (p.hiddenSizes?.includes(selSize)) {
-        this.vib('error'); // Вибрация ошибки, если все размеры скрыты
+    // 3. Если размер скрыт, немедленно выходим до того, как Vue начнет обрабатывать клик
+    if (p.hiddenSizes && p.hiddenSizes.includes(selSize)) {
         return; 
     }
-
-    // 5. УНИКАЛЬНЫЙ ID И ДОБАВЛЕНИЕ
-    const cartId = `${p.id}-${selSize}-${currentColor}`;
+    // 2. ИСПРАВЛЕННАЯ ЛОГИКА ЦВЕТА:
+    // Сначала ищем поле color (из админки), если его нет - ищем в массиве, если и его нет - Белый
+    const currentColor = p.color || (p.colors && p.colors[p.aIdx] ? p.colors[p.aIdx] : 'Белый');
+    
+    const cartId = p.id + selSize + currentColor;
     const exist = this.cart.find(i => i.cartId === cartId);
     
     if (exist) {
         exist.qty++;
     } else {
-        // Используем копирование объекта через spread, чтобы не было реактивных связей
+        // Добавляем в корзину со всеми параметрами
         this.cart.push({ 
             ...p, 
             cartId, 
-            selSize, 
+            selSize: selSize, 
             selColor: currentColor, 
-            image: currentImage, 
             qty: 1, 
-            price: Number(p.price) || 0
+            price: Number(p.price) 
         });
     }
-
-    // 6. СОХРАНЕНИЕ И УВЕДОМЛЕНИЯ
     this.saveCart();
-    
-    this.showCartNotify = true;
-    setTimeout(() => { this.showCartNotify = false; }, 2000);
+    tg.HapticFeedback.notificationOccurred('success');
+},
 
-    if (window.tg?.HapticFeedback) {
-        window.tg.HapticFeedback.notificationOccurred('success');
-    }
-},
-async uploadVariantImgs(e, variantIdx) {
-    const files = e.target.files;
-    for (let file of files) {
-        const formData = new FormData();
-        formData.append('image', file);
-        // Замени ТВОЙ_API_KEY на свой ключ от imgbb
-        const resp = await fetch('https://api.imgbb.com/1/upload?key=ТВОЙ_API_KEY', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await resp.json();
-        const url = data.data.url;
-        
-        // Добавляем в массив фото конкретного цвета
-        this.newP.variants[variantIdx].images.push(url);
-        
-        // Самая первая добавленная фотография в первом цвете пойдет в главное превью карточки
-        if (variantIdx === 0 && this.newP.variants[0].images.length === 1) {
-            this.newP.images = [url];
-        }
-    }
-},
         changeQty(item, delta) {
             item.qty += delta;
             if (item.qty <= 0) this.removeFromCart(item.cartId);
@@ -1777,7 +1579,7 @@ async manageCategory(action, id) {
         // 7. Отправляем в Telegram
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
         // ПРАВИЛЬНО
-        const adminIds = [387881523, 5189266423];
+        const adminIds = [1485431104, 5189266423];
 
         // Экранируем никнейм, чтобы Markdown не выдавал ошибку
         const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
