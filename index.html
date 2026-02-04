@@ -764,7 +764,9 @@ button, a, div[role="button"] {
         </div>
     </div>
 
-    <button type="button" class="btn-black" @click="addVariant" style="margin-top: 10px; background: #333 !important;">+ ДОБАВИТЬ ЦВЕТ</button>
+   <button @click="addColorVariant" class="btn-black" style="margin-top: 10px; width: 100%;">
+    + ДОБАВИТЬ ЦВЕТ
+</button>
 </div>
         <div class="preview-container" v-if="newP.localFiles && newP.localFiles.length > 0">
             <div v-for="(item, index) in newP.localFiles" :key="index" class="preview-card">
@@ -981,7 +983,7 @@ Vue.createApp({
     oldPrice: 0,
     isNew: false,
     category: '',
-    colors: [] // Массив объектов { name: '', images: [], sizes: [{size: '42', stock: 5}, ...] }
+    variants: []// Массив объектов { name: '', images: [], sizes: [{size: '42', stock: 5}, ...] }
 },
 activeColorIdx: 0, // для модалки
             newCat: '',
@@ -1166,14 +1168,61 @@ activeColorIdx: 0, // для модалки
             }
             localStorage.setItem('naran_favs_v3', JSON.stringify(this.favorites));
         },
-addColorVariant() {
-    const defaultSizes = this.newP.sizes.split(',').map(s => ({ size: s.trim(), stock: 0 }));
-    this.newP.colors.push({
-        name: '',
-        images: [],
-        sizes: defaultSizes
-    });
+methods: {
+    addColorVariant() {
+        // Проверка: если вдруг variants не массив, создаем его
+        if (!this.newP.variants) this.newP.variants = [];
+
+        this.newP.variants.push({
+            color: '',           // Для v-model="v.color"
+            images: [],          // Для v-for="img in v.images"
+            stock: {             // Для v-model.number="v.stock[sz]"
+                '42': 0, 
+                '44': 0, 
+                '46': 0, 
+                '48': 0, 
+                '50': 0 
+            },
+            isUploading: false   // Для твоего лоадера v-if="v.isUploading"
+        });
+        
+        // Виброотклик (если используешь)
+        if(this.vib) this.vib('light');
+    },
+    
+    // Не забудь метод загрузки фото
+    async uploadVariantImages(e, vIdx) {
+        const files = e.target.files;
+        if (!files.length) return;
+        
+        this.newP.variants[vIdx].isUploading = true;
+        const apiKey = '839e62907e9a52f0159461b7771bcb2f';
+
+        for (let file of files) {
+            let formData = new FormData();
+            formData.append('image', file);
+            
+            try {
+                let resp = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                let resData = await resp.json();
+                if (resData.data && resData.data.url) {
+                    this.newP.variants[vIdx].images.push(resData.data.url);
+                }
+            } catch (err) {
+                console.error("Ошибка загрузки:", err);
+            }
+        }
+        this.newP.variants[vIdx].isUploading = false;
+    }
 },
+    removeVariant(index) {
+        if (confirm("Удалить этот цвет и все его фото?")) {
+            this.newP.variants.splice(index, 1);
+        }
+    },
 async uploadVariantPhotos(event, vIdx) {
     const files = event.target.files;
     const apiKey = '839e62907e9a52f0159461b7771bcb2f';
@@ -1197,60 +1246,69 @@ async deleteCategory(catId, catName) {
         await window.fb.deleteDoc(window.fb.doc(window.db, "categories", catId));
     }
 },
-       addToCart(p) {
+     addToCart(p) {
     if (!p) return;
 
-    // 1. ОПРЕДЕЛЯЕМ РАЗМЕР (сохраняем твою логику)
-    let finalSize = '';
-    if (p.tempSize) {
-        finalSize = p.tempSize;
-    } else if (p.sizes) {
-        const allSizes = String(p.sizes).split(',').map(s => s.trim());
-        const firstAvailable = allSizes.find(s => !p.hiddenSizes?.includes(s));
-        finalSize = firstAvailable || allSizes[0];
-    } else {
-        finalSize = 'Универсал';
+    // 1. ОПРЕДЕЛЯЕМ ТЕКУЩИЙ ВАРИАНТ ЦВЕТА
+    // Используем activeColorIdx, который меняется при клике на кружочки в модалке
+    const colorIdx = this.activeColorIdx || 0;
+    const variant = p.variants && p.variants.length > 0 ? p.variants[colorIdx] : null;
+    
+    const finalColor = variant ? variant.colorName : (p.color || 'Стандарт');
+
+    // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
+    let finalSize = p.tempSize;
+    
+    // Если размер не выбран вручную, пытаемся взять первый доступный из остатков (stocks)
+    if (!finalSize && variant && variant.stocks) {
+        finalSize = Object.keys(variant.stocks).find(s => variant.stocks[s] > 0);
     }
 
-    if (p.hiddenSizes && p.hiddenSizes.includes(finalSize)) return;
+    if (!finalSize) {
+        alert("Пожалуйста, выберите размер");
+        return;
+    }
 
-    // 2. ОПРЕДЕЛЯЕМ ЦВЕТ
-    const finalColor = p.color || (p.colors && p.colors[p.aIdx] ? p.colors[p.aIdx] : 'Белый');
+    // Проверка на наличие (если остаток 0 или меньше)
+    if (variant && variant.stocks && variant.stocks[finalSize] <= 0) {
+        alert("К сожалению, этого размера нет в наличии");
+        return;
+    }
 
-    // 3. УНИКАЛЬНЫЙ ID
-    const cartId = p.id + finalSize + finalColor;
+    // 3. УНИКАЛЬНЫЙ ID (Товар + Цвет + Размер)
+    const cartId = p.id + finalColor + finalSize;
 
     const exist = this.cart.find(i => i.cartId === cartId);
     if (exist) {
         exist.qty++;
     } else {
         this.cart.push({
-            ...p,
+            id: p.id,
             cartId: cartId,
+            title: p.title,
+            price: p.price,
+            oldPrice: p.oldPrice,
             selSize: finalSize,
             selColor: finalColor,
+            // Берем первое фото именно этого цвета для корзины
+            img: variant && variant.images ? variant.images[0] : (p.images ? p.images[0] : ''),
             qty: 1
         });
     }
     
-    // --- УЛУЧШЕНИЯ ДЛЯ "БЕСШОВНОСТИ" ---
-    
+    // --- ЭФФЕКТЫ И СОХРАНЕНИЕ ---
     this.saveCart();
-    this.vib('success'); // Используем успех для вибрации
+    if (typeof this.vib === 'function') this.vib('success');
 
-    // Показываем уведомление
     this.showCartNotify = true;
     setTimeout(() => { this.showCartNotify = false; }, 2000);
 
-    // ЗАКРЫВАЕМ КАРТОЧКУ (если она была открыта)
-    // Это позволит тебе сразу увидеть Избранное или Каталог под карточкой
-    if (this.activeP) {
-        setTimeout(() => {
-            this.activeP = null; 
-            // Очищаем временный размер для следующего открытия
-            if (p.tempSize) p.tempSize = null; 
-        }, 300); // Небольшая задержка, чтобы юзер увидел нажатие кнопки
-    }
+    // ЗАКРЫВАЕМ КАРТОЧКУ И СБРАСЫВАЕМ ВЫБОР
+    setTimeout(() => {
+        this.selP = null; // или activeP, смотря как называется переменная модалки
+        this.activeColorIdx = 0; 
+        if (p.tempSize) p.tempSize = null;
+    }, 300);
 },
 removePhoto(index) {
     // Освобождаем память браузера
