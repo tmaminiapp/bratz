@@ -888,7 +888,7 @@ Vue.createApp({
             
             user: {},
             isAdmin: false,
-            adminIds: [1485431104, 5189266423],
+            adminIds: [387881523, 5189266423],
             
             selP: null,
             deliv: '',
@@ -900,7 +900,15 @@ Vue.createApp({
             },
             
             // Admin Fields
-            newP: { title: '', desc: '', price: '', oldPrice: '', category: '', sizes: '42, 44, 46', color: '', images: [] },
+            newP: { 
+    title: '', 
+    desc: '', 
+    price: '', 
+    oldPrice: '', 
+    category: '', 
+    isNew: false, // Флаг для плашки NEW
+    variants: []  // ТУТ будут { color: '', images: [], sizes: { '42': 5, '44': 10 } }
+},
             newCat: '',
             editId: null,
             showProductList: false,
@@ -1636,7 +1644,7 @@ async manageCategory(action, id) {
         // 7. Отправляем в Telegram
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
         // ПРАВИЛЬНО
-        const adminIds = [1485431104, 5189266423];
+        const adminIds = [387881523, 5189266423];
 
         // Экранируем никнейм, чтобы Markdown не выдавал ошибку
         const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
