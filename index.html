@@ -35,21 +35,6 @@ button, a, div[role="button"] {
     pointer-events: none !important;
     opacity: 0.5;
 }
-.color-chip.active {
-    border: 2px solid #000 !important;
-    transform: scale(1.1);
-}
-.size-chip.disabled {
-    opacity: 0.3;
-    text-decoration: line-through;
-    cursor: not-allowed;
-}
-.sale-badge {
-    font-size: 10px;
-    font-weight: 800;
-    padding: 4px 8px;
-    letter-spacing: 1px;
-}
     /* Общие стили для кнопок размеров */
 .size-chip { 
     /* Ваши текущие стили */
@@ -432,64 +417,46 @@ button, a, div[role="button"] {
         </div>
 
         <div class="products-grid">
-    <div v-for="p in filteredProducts" :key="p.id" class="card">
-        <div class="slider-wrapper">
-            <div v-if="p.isNew" class="sale-badge" style="position:absolute; top:10px; right:10px; background: #000; color: #fff;">NEW</div>
-            
-            <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
-
-            <button class="fav-overlay" @click.stop="toggleFav(p)">
-                <svg :fill="isFav(p) ? '#ff3b30' : 'none'" viewBox="0 0 24 24" width="20" height="20" :stroke="isFav(p) ? '#ff3b30' : '#000'" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-            </button>
-
-            <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-                <img v-for="img in (p.variants && p.variants.length > 0 ? p.variants[p.activeVariantIdx || 0].images : p.images)" 
-                     :key="img" :src="img" loading="lazy">
-            </div>
-
-            <div class="dots" v-if="p.variants && p.variants[p.activeVariantIdx || 0]?.images.length > 1">
-                <span v-for="(img, i) in p.variants[p.activeVariantIdx || 0].images" 
-                      :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
-            </div>
-        </div>
-
-        <div class="card-info">
-            <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
-            
-            <div class="price-row" @click="openProduct(p)">
-                <span class="price">{{p.price}} ₽</span>
-                <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
-            </div>
-
-            <div class="card-colors" v-if="p.variants && p.variants.length > 1" style="display:flex; gap:5px; margin-bottom:10px;">
-                <div v-for="(v, idx) in p.variants" :key="idx" 
-                     @click="p.activeVariantIdx = idx; p.tempSize = null; vib()"
-                     :style="{ background: v.colorCode || '#eee' }"
-                     :class="['color-chip', { active: (p.activeVariantIdx || 0) === idx }]"
-                     style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #ddd; cursor:pointer;">
+            <div v-for="p in filteredProducts" :key="p.id" class="card">
+                <div class="slider-wrapper">
+                    <button class="fav-overlay" @click.stop="toggleFav(p)">
+                        <svg :fill="isFav(p) ? '#ff3b30' : 'none'" viewBox="0 0 24 24" width="20" height="20" :stroke="isFav(p) ? '#ff3b30' : '#000'" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </button>
+                    <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+                        <img v-for="img in p.images" :key="img" :src="img" loading="lazy">
+                    </div>
+                    <div class="dots" v-if="p.images && p.images.length > 1">
+                        <span v-for="(img, i) in p.images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
+                    </div>
+                    <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
                 </div>
-            </div>
-            
-            <div class="card-sizes" v-if="p.variants && p.variants.length > 0">
-                <div v-for="(qty, size) in p.variants[p.activeVariantIdx || 0].stock" 
-                     :key="size"
-                     @click="qty > 0 ? (p.tempSize = size, vib()) : null"
-                     :class="['size-chip', {
-                        active: p.tempSize === size,
-                        disabled: qty <= 0
-                     }]">
-                    {{ size }}
-                </div>
-            </div>
 
-            <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
-                В КОРЗИНУ
-            </button>
-        </div>
-    </div>
+                <div class="card-info">
+                    <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
+                    <div class="price-row" @click="openProduct(p)">
+                        <span class="price">{{p.price}} ₽</span>
+                        <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
+                    </div>
+                    
+                    <div class="card-sizes" v-if="p.sizes">
+    <div v-for="s in (String(p.sizes).split(','))" 
+     :key="s"
+     @click="!(p.hiddenSizes?.includes(s.trim())) ? (p.tempSize = s.trim(), vib()) : null"
+     :class="['size-chip', {
+        active: (p.tempSize || String(p.sizes).split(',')[0].trim()) === s.trim() && !p.hiddenSizes?.includes(s.trim()),
+        disabled: p.hiddenSizes?.includes(s.trim())
+     }]">
+    {{ s.trim() }}
 </div>
+</div>
+                    <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
+                        В КОРЗИНУ
+                    </button>
+                </div>
+            </div>
+        </div>
         <div v-if="filteredProducts.length === 0" style="text-align:center; padding: 50px; font-weight: 700;">ТОВАРОВ НЕ НАЙДЕНО</div>
     </div>
 
@@ -797,79 +764,55 @@ button, a, div[role="button"] {
     </div> </div> </main>
 
     <div v-if="selP" class="modal" style="z-index: 5000;">
-    <button class="close-modal" @click="selP = null">✕</button>
-    
-    <div class="slider-wrapper" style="aspect-ratio: 1/1.2;">
-        <div class="slider-inner" @scroll="e => handleScroll(e, selP)">
-            <img v-for="img in (selectedVariant?.images || selP.images)" :key="img" :src="img">
+        <button class="close-modal" @click="selP = null">✕</button>
+        <div class="slider-wrapper" style="aspect-ratio: 1/1.2;">
+            <div class="slider-inner" @scroll="e => handleScroll(e, selP)">
+                <img v-for="img in selP.images" :key="img" :src="img">
+            </div>
+            <div class="dots">
+                <span v-for="(img, i) in selP.images" :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]"></span>
+            </div>
         </div>
-        <div class="dots">
-            <span v-for="(img, i) in (selectedVariant?.images || selP.images)" 
-                  :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]"></span>
-        </div>
-        
-        <div v-if="selP.isNew" class="sale-badge" style="position:absolute; top:20px; left:20px; background:#000; color:#fff;">NEW</div>
-        <div v-if="selP.oldPrice" class="sale-badge" style="position:absolute; top:20px; right:20px;">SALE</div>
-    </div>
-
-    <div style="padding: 25px;">
-        <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-            <h2 class="brand-name" style="font-size: 18px; margin:0;">{{selP.title}}</h2>
-            <div class="price-box">
+        <div style="padding: 25px;">
+            <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                <h2 class="brand-name" style="font-size: 18px; margin:0;">{{selP.title}}</h2>
                 <div class="price" style="font-size: 20px;">{{selP.price}} ₽</div>
-                <div v-if="selP.oldPrice" class="old-price" style="text-decoration: line-through; font-size: 14px; color: #888;">{{selP.oldPrice}} ₽</div>
             </div>
-        </div>
-        
-        <p style="font-size: 13px; line-height: 1.6; margin: 20px 0; color: #444;">{{selP.desc}}</p>
-        
-        <div v-if="selP.variants && selP.variants.length > 0">
-            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">
-                ЦВЕТ: {{selectedVariant?.color}}
-            </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px;">
-                <div v-for="(v, idx) in selP.variants" :key="idx"
-                     @click="selectedVariant = v; selectedSize = null; vib()"
-                     :class="['color-chip', { active: selectedVariant === v }]"
-                     style="padding: 8px 15px; border: 1px solid #ddd; font-size: 12px; cursor: pointer; white-space: nowrap;">
-                    {{v.color}}
-                </div>
-            </div>
-        </div>
-
-        <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">ВЫБЕРИТЕ РАЗМЕР</div>
-        <div class="size-grid" v-if="selectedVariant">
-            <button v-for="(qty, sz) in selectedVariant.stock" 
-                    :key="sz"
-                    @click="qty > 0 ? (selectedSize = sz, vib()) : null"
-                    :class="['size-btn', { 
-                        active: selectedSize === sz,
-                        disabled: qty <= 0
-                    }]">
-                {{ sz }}
-            </button>
-        </div>
-
-        <div class="btn-row" style="margin-top: 30px; display: flex; gap: 10px; align-items: center;">
-            <button class="btn-fav" @click="toggleFav(selP)" style="width: 60px; height: 60px; flex-shrink: 0; background: none; border: 1px solid #eee; border-radius: 8px;">
-                <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-            </button>
             
-            <button 
-                class="add-to-cart-btn" 
-                @click="addToCartWithVariant(selP, selectedVariant, selectedSize)" 
-                :disabled="!selectedSize"
-                :class="{ 'disabled-btn': !selectedSize }"
-                style="width: 100%; height: 60px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800;">
-                
-                <span v-if="!selectedSize">ВЫБЕРИТЕ РАЗМЕР</span>
-                <span v-else>В КОРЗИНУ</span>
-            </button>
+            <p style="font-size: 13px; line-height: 1.6; margin: 20px 0; color: #444;">{{selP.desc}}</p>
+            
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">ВЫБЕРИТЕ РАЗМЕР</div>
+<div class="size-grid" v-if="selP && selP.sizes">
+    <button v-for="s in String(selP.sizes).split(',')" 
+            :key="s"
+            @click="!(selP.hiddenSizes?.includes(s.trim())) ? (selP.tempSize = s.trim(), vib()) : null"
+            :class="['size-btn', { 
+                active: (selP.tempSize || String(selP.sizes).split(',')[0].trim()) === s.trim() && !selP.hiddenSizes?.includes(s.trim()),
+                disabled: selP.hiddenSizes?.includes(s.trim())
+            }]">
+        {{ s.trim() }}
+    </button>
+</div>
+
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase;">ЦВЕТ: {{selP.color}}</div>
+
+            <div class="btn-row" style="margin-top: 30px; gap: 10px;">
+                <button class="btn-fav" @click="toggleFav(selP)" style="width: 60px; height: 60px;">
+                    <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                </button>
+                <button 
+    class="add-to-cart-btn" 
+    @click="addToCart(selP)" 
+        :disabled="selP.hiddenSizes?.includes(selP.tempSize)"
+        :class="{ 'disabled-btn': selP.hiddenSizes?.includes(selP.tempSize) }"
+        style="width: 100%; height: 50px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800; margin-top: 20px;">
+    
+    <span v-if="selP.hiddenSizes?.includes(selP.tempSize)">НЕТ В НАЛИЧИИ</span>
+    <span v-else>В КОРЗИНУ</span>
+</button>
+            </div>
         </div>
     </div>
-</div>
 
     <nav class="bottom-nav">
     <button v-for="btn in nav" :key="btn.id" 
@@ -944,14 +887,9 @@ Vue.createApp({
     desc: '',
     price: null,
     oldPrice: null,
-    category: 'all',
-    isNew: false, // Плашка NEW
-    variants: []  // Массив для цветов, фото и остатков
-}, 
-selectedVariant: null, // Хранит выбранный цвет в модалке
-selectedSize: null,    // Хранит выбранный размер в модалке
-
-currentVariant: {
+    category: '',
+    variants: [] // Вместо старых images и color
+},currentVariant: {
     color: '',
     localFiles: [], // Файлы для загрузки
     sizes: {} // Объект типа {"42": 5, "44": 0}
@@ -1150,22 +1088,16 @@ async uploadVariantImages(e, idx) {
         },
 
 
-     openProduct(p) {
-    this.selP = p;
-    // Если у товара есть новые варианты
-    if (p.variants && p.variants.length > 0) {
-        this.selectedVariant = p.variants[0]; // Выбираем первый цвет
-        this.selectedSize = null; // Сбрасываем размер
-    } else {
-        // Поддержка старых товаров (совместимость)
-        this.selectedVariant = { 
-            color: p.color || 'Стандарт', 
-            images: p.images || [], 
-            stock: {} 
-        };
+       openProduct(p) {
+    this.viewProduct = JSON.parse(JSON.stringify(p));
+    // Инициализируем выбор: первый цвет и первый размер в наличии
+    if (this.viewProduct.variants && this.viewProduct.variants.length > 0) {
+        this.selectedVariant = this.viewProduct.variants[0];
+        // Ищем первый размер, где остаток > 0
+        this.selectedSize = Object.keys(this.selectedVariant.sizes).find(s => this.selectedVariant.sizes[s] > 0) || null;
     }
-    this.tab = 'main'; // Остаемся на главной (модалка сверху)
-    this.vib();
+    this.showModal = true;
+    this.vib(); // Виброотклик
 },
 
         isFav(p) { return p && this.favorites.includes(p.id); },
@@ -1235,26 +1167,6 @@ async uploadVariantImages(e, idx) {
             if (p.tempSize) p.tempSize = null; 
         }, 300); // Небольшая задержка, чтобы юзер увидел нажатие кнопки
     }
-},
-addToCartWithVariant(product, variant, size) {
-    if (!size) return alert('Выберите размер!');
-    
-    const cartItem = {
-        cartId: Date.now(), // Уникальный ID для корзины
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        color: variant.color,
-        size: size,
-        img: variant.images[0] // Берем первое фото именно этого цвета!
-    };
-    
-    this.cart.push(cartItem);
-    this.saveCart();
-    this.vib();
-    this.selP = null; // Закрыть модалку
-    // Telegram уведомление (опционально)
-    if (window.Telegram?.WebApp) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
 },
 removePhoto(index) {
     // Освобождаем память браузера
@@ -1492,15 +1404,16 @@ async compressImage(file) {
         }
 
         const productData = {
-    title: this.newP.title,
-    desc: this.newP.desc,
-    price: Number(this.newP.price),
-    oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
-    category: this.newP.category,
-    isNew: !!this.newP.isNew,
-    variants: this.newP.variants, // Сохраняем массив вариантов
-    updatedAt: Date.now()
-};
+            title: this.newP.title,
+            desc: this.newP.desc || '',
+            price: Number(this.newP.price),
+            oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
+            category: this.newP.category || 'all',
+            // Теперь используем массив вариантов вместо одиночных color/images
+            variants: this.newP.variants, 
+            updatedAt: Date.now()
+        };
+
         if (this.editId) {
             await window.fb.updateDoc(window.fb.doc(window.db, "products", this.editId), productData);
             alert('Изменения сохранены!');
