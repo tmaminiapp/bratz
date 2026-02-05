@@ -511,7 +511,7 @@ button, a, div[role="button"] {
 
                 <button class="btn-black" style="width: 100%; margin-top: 5px; text-transform: uppercase; font-size: 11px;" 
                         @click.stop="openProduct(p)">
-                    ВЫБРАТЬ И КУПИТЬ
+                    КУПИТЬ
                 </button>
             </div> 
         </div> 
@@ -742,37 +742,63 @@ button, a, div[role="button"] {
         </button>
         <button v-if="editId" class="cat-tab" style="width:100%; margin-top:5px;" @click="cancelEdit">ОТМЕНА</button>
 
-        <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
-            <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">📦 СПИСОК ТОВАРОВ ({{ products.length }})</span>
-                <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
-            </div>
-            <div v-if="showProductList" style="padding: 5px; max-height: 400px; overflow-y: auto; background: #fff;">
-                <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
-                    <div style="display: flex; gap: 15px; align-items: start;">
-                    <img :src="p.variants && p.variants[0]?.images?.length ? p.variants[0].images[0] : (p.images?.length ? p.images[0] : '')" 
-     loading="lazy" 
-     style="width: 50px; height: 65px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f0f0f0;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">{{ p.title || p.name }} <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span></div>
-                            <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">Цвет: {{ p.color || '—' }}</div>
-                            <div style="display: flex; flex-direction: column; gap: 5px;">
-                                <div v-for="s in (Array.isArray(p.sizes) ? p.sizes : String(p.sizes || '').split(',').filter(x => x))" :key="s" style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 4px 8px; border-radius: 4px;">
-                                    <span style="font-size: 12px; font-weight: 600;" :style="{ color: p.hiddenSizes?.includes(s.trim()) ? '#ccc' : '#000', textDecoration: p.hiddenSizes?.includes(s.trim()) ? 'line-through' : 'none' }">{{ s.trim() }}</span>
-                                    <button @click="toggleSizeVisibility(p, s.trim())" :style="{ border: 'none', background: 'none', fontSize: '10px', fontWeight: '800', color: p.hiddenSizes?.includes(s.trim()) ? '#34c759' : '#ff3b30', textTransform: 'uppercase', cursor: 'pointer' }">
-                                        {{ p.hiddenSizes?.includes(s.trim()) ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
-                                    </button>
+       <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
+    <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+        <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">📦 СПИСОК ТОВАРОВ ({{ products.length }})</span>
+        <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
+    </div>
+    
+    <div v-if="showProductList" style="padding: 5px; max-height: 400px; overflow-y: auto; background: #fff;">
+        <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
+            <div style="display: flex; gap: 15px; align-items: start;">
+                
+                <img :src="p.variants && p.variants[0]?.images?.length ? p.variants[0].images[0] : (p.images?.length ? p.images[0] : '')" 
+                     loading="lazy" 
+                     style="width: 50px; height: 65px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f0f0f0;">
+                
+                <div style="flex: 1;">
+                    <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">
+                        {{ p.title || p.name }} 
+                        <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span>
+                    </div>
+                    <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">Цвет: {{ p.color || '—' }}</div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <div v-for="s in (Array.isArray(p.sizes) ? p.sizes : String(p.sizes || '').split(',').filter(x => x))" 
+                             :key="s" 
+                             style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 6px 8px; border-radius: 6px;">
+                            
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                                <span style="font-size: 12px; font-weight: 600; min-width: 25px;" 
+                                      :style="{ color: p.hiddenSizes?.includes(s.trim()) ? '#ccc' : '#000', textDecoration: p.hiddenSizes?.includes(s.trim()) ? 'line-through' : 'none' }">
+                                    {{ s.trim() }}
+                                </span>
+                                
+                                <div v-if="p.stocks" style="display: flex; align-items: center; gap: 4px;">
+                                    <span style="font-size: 9px; color: #999;">ШТ:</span>
+                                    <input type="number" 
+                                           v-model.number="p.stocks[s.trim()]" 
+                                           @change="updateStock(p, s.trim())"
+                                           style="width: 40px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; font-size: 11px; font-weight: bold; text-align: center;">
                                 </div>
                             </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 15px;">
-                            <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
-                            <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
+
+                            <button @click="toggleSizeVisibility(p, s.trim())" 
+                                    :style="{ border: 'none', background: 'none', fontSize: '10px', fontWeight: '800', color: p.hiddenSizes?.includes(s.trim()) ? '#34c759' : '#ff3b30', textTransform: 'uppercase', cursor: 'pointer' }">
+                                {{ p.hiddenSizes?.includes(s.trim()) ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
+                            </button>
                         </div>
                     </div>
                 </div>
+
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
+                    <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
+                </div>
             </div>
         </div>
+    </div>
+</div>
 
         <hr style="margin: 20px 0; border: none; border-top: 2px solid #000;">   
         <h3 class="brand-name" style="font-size:12px; margin-top:2px;">ЗАКАЗЫ ({{allOrders.length}}) | ВЫРУЧКА: {{revenue}} ₽</h3>
@@ -922,6 +948,7 @@ Vue.createApp({
             searchMode: false,
             burgerOpen: false,
             loading: false,
+            showProductList: false,
             activeInfo: null,
             
             products: [], // Инициализация пустым массивом для защиты
@@ -1082,6 +1109,22 @@ newCat: '',
         
         return sum + (priceNumber * quantity);
     }, 0);
+},
+async updateStock(product, size) {
+    this.vib();
+    // Инициализация объекта, если его нет
+    if (!product.stocks) product.stocks = {};
+    const count = product.stocks[size] || 0;
+
+    try {
+        const pRef = window.fb.doc(window.db, "products", product.id);
+        // Обновляем только конкретный ключ в объекте stocks
+        await window.fb.updateDoc(pRef, {
+            [`stocks.${size}`]: count
+        });
+    } catch (e) {
+        console.error("Ошибка остатков:", e);
+    }
 },
         
         setCategory(name) {
@@ -1672,21 +1715,20 @@ async toggleSizeVisibility(product, size) {
     }
 },
 
-async toggleVisibility(p) {
-    if (!p || !p.id) return;
-    
-    const oldState = p.hidden;
-    p.hidden = !p.hidden;
+async toggleSizeVisibility(product, size) {
     this.vib();
+    const sTrim = size.trim();
+    if (!product.hiddenSizes) product.hiddenSizes = [];
+    
+    const idx = product.hiddenSizes.indexOf(sTrim);
+    if (idx > -1) product.hiddenSizes.splice(idx, 1);
+    else product.hiddenSizes.push(sTrim);
 
     try {
-        const productRef = window.fb.doc(window.db, "products", p.id);
-        await window.fb.updateDoc(productRef, { 
-            hidden: p.hidden 
-        });
+        const pRef = window.fb.doc(window.db, "products", product.id);
+        await window.fb.updateDoc(pRef, { hiddenSizes: product.hiddenSizes });
     } catch (e) {
-        p.hidden = oldState; // Откат при ошибке
-        alert("Ошибка при сохранении статуса");
+        console.error(e);
     }
 },
 
