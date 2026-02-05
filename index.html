@@ -2161,6 +2161,67 @@ async checkout() {
         this.loading = false;
     }
 },
+async updateStatus(order, newStatus) {
+    if (order.status === newStatus) return;
+
+    try {
+        order.isUpdating = true;
+        const orderRef = window.fb.doc(window.db, "orders", order.id);
+        await window.fb.updateDoc(orderRef, { status: newStatus });
+        
+        // --- БЛОК УВЕДОМЛЕНИЙ ---
+        const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
+        
+        // Создаем список тех, кто получит сообщение
+        const recipients = [];
+        
+        // 1. Добавляем ID клиента
+        const customerId = order.user_id || (order.user ? order.user.id : null);
+        if (customerId) recipients.push(customerId);
+        
+        // 2. Добавляем твои дополнительные ID (админы, менеджеры)
+        const extraIds = [641527014, 387881523]; // ЗАМЕНИ ЭТИ ЦИФРЫ НА НУЖНЫЕ ID
+        extraIds.forEach(id => {
+            if (!recipients.includes(id)) recipients.push(id);
+        });
+
+        let message = "";
+        if (newStatus === 'Отправлен') {
+            message = `🚀 *Заказ №${order.order_id} отправлен!*\n\n📦 Статус обновлен на: ${newStatus}`;
+        } else if (newStatus === 'Доставлен') {
+            message = `✅ *Заказ №${order.order_id} доставлен!*\n\nСтатус: ${newStatus}`;
+        }
+
+        if (message && recipients.length > 0) {
+            // Рассылаем всем из списка recipients
+            for (const targetId of recipients) {
+                try {
+                    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: targetId,
+                            text: message,
+                            parse_mode: 'Markdown'
+                        })
+                    });
+                    console.log(`Отправлено на ID: ${targetId}`);
+                } catch (err) {
+                    console.error(`Ошибка отправки для ${targetId}:`, err);
+                }
+            }
+        }
+        // --- КОНЕЦ БЛОКА УВЕДОМЛЕНИЙ ---
+
+        if (window.tg?.HapticFeedback) window.tg.HapticFeedback.impactOccurred('medium');
+
+    } catch (e) {
+        console.error("Ошибка обновления:", e);
+        alert("Ошибка связи с базой.");
+    } finally {
+        order.isUpdating = false;
+    }
+},
 handleFiles(e) {
     const files = Array.from(e.target.files);
     if (!this.newP.localFiles) this.newP.localFiles = [];
