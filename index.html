@@ -1208,6 +1208,26 @@ async updateStock(product, size) {
                 this.currentCat = '';
             }
         },
+       async fetchProducts() {
+        try {
+            // Запрос к коллекции products с сортировкой по дате создания
+            const q = window.fb.query(
+                window.fb.collection(window.db, "products"), 
+                window.fb.orderBy("createdAt", "desc")
+            );
+            const querySnapshot = await window.fb.getDocs(q);
+            
+            const tempProducts = [];
+            querySnapshot.forEach((doc) => {
+                tempProducts.push({ id: doc.id, ...doc.data() });
+            });
+            
+            this.products = tempProducts;
+            console.log("Успешно загружено товаров:", this.products.length);
+        } catch (e) {
+            console.error("Ошибка при получении списка товаров:", e);
+        }
+    },
 
        setTab(id) {
     if (this.vib) this.vib(); 
@@ -1717,18 +1737,19 @@ async compressImage(file) {
     });
 },
 async saveProduct() {
+    // 1. Валидация
     if (!this.newP.title || !this.newP.price || !this.newP.category) {
         return alert('Заполните название, цену и категорию!');
     }
     
-    // Проверка фото
     if (!this.newP.variants?.[0]?.images?.length) {
         return alert('Загрузите хотя бы одно фото!');
     }
 
-    this.loading = true;
+    this.loading = true; // Включаем индикатор загрузки (предотвращает белый экран)
+    
     try {
-        // Создаем чистую копию данных для Firebase
+        // Подготовка данных с глубоким копированием
         const productData = {
             title: this.newP.title.trim(),
             desc: this.newP.desc || '',
@@ -1736,62 +1757,72 @@ async saveProduct() {
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
-            hidden: false,
+            hidden: !!this.newP.hidden,
             hiddenSizes: this.newP.hiddenSizes || [],
-            // Глубокое копирование вариантов
             variants: JSON.parse(JSON.stringify(this.newP.variants)),
-            // Главное фото для превью
             images: [this.newP.variants[0].images[0]], 
             updatedAt: Date.now()
         };
 
         if (this.editId) {
+            // Редактирование существующего товара
             const docRef = window.fb.doc(window.db, "products", this.editId);
             await window.fb.updateDoc(docRef, productData);
             
             const idx = this.products.findIndex(p => p.id === this.editId);
             if (idx !== -1) {
-                // Используем splice для реактивности
                 this.products.splice(idx, 1, { id: this.editId, ...productData });
             }
-            alert('Обновлено!');
+            alert('Обновлено успешно!');
         } else {
+            // Создание нового товара
             productData.createdAt = Date.now();
             const docRef = await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
             
-            // Добавляем в локальный список
+            // Добавляем в локальный массив для мгновенного отображения
             this.products.unshift({ id: docRef.id, ...productData }); 
-            alert('Создано успешно!');
+            alert('Товар успешно создан!');
         }
 
-        this.cancelEdit(); 
+        // --- ПЕРЕХОД ПОСЛЕ УСПЕХА ---
+        this.cancelEdit();       // Сбрасываем форму и переменные
+        this.tab = 'profile';    // ОТКРЫВАЕМ ВКЛАДКУ ПРОФИЛЯ (убедитесь, что имя вкладки совпадает)
+        
     } catch (e) {
         console.error("Ошибка сохранения:", e);
-        alert('Ошибка: ' + e.message);
+        alert('Критическая ошибка: ' + e.message);
     } finally {
+        // Гарантируем отключение лоадера, чтобы не висел белый экран
         this.loading = false;
     }
 },
-      editProduct(p) {
+    editProduct(p) {
     this.editId = p.id;
+    // Используем JSON.parse для глубокого копирования всего объекта сразу
+    const cleanItem = JSON.parse(JSON.stringify(p));
+    
     this.newP = {
-        title: p.title || '',
-        desc: p.desc || '',
-        price: p.price || null,
-        oldPrice: p.oldPrice || null,
-        category: p.category || 'all',
-        isNew: p.isNew || false,
-        // Если вариантов нет (старый товар), создаем один пустой для совместимости
-        variants: p.variants ? JSON.parse(JSON.stringify(p.variants)) : [
-            { color: 'Стандарт', images: p.images || [], stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } }
+        title: cleanItem.title || '',
+        desc: cleanItem.desc || '',
+        price: cleanItem.price || null,
+        oldPrice: cleanItem.oldPrice || null,
+        category: cleanItem.category || '',
+        isNew: !!cleanItem.isNew,
+        hiddenSizes: cleanItem.hiddenSizes || [], // Важно подгружать, чтобы не стереть!
+        variants: cleanItem.variants || [
+            { color: 'Стандарт', images: cleanItem.images || [], stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } }
         ]
     };
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    this.showProductList = false; // Скрываем список, открываем форму
+    window.scrollTo(0, 0);
 },
 
-      cancelEdit() {
+cancelEdit() {
     this.editId = null;
     this.showProductList = true;
+    
+    // Приводим к тому же виду, что и в editProduct
     this.newP = {
         title: '',
         desc: '',
@@ -1801,14 +1832,10 @@ async saveProduct() {
         isNew: false,
         hiddenSizes: [],
         variants: [
-            { 
-                color: '', 
-                images: [], 
-                stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
-                isUploading: false 
-            }
+            { color: '', images: [], stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } }
         ]
     };
+    
     if (this.localFiles) this.localFiles = []; 
 },
 
@@ -2268,6 +2295,7 @@ updateChart() {
      mounted() {
     tg.ready();
     tg.expand();
+    this.fetchProducts();
     
     // Получаем данные пользователя
     this.user = tg.initDataUnsafe?.user || { id: 387881523, first_name: 'Admin_Test' };
