@@ -582,7 +582,9 @@ button, a, div[role="button"] {
                 <div style="font-size:10px; color:gray; font-weight: 600;">{{o.date}}</div>
             </div>
         </div>
-    </div> <div v-if="isAdmin" class="admin-section">
+    </div> 
+    
+    <div v-if="isAdmin" class="admin-section">
         <h2 class="brand-name" style="font-size: 14px; margin-bottom: 20px;">АДМИН-ПАНЕЛЬ</h2>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
@@ -712,7 +714,8 @@ button, a, div[role="button"] {
             <div v-if="showProductList" style="padding: 5px; max-height: 400px; overflow-y: auto; background: #fff;">
                 <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
                     <div style="display: flex; gap: 15px; align-items: start;">
-                        <img :src="p.images && p.images[0] ? p.images[0] : 'https://via.placeholder.com/60x80?text=No+Photo'" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; background: #eee;">
+                       <img :src="p.variants && p.variants[0] && p.variants[0].images ? p.variants[0].images[0] : (p.images ? p.images[0] : '')" 
+     loading="lazy">
                         <div style="flex: 1;">
                             <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">{{ p.title || p.name }} <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span></div>
                             <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">Цвет: {{ p.color || '—' }}</div>
@@ -768,70 +771,73 @@ button, a, div[role="button"] {
         </div>      
     </div> </div> </main>
 
-    <div v-if="selP" class="modal" style="z-index: 5000;">
-        <button class="close-modal" @click="selP = null">✕</button>
-        <div class="slider-wrapper" style="aspect-ratio: 1/1.2;">
-            <div class="slider-inner" @scroll="e => handleScroll(e, selP)">
-                <img v-for="img in selP.images" :key="img" :src="img">
-            </div>
-            <div class="dots">
-                <span v-for="(img, i) in selP.images" :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]"></span>
-            </div>
-        </div>
-        <div style="padding: 25px;">
-            <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-                <h2 class="brand-name" style="font-size: 18px; margin:0;">{{selP.title}}</h2>
-                <div class="price" style="font-size: 20px;">{{selP.price}} ₽</div>
+  <div v-if="selP" class="modal" style="z-index: 5000;">
+    <button class="close-modal" @click="selP = null">✕</button>
+
+    <div class="slider-wrapper" style="aspect-ratio: 1/1.2; position: relative; background: #f9f9f9;">
+        <template v-if="selP.variants && selP.variants[currentVariantIndex]">
+            <div class="slider-inner" id="modalSlider" @scroll="e => handleScroll(e, selP)">
+                <img v-for="(img, idx) in selP.variants[currentVariantIndex].images" 
+                     :key="idx" :src="img" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
             
-            <p style="font-size: 13px; line-height: 1.6; margin: 20px 0; color: #444;">{{selP.desc}}</p>
-            
-            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">ВЫБЕРИТЕ РАЗМЕР</div>
-<div class="size-grid" v-if="selP && selP.sizes">
-    <button v-for="s in String(selP.sizes).split(',')" 
-            :key="s"
-            @click="!(selP.hiddenSizes?.includes(s.trim())) ? (selP.tempSize = s.trim(), vib()) : null"
-            :class="['size-btn', { 
-                active: (selP.tempSize || String(selP.sizes).split(',')[0].trim()) === s.trim() && !selP.hiddenSizes?.includes(s.trim()),
-                disabled: selP.hiddenSizes?.includes(s.trim())
-            }]">
-        {{ s.trim() }}
-    </button>
-</div>
-
-         <div class="field" v-if="selP.variants && selP.variants.length">
-    <label>ВЫБЕРИТЕ ЦВЕТА (можно несколько):</label>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
-        <button 
-            v-for="v in selP.variants" 
-            :key="v.color"
-            @click="toggleColor(v.color)"
-            :class="['size-btn', { active: selP.selectedColors.includes(v.color) }]"
-            style="width: auto; padding: 8px 15px; min-width: 60px;"
-        >
-            {{ v.color }}
-        </button>
-    </div>
-</div>
-
-            <div class="btn-row" style="margin-top: 30px; gap: 10px;">
-                <button class="btn-fav" @click="toggleFav(selP)" style="width: 60px; height: 60px;">
-                    <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                </button>
-                <button 
-    class="add-to-cart-btn" 
-    @click="addToCart(selP)" 
-        :disabled="selP.hiddenSizes?.includes(selP.tempSize)"
-        :class="{ 'disabled-btn': selP.hiddenSizes?.includes(selP.tempSize) }"
-        style="width: 100%; height: 50px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800; margin-top: 20px;">
-    
-    <span v-if="selP.hiddenSizes?.includes(selP.tempSize)">НЕТ В НАЛИЧИИ</span>
-    <span v-else>В КОРЗИНУ</span>
-</button>
+            <div class="dots" v-if="selP.variants[currentVariantIndex].images.length > 1">
+                <span v-for="(img, i) in selP.variants[currentVariantIndex].images" 
+                      :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]">
+                </span>
             </div>
+        </template>
+        <div v-else style="display:flex; align-items:center; justify-content:center; height:100%; color:#999; font-size:12px;">
+            ЗАГРУЗКА...
         </div>
     </div>
 
+    <div v-if="selP && selP.variants && selP.variants[currentVariantIndex]" style="padding: 25px;">
+        
+        <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+            <h2 class="brand-name" style="font-size: 18px; margin:0; text-transform: uppercase;">{{ selP?.title }}</h2>
+            <div class="price" style="font-size: 20px; font-weight: 800;">{{ selP?.price }} ₽</div>
+        </div>
+        
+        <p style="font-size: 13px; line-height: 1.6; margin: 15px 0; color: #444;">{{ selP?.desc }}</p>
+        
+        <div style="font-size: 10px; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">ЦВЕТ: {{ selP.variants[currentVariantIndex]?.color }}</div>
+        <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px;">
+            <div v-for="(v, idx) in selP.variants" :key="idx" 
+                 @click="currentVariantIndex = idx; selectFirstAvailableSize(v)"
+                 :class="['color-badge', { active: currentVariantIndex === idx }]"
+                 style="padding: 8px 16px; border: 1px solid #eee; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap;">
+                {{ v.color }}
+            </div>
+        </div>
+
+        <div style="font-size: 10px; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">РАЗМЕР: {{ selP.tempSize || 'НЕ ВЫБРАН' }}</div>
+        <div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
+            <button v-for="(qty, sz) in selP.variants[currentVariantIndex]?.stock" 
+                    :key="sz"
+                    @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
+                    :class="['size-btn', { active: selP.tempSize === sz, disabled: qty <= 0 }]"
+                    style="height: 45px; border: 1px solid #eee; background: #fff; font-size: 13px; font-weight: 700; border-radius: 8px; position: relative;">
+                {{ sz }}
+                <div v-if="qty > 0 && qty < 5" style="font-size: 7px; color: #ff3b30; position: absolute; bottom: 4px; width: 100%; text-align: center;">{{qty}} шт.</div>
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button @click="toggleFav(selP)" style="width: 60px; height: 50px; border: 1px solid #eee; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center;">
+                <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+            
+            <button class="add-to-cart-btn" 
+                    @click="addToCart(selP)" 
+                    :disabled="!selP.tempSize"
+                    style="flex: 1; height: 50px; background: #000; color: #fff; border: none; border-radius: 8px; font-weight: 800; letter-spacing: 1px;">
+                <span v-if="selP.tempSize">В КОРЗИНУ</span>
+                <span v-else>ВЫБЕРИТЕ РАЗМЕР</span>
+            </button>
+        </div>
+    </div>
+</div>
     <nav class="bottom-nav">
     <button v-for="btn in nav" :key="btn.id" 
         @click="setTab(btn.id)" 
@@ -888,9 +894,10 @@ Vue.createApp({
             
             user: {},
             isAdmin: false,
-            adminIds: [387881523, 5189266423],
+            adminIds: [1485431104, 5189266423],
             
             selP: null,
+            currentVariantIndex: 0,
             deliv: '',
             address: '',
             map: null,
@@ -900,16 +907,23 @@ Vue.createApp({
             },
             
             // Admin Fields
-            newP: { 
-    title: '', 
-    desc: '', 
-    price: '', 
-    oldPrice: '', 
-    category: '', 
-    isNew: false, // Флаг для плашки NEW
-    variants: []  // ТУТ будут { color: '', images: [], sizes: { '42': 5, '44': 10 } }
+         newP: {
+    title: '',
+    desc: '',
+    price: null,
+    oldPrice: null,
+    category: '',
+    isNew: false,
+    variants: [
+        { 
+            color: '', 
+            images: [], 
+            stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
+            isUploading: false 
+        }
+    ]
 },
-            newCat: '',
+newCat: '',
             editId: null,
             showProductList: false,
             allOrders: [],
@@ -1069,58 +1083,68 @@ Vue.createApp({
         },
 
 
-       openProduct(p) {
-    // Создаем глубокую копию, добавляя массив для выбранных цветов
-    this.selP = { 
-        ...p, 
-        selectedColors: [] 
-    };
+     openProduct(p) {
+    // 1. Сначала сбрасываем индекс, чтобы он не указывал на старый товар
+    this.currentVariantIndex = 0;
 
-    if (!this.selP.hiddenSizes) this.selP.hiddenSizes = [];
-    
-    const sizes = String(this.selP.sizes || '').split(',').map(s => s.trim());
-    const firstOk = sizes.find(s => !this.selP.hiddenSizes.includes(s));
-    this.selP.tempSize = firstOk || sizes[0];
+    // 2. Делаем глубокую копию
+    let productCopy = JSON.parse(JSON.stringify(p));
 
-    // Опционально: если цвет всего один, выбираем его сразу
-    if (this.selP.variants && this.selP.variants.length === 1) {
-        this.selP.selectedColors.push(this.selP.variants[0].color);
+    // 3. ПРОВЕРКА: Если товар старый (нет поля variants), создаем его на лету
+    // Это спасет от ошибки "reading '0' of undefined"
+    if (!productCopy.variants || !Array.isArray(productCopy.variants) || productCopy.variants.length === 0) {
+        productCopy.variants = [{
+            color: productCopy.color || 'Стандарт',
+            images: productCopy.images || [],
+            stock: {}
+        }];
+        
+        // Переносим старые размеры в новый формат, если они были
+        if (productCopy.sizes) {
+            const oldSizes = String(productCopy.sizes).split(',');
+            oldSizes.forEach(s => {
+                productCopy.variants[0].stock[s.trim()] = 10; // Ставим 10 шт по умолчанию
+            });
+        }
     }
-},
-toggleColor(colorName) {
-    const index = this.selP.selectedColors.indexOf(colorName);
-    if (index > -1) {
-        // Если цвет уже нажат — удаляем из списка
-        this.selP.selectedColors.splice(index, 1);
+
+    // 4. Гарантируем наличие индекса анимации
+    productCopy.aIdx = 0;
+
+    // 5. Теперь безопасно сохраняем в selP
+    this.selP = productCopy;
+
+    // 6. Выбор размера по умолчанию для ТЕКУЩЕГО (первого) варианта
+    const firstVar = this.selP.variants[0];
+    if (firstVar && firstVar.stock) {
+        const availableSize = Object.keys(firstVar.stock).find(sz => firstVar.stock[sz] > 0);
+        this.selP.tempSize = availableSize || Object.keys(firstVar.stock)[0] || null;
     } else {
-        // Если еще не нажат — добавляем
-        this.selP.selectedColors.push(colorName);
+        this.selP.tempSize = null;
     }
-    this.vib(); // Ваш метод вибрации
-},
 
+    // 7. Вибрация
+    if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+},
         isFav(p) { return p && this.favorites.includes(p.id); },
         
-       toggleColor(color) {
-    this.vib();
-    const idx = this.selP.selectedColors.indexOf(color);
-    if (idx > -1) {
-        this.selP.selectedColors.splice(idx, 1); // Убираем, если уже есть
-    } else {
-        this.selP.selectedColors.push(color); // Добавляем, если нет
-    }
-},
+        toggleFav(p) {
+            this.vib();
+            const idx = this.favorites.indexOf(p.id);
+            if (idx > -1) {
+                this.favorites.splice(idx, 1);
+            } else {
+                this.favorites.push(p.id);
+            }
+            localStorage.setItem('naran_favs_v3', JSON.stringify(this.favorites));
+        },
 
-      addToCart(p) {
+       addToCart(p) {
     if (!p) return;
 
-    // 1. ПРОВЕРКА: Выбраны ли цвета?
-    // Если массив пуст, берем текущий цвет по умолчанию (как было раньше)
-    const selectedColors = (p.selectedColors && p.selectedColors.length > 0) 
-        ? p.selectedColors 
-        : [p.color || (p.colors && p.colors[p.aIdx] ? p.colors[p.aIdx] : 'Стандарт')];
-
-    // 2. ОПРЕДЕЛЯЕМ РАЗМЕР (твоя логика без изменений)
+    // 1. ОПРЕДЕЛЯЕМ РАЗМЕР (сохраняем твою логику)
     let finalSize = '';
     if (p.tempSize) {
         finalSize = p.tempSize;
@@ -1134,44 +1158,92 @@ toggleColor(colorName) {
 
     if (p.hiddenSizes && p.hiddenSizes.includes(finalSize)) return;
 
-    // 3. ДОБАВЛЯЕМ КАЖДЫЙ ВЫБРАННЫЙ ЦВЕТ ОТДЕЛЬНОЙ ПОЗИЦИЕЙ
-    selectedColors.forEach(color => {
-        const cartId = p.id + finalSize + color; // Уникальный ID для связки размер+цвет
-        const exist = this.cart.find(i => i.cartId === cartId);
+    // 2. ОПРЕДЕЛЯЕМ ЦВЕТ
+    const finalColor = p.color || (p.colors && p.colors[p.aIdx] ? p.colors[p.aIdx] : 'Белый');
 
-        if (exist) {
-            exist.qty++;
-        } else {
-            // Создаем копию объекта для корзины
-            const itemToCart = { ...p };
-            // Удаляем временные поля мультивыбора, чтобы не засорять объект в корзине
-            delete itemToCart.selectedColors; 
-            
-            this.cart.push({
-                ...itemToCart,
-                cartId: cartId,
-                selSize: finalSize,
-                selColor: color,
-                qty: 1
-            });
-        }
-    });
+    // 3. УНИКАЛЬНЫЙ ID
+    const cartId = p.id + finalSize + finalColor;
 
-    // 4. ЭФФЕКТЫ И СОХРАНЕНИЕ
+    const exist = this.cart.find(i => i.cartId === cartId);
+    if (exist) {
+        exist.qty++;
+    } else {
+        this.cart.push({
+            ...p,
+            cartId: cartId,
+            selSize: finalSize,
+            selColor: finalColor,
+            qty: 1
+        });
+    }
+    
+    // --- УЛУЧШЕНИЯ ДЛЯ "БЕСШОВНОСТИ" ---
+    
     this.saveCart();
-    this.vib('success');
+    this.vib('success'); // Используем успех для вибрации
 
+    // Показываем уведомление
     this.showCartNotify = true;
     setTimeout(() => { this.showCartNotify = false; }, 2000);
 
-    // Закрываем карточку
-    if (this.selP) { // или activeP, смотря как называется у тебя переменная модалки
+    // ЗАКРЫВАЕМ КАРТОЧКУ (если она была открыта)
+    // Это позволит тебе сразу увидеть Избранное или Каталог под карточкой
+    if (this.activeP) {
         setTimeout(() => {
-            this.selP = null;
-            if (p.tempSize) p.tempSize = null;
-            if (p.selectedColors) p.selectedColors = []; // Сбрасываем выбор
-        }, 300);
+            this.activeP = null; 
+            // Очищаем временный размер для следующего открытия
+            if (p.tempSize) p.tempSize = null; 
+        }, 300); // Небольшая задержка, чтобы юзер увидел нажатие кнопки
     }
+},
+// Добавление нового блока цвета
+addVariant() {
+    this.newP.variants.push({
+        color: '',
+        images: [],
+        stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
+        isUploading: false
+    });
+},
+
+// Загрузка фото на ImgBB для конкретного цвета
+async uploadVariantImages(event, vIdx) {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    const apiKey = '839e62907e9a52f0159461b7771bcb2f';
+    this.newP.variants[vIdx].isUploading = true; // Чтобы показать лоадер у конкретного цвета
+
+    for (let file of files) {
+        try {
+            // Твой метод сжатия (если он есть в коде, оставляем)
+            const compressedFile = typeof this.compressImage === 'function' 
+                ? await this.compressImage(file) 
+                : file;
+
+            const formData = new FormData();
+            formData.append('image', compressedFile);
+
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Пушим прямую ссылку в массив картинок этого варианта
+                this.newP.variants[vIdx].images.push(data.data.url);
+            }
+        } catch (err) {
+            console.error("Ошибка загрузки фото:", err);
+        }
+    }
+    this.newP.variants[vIdx].isUploading = false;
+},
+selectFirstAvailableSize(variant) {
+    // Автоматически выбираем первый размер в новом цвете, который есть на складе
+    const size = Object.keys(variant.stock).find(sz => variant.stock[sz] > 0);
+    this.selP.tempSize = size || null;
 },
 removePhoto(index) {
     // Освобождаем память браузера
@@ -1387,43 +1459,45 @@ async compressImage(file) {
         };
     });
 },
-       async saveProduct() {
-    if (!this.newP.title || !this.newP.price) {
-        return alert('Заполните название и цену!');
+   async saveProduct() {
+    // 1. Валидация
+    if (!this.newP.title || !this.newP.price || !this.newP.category) {
+        return alert('Заполните название, цену и категорию!');
+    }
+    
+    // Проверка, что добавлен хотя бы один цвет и в нем есть фото
+    if (!this.newP.variants || this.newP.variants.length === 0) {
+        return alert('Добавьте хотя бы один вариант цвета!');
     }
 
     this.loading = true;
 
     try {
-        let finalImages = [...(this.newP.images || [])]; 
-
-        // Загружаем новые фотографии
-        if (this.newP.localFiles && this.newP.localFiles.length > 0) {
-            for (let item of this.newP.localFiles) {
-                // ШАГ А: Сжимаем фото перед отправкой
-                const compressedFile = await this.compressImage(item.file);
-                
-                // ШАГ Б: Загружаем сжатый файл через твой метод uploadFile
-                const uploadedUrl = await this.uploadFile(compressedFile);
-                
-                finalImages.push(uploadedUrl);
-            }
-        }
-
+        // Подготавливаем объект для базы данных
         const productData = {
             title: this.newP.title,
             desc: this.newP.desc || '',
             price: Number(this.newP.price),
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
-            category: this.newP.category || 'all',
-            sizes: this.newP.sizes || '42, 44, 46',
-            color: this.newP.color || '',
-            images: finalImages,
+            category: this.newP.category,
+            isNew: !!this.newP.isNew, // Новое поле для плашки NEW
+            
+            // Сохраняем все варианты (цвета, фото внутри них и остатки)
+            variants: this.newP.variants.map(v => ({
+                color: v.color,
+                images: v.images, // Сюда уже должны попасть ссылки после загрузки
+                stock: v.stock    // Объект типа { '42': 5, '44': 10 ... }
+            })),
+
+            // Для удобства поиска и главной страницы сохраняем первое фото первого цвета
+            mainImage: this.newP.variants[0].images[0] || '',
+            
             updatedAt: Date.now()
         };
 
         if (this.editId) {
-            await window.fb.updateDoc(window.fb.doc(window.db, "products", this.editId), productData);
+            // Используем setDoc или updateDoc
+            await window.fb.setDoc(window.fb.doc(window.db, "products", this.editId), productData, { merge: true });
             alert('Изменения сохранены!');
         } else {
             productData.createdAt = Date.now();
@@ -1644,7 +1718,7 @@ async manageCategory(action, id) {
         // 7. Отправляем в Telegram
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
         // ПРАВИЛЬНО
-        const adminIds = [387881523, 5189266423];
+        const adminIds = [1485431104, 5189266423];
 
         // Экранируем никнейм, чтобы Markdown не выдавал ошибку
         const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
@@ -1740,42 +1814,6 @@ async updateStatus(order, newStatus) {
     } finally {
         order.isUpdating = false;
     }
-},
-addVariantField() {
-    this.vib();
-    // Создаем пустую структуру для нового цвета
-    this.newP.variants.push({
-        color: '',
-        images: [],
-        sizes: {} // Здесь можно будет хранить остатки
-    });
-},
-
-// Улучшенный метод загрузки фото специально для вариантов
-async uploadToImgBB(event, vIdx) {
-    this.loading = true;
-    const files = event.target.files;
-    const apiKey = '839e62907e9a52f0159461b7771bcb2f';
-
-    for (let file of files) {
-        let formData = new FormData();
-        formData.append('image', file);
-        
-        try {
-            let res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-                method: 'POST',
-                body: formData
-            });
-            let data = await res.json();
-            if (data.success) {
-                // Добавляем фото именно в тот цвет, который выбрали
-                this.newP.variants[vIdx].images.push(data.data.url);
-            }
-        } catch (e) {
-            console.error("Ошибка загрузки");
-        }
-    }
-    this.loading = false;
 },
 handleFiles(e) {
     const files = Array.from(e.target.files);
