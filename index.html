@@ -557,13 +557,6 @@ button, a, div[role="button"] {
             style="background: none; border: none; color: #ccc; padding: 5px; font-size: 18px;">✕</button>
 </div>
 
-    <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13px; font-weight: 800;">ИТОГО К ОПЛАТЕ:</span>
-            <span style="font-size: 18px; font-weight: 800;">{{ total().toLocaleString() }} ₽</span>
-        </div>
-    </div>
-
     <div style="margin-top: 30px;">
         <div class="field">
             <label>ВАШЕ ИМЯ</label>
@@ -581,6 +574,20 @@ button, a, div[role="button"] {
 
         <div id="map" v-show="deliv"></div>
         <div v-if="address" style="font-size:12px; font-weight:700; margin-bottom: 20px;">📍 {{address}}</div>
+      <div class="field" style="margin-top: 15px;">
+    <label style="font-weight: 800; font-size: 11px;">СПОСОБ ДОСТАВКИ</label>
+    <select v-model="deliv" class="input-admin" @change="vib()">
+        <option value="САМОВЫВОЗ">Самовывоз — 0 ₽</option>
+        <option value="ДОСТАВКА">До службы доставки — 200 ₽</option>
+    </select>
+</div>
+
+<div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 800;">ИТОГО К ОПЛАТЕ:</span>
+            <span style="font-size: 18px; font-weight: 800;">{{ total().toLocaleString() }} ₽</span>
+        </div>
+    </div>
 
         <div style="font-size: 9px; color: var(--gray); line-height: 1.2; margin-bottom: 15px; text-align: center;">
             Нажимая на кнопку, вы даете согласие на обработку персональных данных в соответствии с 152-Ф3 для оформления и доставки заказа.
@@ -758,25 +765,29 @@ button, a, div[role="button"] {
     </div>
     
     <div v-if="showProductList" style="padding: 5px; max-height: 500px; overflow-y: auto; background: #fff;">
+    <div v-if="products.length === 0" style="text-align: center; padding: 40px; color: #ccc;">
+        Список товаров пуст
+    </div>
+
     <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
         <div style="display: flex; gap: 15px; align-items: start;">
             
-            <img :src="p.variants && p.variants[0]?.images?.[0] || p.images?.[0] || ''" 
+            <img :src="(p.variants?.[0]?.images?.[0]) || (p.images?.[0]) || ''" 
                  loading="lazy" 
-                 style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f0f0f0;">
+                 style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f0f0f0; border: 1px solid #eee;">
             
             <div style="flex: 1;">
                 <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">
-                    {{ p.title || p.name }} 
+                    {{ p.title || p.name || 'Без названия' }} 
                     <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span>
                 </div>
                 
                 <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">
-                    Цвет: {{ p.variants && p.variants[0] ? p.variants[0].color : (p.color || '—') }}
+                    Цвет: {{ p.variants?.[0]?.color || p.color || '—' }}
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <div v-for="s in (p.variants && p.variants[0]?.stocks ? Object.keys(p.variants[0].stocks) : (p.stocks ? Object.keys(p.stocks) : []))" 
+                    <div v-for="s in (p.variants?.[0]?.stocks ? Object.keys(p.variants[0].stocks) : (p.stocks ? Object.keys(p.stocks) : []))" 
                          :key="s" 
                          style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 6px 8px; border-radius: 6px;">
                         
@@ -792,7 +803,7 @@ button, a, div[role="button"] {
                             <div style="display: flex; align-items: center; gap: 4px;">
                                 <span style="font-size: 9px; color: #999;">ШТ:</span>
                                 <input type="number" 
-                                       v-model.number="(p.variants && p.variants[0] ? p.variants[0].stocks : p.stocks)[s]" 
+                                       v-model.number="(p.variants?.[0]?.stocks || p.stocks || {})[s]" 
                                        @change="updateStock(p, s)"
                                        style="width: 45px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; font-size: 11px; font-weight: bold; text-align: center;">
                             </div>
@@ -813,6 +824,7 @@ button, a, div[role="button"] {
         </div>
     </div>
 </div>
+
 
         <hr style="margin: 20px 0; border: none; border-top: 2px solid #000;">   
         <h3 class="brand-name" style="font-size:12px; margin-top:2px;">ЗАКАЗЫ ({{allOrders.length}}) | ВЫРУЧКА: {{revenue}} ₽</h3>
@@ -981,6 +993,7 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+        deliv: 'САМОВЫВОЗ', // Значение по умолчанию
         tab: 'catalog',
         currentCat: '',
         searchQuery: '',
@@ -1128,26 +1141,25 @@ Vue.createApp({
     },
     methods: {
         vib() { tg.HapticFeedback.impactOccurred('light'); },
-       total() {
-    // 1. Проверка на наличие корзины
-    if (!this.cart || !Array.isArray(this.cart) || this.cart.length === 0) return 0;
+ total() {
+    // 1. Считаем стоимость товаров
+    let itemsTotal = 0;
+    if (this.cart && this.cart.length > 0) {
+        itemsTotal = this.cart.reduce((sum, item) => {
+            let rawPrice = item.price || 0;
+            // Очистка: оставляем только цифры
+            let priceNumber = typeof rawPrice === 'string' 
+                ? parseInt(rawPrice.replace(/[^\d]/g, '')) || 0 
+                : Number(rawPrice);
+            let quantity = parseInt(item.count || item.qty || 1);
+            return sum + (priceNumber * quantity);
+        }, 0);
+    }
 
-    return this.cart.reduce((sum, item) => {
-        // 2. Пробуем достать цену из разных полей (на случай опечаток в коде)
-        let rawPrice = item.price || item.cost || 0;
-        
-        // 3. Очищаем цену: оставляем только цифры. 
-        // Если цена "1 500 ₽", она превратится в "1500"
-        let cleanPrice = String(rawPrice).replace(/[^\d]/g, '');
-        
-        // 4. Превращаем в число. Если не получилось — берем 0
-        let priceNumber = parseInt(cleanPrice) || 0;
-        
-        // 5. Количество (qty или count)
-        let quantity = parseInt(item.qty || item.count || 1);
-        
-        return sum + (priceNumber * quantity);
-    }, 0);
+    // 2. Логика доставки: +200 руб, если в select выбрана "ДОСТАВКА"
+    let deliveryCost = (this.deliv === 'ДОСТАВКА') ? 200 : 0;
+
+    return itemsTotal + deliveryCost;
 },
 async updateStock(product, size) {
     try {
@@ -1704,52 +1716,57 @@ async compressImage(file) {
         };
     });
 },
-  async saveProduct() {
+async saveProduct() {
     if (!this.newP.title || !this.newP.price || !this.newP.category) {
         return alert('Заполните название, цену и категорию!');
     }
     
-    // Проверка на наличие хотя бы одного фото в первом цвете
-    if (!this.newP.variants[0] || !this.newP.variants[0].images || this.newP.variants[0].images.length === 0) {
-        return alert('Загрузите хотя бы одно фото для первого цвета!');
+    // Проверка фото
+    if (!this.newP.variants?.[0]?.images?.length) {
+        return alert('Загрузите хотя бы одно фото!');
     }
 
     this.loading = true;
     try {
+        // Создаем чистую копию данных для Firebase
         const productData = {
-            title: this.newP.title,
+            title: this.newP.title.trim(),
             desc: this.newP.desc || '',
             price: Number(this.newP.price),
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
-            variants: this.newP.variants.map(v => ({
-                color: v.color || 'Стандарт',
-                images: v.images || [],
-                stocks: v.stocks || { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 }
-            })),
-            // Это поле нужно для того, чтобы в списке товаров (сетке) всегда была картинка
-            images: this.newP.variants[0].images, 
+            hidden: false,
+            hiddenSizes: this.newP.hiddenSizes || [],
+            // Глубокое копирование вариантов
+            variants: JSON.parse(JSON.stringify(this.newP.variants)),
+            // Главное фото для превью
+            images: [this.newP.variants[0].images[0]], 
             updatedAt: Date.now()
         };
 
-       if (this.editId) {
-    // Используем updateDoc вместо setDoc
-    const docRef = window.fb.doc(window.db, "products", this.editId);
-    await window.fb.updateDoc(docRef, productData);
-    alert('Обновлено!');
-}
-        else {
-         productData.createdAt = Date.now();
-          const docRef = await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
-    
-         // ДОБАВЬ ЭТУ СТРОКУ:
-          this.products.unshift({ id: docRef.id, ...productData }); 
-    
-          alert('Создано!');
-          }
+        if (this.editId) {
+            const docRef = window.fb.doc(window.db, "products", this.editId);
+            await window.fb.updateDoc(docRef, productData);
+            
+            const idx = this.products.findIndex(p => p.id === this.editId);
+            if (idx !== -1) {
+                // Используем splice для реактивности
+                this.products.splice(idx, 1, { id: this.editId, ...productData });
+            }
+            alert('Обновлено!');
+        } else {
+            productData.createdAt = Date.now();
+            const docRef = await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
+            
+            // Добавляем в локальный список
+            this.products.unshift({ id: docRef.id, ...productData }); 
+            alert('Создано успешно!');
+        }
+
         this.cancelEdit(); 
     } catch (e) {
+        console.error("Ошибка сохранения:", e);
         alert('Ошибка: ' + e.message);
     } finally {
         this.loading = false;
@@ -1773,30 +1790,26 @@ async compressImage(file) {
 },
 
       cancelEdit() {
-    this.editId = null; // Сбрасываем ID редактирования, чтобы Firebase понимал: это НОВЫЙ товар
+    this.editId = null;
+    this.showProductList = true;
     this.newP = {
         title: '',
         desc: '',
         price: null,
         oldPrice: null,
-        category: this.categories.length > 0 ? this.categories[0].name : '', // Можно ставить первую категорию по умолчанию
+        category: '',
         isNew: false,
+        hiddenSizes: [],
         variants: [
             { 
                 color: '', 
                 images: [], 
-                // Исправлено: название поля должно быть 'stock', как в saveProduct
-                stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
+                stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
                 isUploading: false 
             }
         ]
     };
-    
-    // Сбрасываем input для файлов (если используешь скрытые инпуты)
-    const fileInputs = document.querySelectorAll('input[type="file"]');
-    fileInputs.forEach(input => input.value = '');
-    
-    console.log("Форма успешно очищена");
+    if (this.localFiles) this.localFiles = []; 
 },
 
         async deleteProduct(id) {
@@ -1889,89 +1902,83 @@ async manageCategory(action, id) {
         alert("Ошибка категории: " + e.message);
     }
 },
-
-   async checkout() {
+async checkout() {
     this.vib();
     
-    // Проверка заполнения формы
     if (!this.form.name || !this.form.phone || !this.address) {
         return alert("Заполните имя, телефон и адрес доставки!");
     }
 
     if (this.cart.length === 0) return alert("Корзина пуста!");
 
-    this.loading = true; // Блокируем кнопку, чтобы не было дублей заказов
+    this.loading = true;
     
     try {
-        // 1. УМЕНЬШЕНИЕ ОСТАТКОВ В БАЗЕ ПЕРЕД СОЗДАНИЕМ ЗАКАЗА
+        // 1. УМЕНЬШЕНИЕ ОСТАТКОВ
         for (let item of this.cart) {
             const pRef = window.fb.doc(window.db, "products", item.id);
             const pSnap = await window.fb.getDoc(pRef);
             
             if (pSnap.exists()) {
                 let d = pSnap.data();
-                const sizeToReduce = item.selSize || item.size; // Берем выбранный размер
-                const countToReduce = Number(item.count || item.qty || 1); // Берем количество
+                const sz = item.selSize || item.size;
+                const qty = Number(item.count || item.qty || 1);
 
-                // Если товар с вариантами (цвета)
                 if (d.variants && d.variants.length > 0) {
-                    let updatedVariants = [...d.variants];
-                    // Ищем нужный цвет в базе
-                    let vIdx = updatedVariants.findIndex(v => v.color === item.selColor || v.color === item.color);
+                    let vds = [...d.variants];
+                    let vIdx = vds.findIndex(v => v.color === item.selColor || v.color === item.color);
                     
-                    if (vIdx > -1 && updatedVariants[vIdx].stocks && updatedVariants[vIdx].stocks[sizeToReduce] !== undefined) {
-                        // Вычитаем и следим, чтобы не ушло в минус
-                        let currentStock = Number(updatedVariants[vIdx].stocks[sizeToReduce]);
-                        updatedVariants[vIdx].stocks[sizeToReduce] = Math.max(0, currentStock - countToReduce);
-                        
-                        await window.fb.updateDoc(pRef, { variants: updatedVariants });
+                    if (vIdx > -1 && vds[vIdx].stocks && vds[vIdx].stocks[sz] !== undefined) {
+                        vds[vIdx].stocks[sz] = Math.max(0, Number(vds[vIdx].stocks[sz]) - qty);
+                        await window.fb.updateDoc(pRef, { variants: vds });
                     }
-                } 
-                // Если старая структура (просто stocks в корне)
-                else if (d.stocks && d.stocks[sizeToReduce] !== undefined) {
-                    let newStocks = { ...d.stocks };
-                    let currentStock = Number(newStocks[sizeToReduce]);
-                    newStocks[sizeToReduce] = Math.max(0, currentStock - countToReduce);
-                    
-                    await window.fb.updateDoc(pRef, { stocks: newStocks });
+                } else if (d.stocks && d.stocks[sz] !== undefined) {
+                    let ns = { ...d.stocks };
+                    ns[sz] = Math.max(0, Number(ns[sz]) - qty);
+                    await window.fb.updateDoc(pRef, { stocks: ns });
                 }
             }
         }
 
-        // 2. СОХРАНЕНИЕ ЗАКАЗА (с полями, которые ты выводишь в админке)
+        // 2. РАСЧЕТ ИТОГОВ
+        const finalTotal = this.total(); 
+        const deliveryCharge = (this.deliv === 'ДОСТАВКА') ? 200 : 0;
+
+        // 3. СОХРАНЕНИЕ ЗАКАЗА
         const orderData = {
             order_id: Math.floor(1000 + Math.random() * 9000),
             customer_name: this.form.name,
             customer_phone: this.form.phone,
             address: this.address,
-            delivery: this.deliv || 'Самовывоз', // Тип доставки
+            delivery_type: this.deliv, // "САМОВЫВОЗ" или "ДОСТАВКА"
+            delivery_price: deliveryCharge,
             items: this.cart.map(i => ({
                 id: i.id,
                 title: i.title,
                 count: i.count || i.qty || 1,
                 color: i.selColor || i.color || '-',
-                size: i.selSize || i.size || '-'
+                size: i.selSize || i.size || '-',
+                price: i.price
             })),
-            order_total: this.total(), // Сумма заказа
+            order_total: finalTotal, // Финальная сумма с доставкой
             status: 'Новый',
             createdAt: Date.now()
         };
 
         await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
         
-        alert("Заказ успешно оформлен! Мы свяжемся с вами.");
+        alert(`Заказ оформлен! Итого к оплате: ${finalTotal} ₽`);
         
-        // 3. ОЧИСТКА КОРЗИНЫ
+        // ОЧИСТКА
         this.cart = [];
+        this.deliv = 'САМОВЫВОЗ'; // Сброс на самовывоз
         localStorage.removeItem('naran_cart_v3');
         this.saveCart();
-        
-        // Переход на вкладку профиля или каталога
         this.tab = 'catalog'; 
         
     } catch (e) {
         console.error("Ошибка при оформлении:", e);
-        alert("Произошла ошибка при оформлении заказа. Попробуйте еще раз.");
+        alert("Произошла ошибка при оформлении.");
     } finally {
         this.loading = false;
     }
@@ -2228,6 +2235,7 @@ updateChart() {
         this.chart = new Chart(ctx, {
             type: 'line',
             data: {
+                deliveryType: 'pickup',
                 labels: labels,
                 datasets: [{
                     label: 'Заказы',
