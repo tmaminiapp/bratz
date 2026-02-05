@@ -516,16 +516,18 @@ button, a, div[role="button"] {
                 </div>
 
                 <div class="card-sizes" v-if="p.variants && p.variants[0]">
-                    <div v-for="(qty, sz) in p.variants[0].stocks" 
-                         :key="sz"
-                         @click="qty > 0 ? (p.tempSize = sz, vib('light')) : null"
-                         :class="['size-chip', {
-                            active: p.tempSize === sz,
-                            disabled: qty <= 0
-                         }]">
-                        {{ sz }}
-                    </div>
-                </div>
+    <div v-for="(qty, sz) in p.variants[0].stocks" 
+         :key="sz"
+         /* ПРОВЕРКА: показываем только если размер НЕ в списке скрытых */
+         v-if="!(p.hiddenSizes || []).includes(String(sz))"
+         @click.stop="qty > 0 ? (p.tempSize = sz, vib('light')) : null"
+         :class="['size-chip', {
+            active: p.tempSize === sz,
+            disabled: qty <= 0
+         }]">
+        {{ sz }}
+    </div>
+</div>
 
                 <button class="btn-black" style="width: 100%; margin-top: 5px; text-transform: uppercase; font-size: 11px;" 
                         @click.stop="openProduct(p)">
@@ -1891,32 +1893,36 @@ cancelEdit() {
     }
 },
 // В методах Vue приложения
-async toggleSizeVisibility(p, size) {
+async toggleVariantSizeVisibility(p, v, sz) {
     try {
         const productRef = window.fb.doc(window.db, "products", p.id);
         
-        // Инициализируем массив, если его нет
-        if (!p.hiddenSizes) p.hiddenSizes = [];
+        // 1. Убеждаемся, что у конкретного ВАРИАНТА (цвета) есть массив hiddenSizes
+        if (!v.hiddenSizes) {
+            v.hiddenSizes = [];
+        }
         
-        const s = String(size);
-        const index = p.hiddenSizes.indexOf(s);
+        const sizeStr = String(sz);
+        const index = v.hiddenSizes.indexOf(sizeStr);
 
         if (index > -1) {
-            p.hiddenSizes.splice(index, 1); // Показать
+            v.hiddenSizes.splice(index, 1); // Показываем (удаляем из скрытых)
         } else {
-            p.hiddenSizes.push(s); // Скрыть
+            v.hiddenSizes.push(sizeStr); // Скрываем (добавляем в скрытые)
         }
 
+        // 2. Обновляем весь массив вариантов в базе данных
+        // Так как v — это часть p.variants, изменения уже применились к p.variants локально
         await window.fb.updateDoc(productRef, {
-            hiddenSizes: p.hiddenSizes
+            variants: p.variants
         });
 
         this.vib('light');
     } catch (e) {
-        console.error(e);
+        console.error("Ошибка при скрытии размера:", e);
+        alert("Не удалось сохранить изменения");
     }
 },
-
 
 async deleteProductWithConfirm(productId) {
     if (confirm("Вы уверены, что хотите навсегда удалить этот товар из облака?")) {
