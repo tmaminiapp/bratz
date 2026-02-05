@@ -424,9 +424,12 @@ button, a, div[role="button"] {
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                     </button>
-                    <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-                        <img v-for="img in p.images" :key="img" :src="img" loading="lazy">
-                    </div>
+                   <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+    <template v-if="p.variants && p.variants.length > 0">
+        <img v-for="img in p.variants[0].images" :key="img" :src="img" loading="lazy">
+    </template>
+    <img v-else v-for="img in p.images" :key="img" :src="img" loading="lazy">
+                  </div>
                     <div class="dots" v-if="p.images && p.images.length > 1">
                         <span v-for="(img, i) in p.images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
                     </div>
@@ -456,15 +459,14 @@ button, a, div[role="button"] {
                         <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
                     </div>
                     
-                  <div class="card-sizes" v-if="p.variants && p.variants[0]">
-    <div v-for="(qty, sz) in (p.variants[0].stocks || p.variants[0].stocks)" 
+                 <div class="card-sizes" v-if="p.variants && p.variants[0]">
+    <div v-for="(qty, sz) in p.variants[0].stocks" 
          :key="sz"
          @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
          :class="['size-chip', {
-            active: (p.tempSize || Object.keys(p.variants[0].stocks || p.variants[0].stocks)[0]) === sz,
+            active: (p.tempSize || Object.keys(p.variants[0].stocks)[0]) === sz,
             disabled: qty <= 0
-         }]"
-         style="margin-right: 4px;">
+         }]">
         {{ sz }}
     </div>
 </div>
@@ -1009,6 +1011,7 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+        selVariantIdx: 0, // Индекс выбранного цвета
         deliv: 'САМОВЫВОЗ', // Значение по умолчанию
         tab: 'catalog',
         currentCat: '',
@@ -1102,6 +1105,14 @@ Vue.createApp({
 
         return { todayCount, todayRev, monthCount, monthRev, allCount, allRev };
     },
+    adminProducts() {
+        if (!this.products) return [];
+        const q = (this.searchQuery || '').toLowerCase().trim();
+        return this.products.filter(p => 
+            p.title.toLowerCase().includes(q) || 
+            (p.color && p.color.toLowerCase().includes(q))
+        );
+    },
        filteredProducts() {
     // 1. Быстрая проверка на наличие данных
     if (!this.products || !Array.isArray(this.products)) return [];
@@ -1137,6 +1148,10 @@ Vue.createApp({
         return [];
     }
 },
+selVariant() {
+        if (!this.openedProduct || !this.openedProduct.variants) return {};
+        return this.openedProduct.variants[this.selVariantIdx] || this.openedProduct.variants[0];
+    },
         favList() {
             if (!this.products) return [];
             return this.products.filter(p => this.favorites.includes(p.id));
@@ -1179,38 +1194,28 @@ Vue.createApp({
 },
 async updateStock(product, size) {
     try {
-        // Используем твой путь через window.fb, как в saveProduct
         const productRef = window.fb.doc(window.db, "products", product.id);
-        
         let newValue;
-        let updatePath;
+        let dbPath;
 
-        if (product.variants && product.variants[0] && product.variants[0].stocks) {
-            // Путь для новой структуры (с вариантами)
-            newValue = Number(product.variants[0].stocks[size] || 0);
-            updatePath = `variants.0.stocks.${size}`;
-        } else if (product.stocks) {
-            // Путь для старой структуры (без вариантов)
-            newValue = Number(product.stocks[size] || 0);
-            updatePath = `stocks.${size}`;
+        // Определяем значение и путь в БД
+        if (product.variants && product.variants[0]) {
+            newValue = Number(product.variants[0].stocks[size]);
+            dbPath = `variants.0.stocks.${size}`;
         } else {
-            console.warn("Структура stocks не найдена у товара");
-            return;
+            newValue = Number(product.stocks[size]);
+            dbPath = `stocks.${size}`;
         }
 
-        // Обновляем в базе
         await window.fb.updateDoc(productRef, {
-            [updatePath]: newValue
+            [dbPath]: newValue
         });
-        
-        console.log(`Успешно: Размер ${size} теперь ${newValue} шт.`);
-        
-        // Если есть функция вибрации для отклика
-        if (typeof this.vib === 'function') this.vib();
 
-    } catch (error) {
-        console.error("Ошибка при обновлении остатка:", error);
-        alert("Ошибка сохранения: " + error.message);
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
+    } catch (e) {
+        console.error("Ошибка обновления остатка:", e);
     }
 },
         setCategory(name) {
@@ -1285,6 +1290,10 @@ getStocksObject(p) {
 
 
      openProduct(p) {
+        this.openedProduct = p;
+    this.selVariantIdx = 0; // Сбрасываем на первый цвет при открытии
+    this.tab = 'product';   // Переход на вкладку товара
+    window.scrollTo(0,0);
     // 1. Сначала сбрасываем индекс, чтобы он не указывал на старый товар
     this.currentVariantIndex = 0;
 
@@ -1880,43 +1889,29 @@ cancelEdit() {
     }
 },
 // В методах Vue приложения
-async toggleSizeVisibility(product, size) {
-    this.vib(); // Виброотклик
-    const sTrim = size.trim();
-    
-    // 1. Подготовка массива (Spread оператор гарантирует реактивность во Vue)
-    let currentHidden = Array.isArray(product.hiddenSizes) ? [...product.hiddenSizes] : [];
-    
-    const index = currentHidden.indexOf(sTrim);
-    if (index > -1) {
-        currentHidden.splice(index, 1); // Делаем видимым
-    } else {
-        currentHidden.push(sTrim); // Скрываем
-    }
-
-    // Присваиваем локально для мгновенного отклика в интерфейсе
-    product.hiddenSizes = currentHidden;
-
-    // 2. ЗАПИСЬ В FIREBASE
+async toggleSizeVisibility(p, size) {
     try {
-        if (!product.id) throw new Error("Нет ID товара");
+        const productRef = window.fb.doc(window.db, "products", p.id);
+        
+        // Инициализируем массив, если его нет
+        if (!p.hiddenSizes) p.hiddenSizes = [];
+        
+        const s = String(size);
+        const index = p.hiddenSizes.indexOf(s);
 
-        const productRef = window.fb.doc(window.db, "products", product.id);
-        await window.fb.updateDoc(productRef, {
-            hiddenSizes: currentHidden
-        });
-    } catch (e) {
-        console.error("ОШИБКА СОХРАНЕНИЯ:", e);
-        
-        // ОТКАТ: если база не обновилась, возвращаем как было
-        const rollbackIdx = product.hiddenSizes.indexOf(sTrim);
-        if (rollbackIdx > -1) {
-            product.hiddenSizes.splice(rollbackIdx, 1);
+        if (index > -1) {
+            p.hiddenSizes.splice(index, 1); // Показать
         } else {
-            product.hiddenSizes.push(sTrim);
+            p.hiddenSizes.push(s); // Скрыть
         }
-        
-        alert("Ошибка сохранения: проверьте интернет");
+
+        await window.fb.updateDoc(productRef, {
+            hiddenSizes: p.hiddenSizes
+        });
+
+        this.vib('light');
+    } catch (e) {
+        console.error(e);
     }
 },
 
