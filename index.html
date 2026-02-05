@@ -652,55 +652,63 @@ button, a, div[role="button"] {
             <canvas id="orderChart" style="max-height: 200px;"></canvas>
         </div>
         
-        <div class="field">
-            <label>ДОБАВИТЬ КАТЕГОРИЮ</label>
-            <div style="display:flex; gap:10px;">
-                <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
-                <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
-            </div>
-            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
-                <span v-for="c in categories" :key="c.id" class="sale-badge" @click="manageCategory('del', c.id)">{{c.name}} ✕</span>
-            </div>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        
-        <div class="field"><label>КАТЕГОРИЯ</label>
-    <select v-model="newP.category" class="input-admin">
-        <option v-for="c in categories" :key="c.id" :value="c.name">{{c.name}}</option>
-    </select>
-       </div>
-        <div class="field"><label>ТОВАР: НАЗВАНИЕ</label><input v-model="newP.title" class="input-admin"></div>
-        <div class="field"><label>ОПИСАНИЕ</label><textarea v-model="newP.desc" class="input-admin" style="height:80px;"></textarea></div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <div class="field"><label>ЦЕНА (₽)</label><input v-model="newP.price" type="number" class="input-admin"></div>
-            <div class="field"><label>СТАРАЯ ЦЕНА (SALE)</label><input v-model="newP.oldPrice" type="number" class="input-admin"></div>
-        </div>
+       <div class="field">
+    <label>ДОБАВИТЬ КАТЕГОРИЮ</label>
+    <div style="display:flex; gap:10px;">
+        <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
+        <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
+        <span v-for="c in categories" :key="c.id" class="sale-badge" @click="manageCategory('del', c.id)">
+            {{c.name}} ✕
+        </span>
+    </div>
+</div>
 
 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
 <div class="field">
+    <label>КАТЕГОРИЯ</label>
+    <select v-model="newP.category" class="input-admin">
+        <option v-for="c in categories" :key="c.id" :value="c.name">{{c.name}}</option>
+    </select>
+</div>
+
+<div class="field">
+    <label>ТОВАР: НАЗВАНИЕ</label>
+    <input v-model="newP.title" class="input-admin">
+</div>
+
+<div class="field">
+    <label>ОПИСАНИЕ</label>
+    <textarea v-model="newP.desc" class="input-admin" style="height:80px;"></textarea>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+    <div class="field">
+        <label>ЦЕНА (₽)</label>
+        <input v-model="newP.price" type="number" class="input-admin">
+    </div>
+    <div class="field">
+        <label>СТАРАЯ ЦЕНА (SALE)</label>
+        <input v-model="newP.oldPrice" type="number" class="input-admin">
+    </div>
+</div>
+
+<div class="field" style="margin-top: 10px;">
     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
         <input type="checkbox" v-model="newP.isNew" style="width: 18px; height: 18px; accent-color: #000;"> 
         ПОСТАВИТЬ ПЛАШКУ "NEW"
     </label>
 </div>
 
-<div class="field"><label>ТОВАР: НАЗВАНИЕ</label><input v-model="newP.title" class="input-admin"></div>
-<div class="field"><label>ОПИСАНИЕ</label><textarea v-model="newP.desc" class="input-admin" style="height:80px;"></textarea></div>
-
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-    <div class="field"><label>ЦЕНА (₽)</label><input v-model="newP.price" type="number" class="input-admin"></div>
-    <div class="field"><label>СТАРАЯ ЦЕНА (ПЛАШКА SALE)</label><input v-model="newP.oldPrice" type="number" class="input-admin"></div>
-</div>
-
-
+<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
 <div style="margin-top: 20px;">
     <label style="font-weight: 800; font-size: 12px;">ВАРИАНТЫ ЦВЕТОВ, ФОТО И РАЗМЕРЫ</label>
     
     <div v-for="(v, vIdx) in newP.variants" :key="vIdx" 
-         style="border: 1px solid #eee; padding: 15px; margin-top: 10px; position: relative; background: #fafafa;">
+         style="border: 1px solid #eee; padding: 15px; margin-top: 10px; position: relative; background: #fafafa; border-radius: 8px;">
         
         <button @click="newP.variants.splice(vIdx, 1)" 
                 style="position: absolute; right: 5px; top: 5px; background: none; border: none; color: red; font-weight: bold; cursor: pointer;">✕</button>
@@ -714,37 +722,34 @@ button, a, div[role="button"] {
             <label>ОСТАТКИ ПО РАЗМЕРАМ</label>
             <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                 <div v-for="sz in ['42', '44', '46', '48', '50']" :key="sz" style="text-align: center;">
-    <div style="font-size: 10px;">{{sz}}</div>
-    <input type="number" 
-           v-model.number="v.stocks[sz]" 
-           class="input-admin" 
-           style="width: 50px; padding: 5px; text-align: center;">
-</div>
+                    <div style="font-size: 10px;">{{sz}}</div>
+                    <input type="number" 
+                           v-model.number="v.stocks[sz]" 
+                           class="input-admin" 
+                           style="width: 50px; padding: 5px; text-align: center;">
+                </div>
             </div>
         </div>
 
         <div class="field">
-            <label>ФОТО ЦВЕТА (ImgBB)</label>
+            <label>ФОТО ЦВЕТА (ЗАГРУЗКА)</label>
             <input type="file" multiple @change="(e) => uploadVariantImages(e, vIdx)" class="input-admin" style="padding: 8px;">
-            <div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto;">
-                <img v-for="img in v.images" :key="img" :src="img" style="width: 40px; height: 50px; object-fit: cover; border: 1px solid #ddd;">
-                <div v-if="v.isUploading" class="loader-mini">...</div>
+            <div style="display: flex; gap: 5px; margin-top: 5px; overflow-x: auto; padding-bottom: 5px;">
+                <img v-for="img in v.images" :key="img" :src="img" style="width: 40px; height: 50px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px;">
+                <div v-if="v.isUploading" class="loader-mini" style="font-size: 10px;">ЗАГРУЗКА...</div>
             </div>
         </div>
     </div>
 
-    <button type="button" class="btn-black" @click="addVariant" style="margin-top: 10px; background: #333 !important;">+ ДОБАВИТЬ ЦВЕТ</button>
+    <button type="button" class="btn-black" @click="addVariant" style="margin-top: 10px; background: #333 !important; width: 100%;">+ ДОБАВИТЬ ЦВЕТ</button>
 </div>
-        <div class="preview-container" v-if="newP.localFiles && newP.localFiles.length > 0">
-            <div v-for="(item, index) in newP.localFiles" :key="index" class="preview-card">
-                <img :src="item.preview" />
-                <div class="remove-preview-btn" @click="removePhoto(index)">×</div>
-            </div>
-        </div>
-        <button class="btn-black" style="width:100%; margin-top:10px;" @click="saveProduct" :disabled="loading">
-            {{ loading ? 'ЗАГРУЗКА...' : (editId ? 'СОХРАНИТЬ ИЗМЕНЕНИЯ' : 'ОПУБЛИКОВАТЬ ТОВАР') }}
-        </button>
-        <button v-if="editId" class="cat-tab" style="width:100%; margin-top:5px;" @click="cancelEdit">ОТМЕНА</button>
+
+<div style="margin-top: 20px;">
+    <button class="btn-black" style="width:100%;" @click="saveProduct" :disabled="loading">
+        {{ loading ? 'ЗАГРУЗКА...' : (editId ? 'СОХРАНИТЬ ИЗМЕНЕНИЯ' : 'ОПУБЛИКОВАТЬ ТОВАР') }}
+    </button>
+    <button v-if="editId" class="cat-tab" style="width:100%; margin-top:10px;" @click="cancelEdit">ОТМЕНА</button>
+</div>
 
        <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
     <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
@@ -1758,18 +1763,25 @@ async compressImage(file) {
 },
 
         cancelEdit() {
-    this.editId = null;
-    this.newP = { 
-        title: '', 
-        desc: '', 
-        price: '', 
-        oldPrice: '', 
-        category: '', 
-        sizes: '42, 44, 46', 
-        color: '', 
-        images: [],
-        localFiles: [] // ОБЯЗАТЕЛЬНО очищаем выбранные фото
+    this.editId = null; // ЭТО КРИТИЧЕСКИ ВАЖНО
+    this.newP = {
+        title: '',
+        desc: '',
+        price: null,
+        oldPrice: null,
+        category: '',
+        isNew: false,
+        variants: [
+            { 
+                color: '', 
+                images: [], 
+                stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
+                isUploading: false 
+            }
+        ]
     };
+    this.localFiles = []; // Очищаем локальные превью
+    this.loading = false;
 },
 
         async deleteProduct(id) {
@@ -1863,52 +1875,91 @@ async manageCategory(action, id) {
     }
 },
 
-    async checkout() {
+   async checkout() {
     this.vib();
+    
+    // Проверка заполнения формы
     if (!this.form.name || !this.form.phone || !this.address) {
-        return alert("Заполните данные!");
+        return alert("Заполните имя, телефон и адрес доставки!");
     }
 
+    if (this.cart.length === 0) return alert("Корзина пуста!");
+
+    this.loading = true; // Блокируем кнопку, чтобы не было дублей заказов
+    
     try {
-        // УМЕНЬШЕНИЕ ОСТАТКОВ В БАЗЕ
+        // 1. УМЕНЬШЕНИЕ ОСТАТКОВ В БАЗЕ ПЕРЕД СОЗДАНИЕМ ЗАКАЗА
         for (let item of this.cart) {
             const pRef = window.fb.doc(window.db, "products", item.id);
             const pSnap = await window.fb.getDoc(pRef);
+            
             if (pSnap.exists()) {
                 let d = pSnap.data();
+                const sizeToReduce = item.selSize || item.size; // Берем выбранный размер
+                const countToReduce = Number(item.count || item.qty || 1); // Берем количество
+
+                // Если товар с вариантами (цвета)
                 if (d.variants && d.variants.length > 0) {
-                    let vds = [...d.variants];
-                    let vIdx = vds.findIndex(v => v.color === item.selColor);
-                    if (vIdx > -1 && vds[vIdx].stocks[item.selSize] !== undefined) {
-                        vds[vIdx].stocks[item.selSize] = Math.max(0, vds[vIdx].stocks[item.selSize] - item.qty);
-                        await window.fb.updateDoc(pRef, { variants: vds });
+                    let updatedVariants = [...d.variants];
+                    // Ищем нужный цвет в базе
+                    let vIdx = updatedVariants.findIndex(v => v.color === item.selColor || v.color === item.color);
+                    
+                    if (vIdx > -1 && updatedVariants[vIdx].stocks && updatedVariants[vIdx].stocks[sizeToReduce] !== undefined) {
+                        // Вычитаем и следим, чтобы не ушло в минус
+                        let currentStock = Number(updatedVariants[vIdx].stocks[sizeToReduce]);
+                        updatedVariants[vIdx].stocks[sizeToReduce] = Math.max(0, currentStock - countToReduce);
+                        
+                        await window.fb.updateDoc(pRef, { variants: updatedVariants });
                     }
-                } else if (d.stocks && d.stocks[item.selSize] !== undefined) {
-                    let ns = { ...d.stocks };
-                    ns[item.selSize] = Math.max(0, ns[item.selSize] - item.qty);
-                    await window.fb.updateDoc(pRef, { stocks: ns });
+                } 
+                // Если старая структура (просто stocks в корне)
+                else if (d.stocks && d.stocks[sizeToReduce] !== undefined) {
+                    let newStocks = { ...d.stocks };
+                    let currentStock = Number(newStocks[sizeToReduce]);
+                    newStocks[sizeToReduce] = Math.max(0, currentStock - countToReduce);
+                    
+                    await window.fb.updateDoc(pRef, { stocks: newStocks });
                 }
             }
         }
 
-        // Сохранение самого заказа
+        // 2. СОХРАНЕНИЕ ЗАКАЗА (с полями, которые ты выводишь в админке)
         const orderData = {
             order_id: Math.floor(1000 + Math.random() * 9000),
-            user: this.user,
-            items: this.cart,
-            total: this.total(),
-            form: this.form,
+            customer_name: this.form.name,
+            customer_phone: this.form.phone,
             address: this.address,
-            status: 'В обработке',
-            createdAt: window.fb.serverTimestamp()
+            delivery: this.deliv || 'Самовывоз', // Тип доставки
+            items: this.cart.map(i => ({
+                id: i.id,
+                title: i.title,
+                count: i.count || i.qty || 1,
+                color: i.selColor || i.color || '-',
+                size: i.selSize || i.size || '-'
+            })),
+            order_total: this.total(), // Сумма заказа
+            status: 'Новый',
+            createdAt: Date.now()
         };
 
         await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
-        alert("Заказ принят!");
+        
+        alert("Заказ успешно оформлен! Мы свяжемся с вами.");
+        
+        // 3. ОЧИСТКА КОРЗИНЫ
         this.cart = [];
+        localStorage.removeItem('naran_cart_v3');
         this.saveCart();
-        this.tab = 'profile';
-    } catch (e) { alert("Ошибка!"); console.error(e); }
+        
+        // Переход на вкладку профиля или каталога
+        this.tab = 'catalog'; 
+        
+    } catch (e) {
+        console.error("Ошибка при оформлении:", e);
+        alert("Произошла ошибка при оформлении заказа. Попробуйте еще раз.");
+    } finally {
+        this.loading = false;
+    }
 },
 // Метод для кнопок "В пути" и "Готов"
 async updateStatus(order, newStatus) {
