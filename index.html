@@ -1537,67 +1537,63 @@ async compressImage(file) {
         };
     });
 },
-   async saveProduct() {
-    // 1. Валидация
+  async saveProduct() {
     if (!this.newP.title || !this.newP.price || !this.newP.category) {
         return alert('Заполните название, цену и категорию!');
     }
     
-    // Проверка, что добавлен хотя бы один цвет и в нем есть фото
-    if (!this.newP.variants || this.newP.variants.length === 0) {
-        return alert('Добавьте хотя бы один вариант цвета!');
+    // Проверка на наличие хотя бы одного фото в первом цвете
+    if (!this.newP.variants[0] || !this.newP.variants[0].images || this.newP.variants[0].images.length === 0) {
+        return alert('Загрузите хотя бы одно фото для первого цвета!');
     }
 
     this.loading = true;
-
     try {
-        // Подготавливаем объект для базы данных
         const productData = {
             title: this.newP.title,
             desc: this.newP.desc || '',
             price: Number(this.newP.price),
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
-            isNew: !!this.newP.isNew, // Новое поле для плашки NEW
-            
-            // Сохраняем все варианты (цвета, фото внутри них и остатки)
+            isNew: !!this.newP.isNew,
             variants: this.newP.variants.map(v => ({
-                color: v.color,
-                images: v.images, // Сюда уже должны попасть ссылки после загрузки
-                stock: v.stock    // Объект типа { '42': 5, '44': 10 ... }
+                color: v.color || 'Стандарт',
+                images: v.images || [],
+                stock: v.stock || { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 }
             })),
-
-            // Для удобства поиска и главной страницы сохраняем первое фото первого цвета
-            mainImage: this.newP.variants[0].images[0] || '',
-            
+            // Это поле нужно для того, чтобы в списке товаров (сетке) всегда была картинка
+            images: this.newP.variants[0].images, 
             updatedAt: Date.now()
         };
 
         if (this.editId) {
-            // Используем setDoc или updateDoc
-            await window.fb.setDoc(window.fb.doc(window.db, "products", this.editId), productData, { merge: true });
-            alert('Изменения сохранены!');
+            await window.fb.setDoc(window.fb.doc(window.db, "products", this.editId), productData);
+            alert('Обновлено!');
         } else {
             productData.createdAt = Date.now();
             await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
-            alert('Товар опубликован!');
+            alert('Создано!');
         }
-
         this.cancelEdit(); 
-        
     } catch (e) {
-        console.error("Ошибка:", e);
-        alert('Ошибка при сохранении: ' + e.message);
+        alert('Ошибка: ' + e.message);
     } finally {
         this.loading = false;
     }
 },
-        editProduct(p) {
+      editProduct(p) {
     this.editId = p.id;
-    // Создаем копию товара и гарантируем, что localFiles существует
-    this.newP = { 
-        ...p, 
-        localFiles: [] 
+    this.newP = {
+        title: p.title || '',
+        desc: p.desc || '',
+        price: p.price || null,
+        oldPrice: p.oldPrice || null,
+        category: p.category || 'all',
+        isNew: p.isNew || false,
+        // Если вариантов нет (старый товар), создаем один пустой для совместимости
+        variants: p.variants ? JSON.parse(JSON.stringify(p.variants)) : [
+            { color: 'Стандарт', images: p.images || [], stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } }
+        ]
     };
     window.scrollTo({ top: 0, behavior: 'smooth' });
 },
