@@ -1156,26 +1156,19 @@ newCat: '',
 },
 async updateStock(product, size) {
     this.vib();
-    if (!product.stocks) product.stocks = {};
-    const count = product.stocks[size] || 0;
-
     try {
         const pRef = window.fb.doc(window.db, "products", product.id);
+        const stocks = this.getStocksObject(product);
         
-        // Обновляем корень
-        let updates = { [`stocks.${size}`]: count };
-
-        // Если есть новая структура (варианты), обновляем и там
-        if (product.variants && product.variants.length > 0) {
-            let v = [...product.variants];
-            if (!v[0].stocks) v[0].stocks = {};
-            v[0].stocks[size] = count;
-            updates.variants = v;
+        if (product.variants && product.variants[0]) {
+            // Если структура новая — обновляем весь массив вариантов
+            await window.fb.updateDoc(pRef, { variants: product.variants });
+        } else {
+            // Если старая — обновляем поле stocks
+            await window.fb.updateDoc(pRef, { stocks: product.stocks });
         }
-
-        await window.fb.updateDoc(pRef, updates);
     } catch (e) {
-        console.error("Ошибка сохранения количества:", e);
+        console.error("Ошибка обновления остатка:", e);
     }
 },
         
@@ -1206,6 +1199,21 @@ async updateStock(product, size) {
             }, 200);
         });
     }
+},
+getProductSizes(p) {
+    if (!p) return [];
+    const stocks = this.getStocksObject(p);
+    return Object.keys(stocks);
+},
+
+// 2. Возвращает сам объект с количеством (чтобы v-model работал)
+getStocksObject(p) {
+    if (p.variants && p.variants[0]) {
+        if (!p.variants[0].stocks) p.variants[0].stocks = {};
+        return p.variants[0].stocks;
+    }
+    if (!p.stocks) p.stocks = {};
+    return p.stocks;
 },
 
         handleScroll(e, p) {
