@@ -1772,26 +1772,31 @@ async compressImage(file) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 },
 
-        cancelEdit() {
-    this.editId = null; // ЭТО КРИТИЧЕСКИ ВАЖНО
+      cancelEdit() {
+    this.editId = null; // Сбрасываем ID редактирования, чтобы Firebase понимал: это НОВЫЙ товар
     this.newP = {
         title: '',
         desc: '',
         price: null,
         oldPrice: null,
-        category: '',
+        category: this.categories.length > 0 ? this.categories[0].name : '', // Можно ставить первую категорию по умолчанию
         isNew: false,
         variants: [
             { 
                 color: '', 
                 images: [], 
-                stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
+                // Исправлено: название поля должно быть 'stock', как в saveProduct
+                stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
                 isUploading: false 
             }
         ]
     };
-    this.localFiles = []; // Очищаем локальные превью
-    this.loading = false;
+    
+    // Сбрасываем input для файлов (если используешь скрытые инпуты)
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => input.value = '');
+    
+    console.log("Форма успешно очищена");
 },
 
         async deleteProduct(id) {
