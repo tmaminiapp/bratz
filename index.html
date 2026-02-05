@@ -592,12 +592,12 @@ button, a, div[role="button"] {
 
         <div id="map" v-show="deliv"></div>
         <div v-if="address" style="font-size:12px; font-weight:700; margin-bottom: 20px;">📍 {{address}}</div>
-      <div class="field" style="margin-top: 15px;">
-    <label style="font-weight: 800; font-size: 11px;">СПОСОБ ДОСТАВКИ</label>
-    <select v-model="deliv" class="input-admin" @change="vib()">
-        <option value="САМОВЫВОЗ">Самовывоз — 0 ₽</option>
-        <option value="ДОСТАВКА">До службы доставки — 200 ₽</option>
-    </select>
+     <div class="field" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 8px;">
+    <label style="font-weight: 800; font-size: 11px; color: #666;">СПОСОБ ДОСТАВКИ</label>
+    <div style="font-size: 13px; font-weight: 700; color: #000; margin-top: 4px;">
+        📦 Доставка до пункта — 200 ₽
+    </div>
+    <div style="font-size: 9px; color: #999;">(Применяется автоматически ко всем заказам)</div>
 </div>
 
 <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
@@ -1012,7 +1012,7 @@ Vue.createApp({
     data() {
     return {
         selVariantIdx: 0, // Индекс выбранного цвета
-        deliv: 'САМОВЫВОЗ', // Значение по умолчанию
+        deliv: 'доставка', // Значение по умолчанию
         tab: 'catalog',
         currentCat: '',
         searchQuery: '',
@@ -1105,6 +1105,11 @@ Vue.createApp({
 
         return { todayCount, todayRev, monthCount, monthRev, allCount, allRev };
     },
+    cartTotal() {
+    const itemsSum = this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    // Если корзина пуста, общая сумма 0, если нет — сумма товаров + 200
+    return itemsSum > 0 ? itemsSum + 200 : 0;
+},
     adminProducts() {
         if (!this.products) return [];
         const q = (this.searchQuery || '').toLowerCase().trim();
@@ -1172,13 +1177,11 @@ selVariant() {
     },
     methods: {
         vib() { tg.HapticFeedback.impactOccurred('light'); },
- total() {
-    // 1. Считаем стоимость товаров
+total() {
     let itemsTotal = 0;
     if (this.cart && this.cart.length > 0) {
         itemsTotal = this.cart.reduce((sum, item) => {
             let rawPrice = item.price || 0;
-            // Очистка: оставляем только цифры
             let priceNumber = typeof rawPrice === 'string' 
                 ? parseInt(rawPrice.replace(/[^\d]/g, '')) || 0 
                 : Number(rawPrice);
@@ -1187,10 +1190,8 @@ selVariant() {
         }, 0);
     }
 
-    // 2. Логика доставки: +200 руб, если в select выбрана "ДОСТАВКА"
-    let deliveryCost = (this.deliv === 'ДОСТАВКА') ? 200 : 0;
-
-    return itemsTotal + deliveryCost;
+    // Если корзина не пуста, всегда добавляем 200
+    return itemsTotal > 0 ? (itemsTotal + 200) : 0;
 },
 async updateStock(product, size) {
     try {
@@ -1982,7 +1983,7 @@ async checkout() {
 
         // 2. РАСЧЕТ ИТОГОВ
         const finalTotal = this.total(); 
-        const deliveryCharge = (this.deliv === 'ДОСТАВКА') ? 200 : 0;
+        const deliveryCharge = 200; // Фиксировано
 
         // 3. СОХРАНЕНИЕ ЗАКАЗА
         const orderData = {
@@ -1990,7 +1991,7 @@ async checkout() {
             customer_name: this.form.name,
             customer_phone: this.form.phone,
             address: this.address,
-            delivery_type: this.deliv, // "САМОВЫВОЗ" или "ДОСТАВКА"
+            delivery_type: 'доставка', // Всегда доставка
             delivery_price: deliveryCharge,
             items: this.cart.map(i => ({
                 id: i.id,
@@ -2000,18 +2001,18 @@ async checkout() {
                 size: i.selSize || i.size || '-',
                 price: i.price
             })),
-            order_total: finalTotal, // Финальная сумма с доставкой
+            order_total: finalTotal, 
             status: 'Новый',
             createdAt: Date.now()
         };
 
         await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
         
-        alert(`Заказ оформлен! Итого к оплате: ${finalTotal} ₽`);
+        alert(`Заказ оформлен! Итого к оплате (с учетом доставки): ${finalTotal} ₽`);
         
         // ОЧИСТКА
         this.cart = [];
-        this.deliv = 'САМОВЫВОЗ'; // Сброс на самовывоз
+        this.deliv = 'ДОСТАВКА'; // Сбрасываем на доставку по умолчанию
         localStorage.removeItem('naran_cart_v3');
         this.saveCart();
         this.tab = 'catalog'; 
