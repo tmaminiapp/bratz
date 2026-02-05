@@ -894,32 +894,35 @@ button, a, div[role="button"] {
             РАЗМЕР: {{ selP.tempSize || 'НЕ ВЫБРАН' }}
         </div>
 
-        <div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
-            <button v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || selP.variants[currentVariantIndex]?.stocks || {})" 
-                    :key="sz"
-                    @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
-                    :class="['size-btn', { active: selP.tempSize === sz }]"
-                    :disabled="qty <= 0"
-                    :style="{
-                        height: '45px',
-                        border: '1px solid #eee',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        fontWeight: '700',
-                        transition: '0.2s',
-                        background: selP.tempSize === sz ? '#000' : (qty <= 0 ? '#f9f9f9' : '#fff'),
-                        color: selP.tempSize === sz ? '#fff' : (qty <= 0 ? '#ccc' : '#000'),
-                        opacity: qty <= 0 ? '0.6' : '1',
-                        position: 'relative',
-                        cursor: qty <= 0 ? 'not-allowed' : 'pointer'
-                    }">
-                {{ sz }}
-                <div v-if="qty > 0 && qty < 5" 
-                     style="font-size: 7px; color: #ff3b30; position: absolute; bottom: 4px; width: 100%; text-align: center;">
-                    {{qty}} шт.
-                </div>
-            </button>
-        </div>
+       <div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
+    <template v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || {})" :key="sz">
+        
+        <button v-if="!(selP.hiddenSizes || []).includes(String(sz).trim())"
+                @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
+                :class="['size-btn', { active: selP.tempSize === sz }]"
+                :disabled="qty <= 0"
+                :style="{
+                    height: '45px',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    transition: '0.2s',
+                    background: selP.tempSize === sz ? '#000' : (qty <= 0 ? '#f9f9f9' : '#fff'),
+                    color: selP.tempSize === sz ? '#fff' : (qty <= 0 ? '#ccc' : '#000'),
+                    opacity: qty <= 0 ? '0.6' : '1',
+                    position: 'relative',
+                    cursor: qty <= 0 ? 'not-allowed' : 'pointer'
+                }">
+            {{ sz }}
+            <div v-if="qty > 0 && qty < 5" 
+                 style="font-size: 7px; color: #ff3b30; position: absolute; bottom: 4px; width: 100%; text-align: center;">
+                {{qty}} шт.
+            </div>
+        </button>
+        
+    </template>
+</div>
 
         <div style="display: flex; gap: 10px;">
             <button @click="toggleFav(selP)" style="width: 60px; height: 50px; border: 1px solid #eee; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center;">
@@ -1730,14 +1733,21 @@ async compressImage(file) {
             updatedAt: Date.now()
         };
 
-        if (this.editId) {
-            await window.fb.setDoc(window.fb.doc(window.db, "products", this.editId), productData);
-            alert('Обновлено!');
-        } else {
-            productData.createdAt = Date.now();
-            await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
-            alert('Создано!');
-        }
+       if (this.editId) {
+    // Используем updateDoc вместо setDoc
+    const docRef = window.fb.doc(window.db, "products", this.editId);
+    await window.fb.updateDoc(docRef, productData);
+    alert('Обновлено!');
+}
+        else {
+         productData.createdAt = Date.now();
+          const docRef = await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
+    
+         // ДОБАВЬ ЭТУ СТРОКУ:
+          this.products.unshift({ id: docRef.id, ...productData }); 
+    
+          alert('Создано!');
+          }
         this.cancelEdit(); 
     } catch (e) {
         alert('Ошибка: ' + e.message);
