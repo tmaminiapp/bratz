@@ -431,6 +431,22 @@ button, a, div[role="button"] {
                         <span v-for="(img, i) in p.images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
                     </div>
                     <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
+                    <div v-if="p.isNew" 
+         class="new-badge" 
+         :style="{ 
+            position: 'absolute', 
+            top: p.oldPrice ? '35px' : '10px', 
+            left: '10px',
+            background: '#000',
+            color: '#fff',
+            fontSize: '10px',
+            fontWeight: '800',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            zIndex: 5
+         }">
+        NEW
+    </div>
                 </div>
 
                 <div class="card-info">
@@ -967,7 +983,7 @@ button, a, div[role="button"] {
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, where, getDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
     const firebaseConfig = {
@@ -984,7 +1000,7 @@ button, a, div[role="button"] {
     const db = getFirestore(app);
     const storage = getStorage(app); // инициализируем storage
     window.db = db;
-    window.fb = { collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, where, serverTimestamp, getStorage: () => storage, ref, uploadBytes, getDownloadURL };
+    window.fb = { collection, addDoc, onSnapshot, query, getDoc, orderBy, doc, getFirestore, getDocs, deleteDoc, updateDoc, where, db, serverTimestamp, getStorage: () => storage, ref, uploadBytes, getDownloadURL };
 </script>
 
 <script>
