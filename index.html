@@ -441,11 +441,11 @@ button, a, div[role="button"] {
                     </div>
                     
                   <div class="card-sizes" v-if="p.variants && p.variants[0]">
-    <div v-for="(qty, sz) in (p.variants[0].stocks || p.variants[0].stock)" 
+    <div v-for="(qty, sz) in (p.variants[0].stocks || p.variants[0].stocks)" 
          :key="sz"
          @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
          :class="['size-chip', {
-            active: (p.tempSize || Object.keys(p.variants[0].stocks || p.variants[0].stock)[0]) === sz,
+            active: (p.tempSize || Object.keys(p.variants[0].stocks || p.variants[0].stocks)[0]) === sz,
             disabled: qty <= 0
          }]"
          style="margin-right: 4px;">
@@ -499,7 +499,7 @@ button, a, div[role="button"] {
                 </div>
 
                 <div class="card-sizes" v-if="p.variants && p.variants[0]">
-                    <div v-for="(qty, sz) in p.variants[0].stock" 
+                    <div v-for="(qty, sz) in p.variants[0].stocks" 
                          :key="sz"
                          @click="qty > 0 ? (p.tempSize = sz, vib('light')) : null"
                          :class="['size-chip', {
@@ -714,9 +714,12 @@ button, a, div[role="button"] {
             <label>ОСТАТКИ ПО РАЗМЕРАМ</label>
             <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                 <div v-for="sz in ['42', '44', '46', '48', '50']" :key="sz" style="text-align: center;">
-                    <div style="font-size: 10px;">{{sz}}</div>
-                    <input type="number" v-model.number="v.stock[sz]" class="input-admin" style="width: 50px; padding: 5px; text-align: center;">
-                </div>
+    <div style="font-size: 10px;">{{sz}}</div>
+    <input type="number" 
+           v-model.number="v.stocks[sz]" 
+           class="input-admin" 
+           style="width: 50px; padding: 5px; text-align: center;">
+</div>
             </div>
         </div>
 
@@ -749,53 +752,58 @@ button, a, div[role="button"] {
         <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
     </div>
     
-    <div v-if="showProductList" style="padding: 5px; max-height: 400px; overflow-y: auto; background: #fff;">
-        <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
-            <div style="display: flex; gap: 15px; align-items: start;">
+    <div v-if="showProductList" style="padding: 5px; max-height: 500px; overflow-y: auto; background: #fff;">
+    <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
+        <div style="display: flex; gap: 15px; align-items: start;">
+            
+            <img :src="p.variants && p.variants[0]?.images?.[0] || p.images?.[0] || ''" 
+                 loading="lazy" 
+                 style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f0f0f0;">
+            
+            <div style="flex: 1;">
+                <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">
+                    {{ p.title || p.name }} 
+                    <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span>
+                </div>
                 
-                <img :src="p.variants && p.variants[0]?.images?.length ? p.variants[0].images[0] : (p.images?.length ? p.images[0] : '')" 
-                     loading="lazy" 
-                     style="width: 50px; height: 65px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f0f0f0;">
+                <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">
+                    Цвет: {{ p.variants && p.variants[0] ? p.variants[0].color : (p.color || '—') }}
+                </div>
                 
-                <div style="flex: 1;">
-                    <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">
-                        {{ p.title || p.name }} 
-                        <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span>
-                    </div>
-                    <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">Цвет: {{ p.color || '—' }}</div>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 5px;">
-                        <div v-for="s in (Array.isArray(p.sizes) ? p.sizes : String(p.sizes || '').split(',').filter(x => x))" 
-                             :key="s" 
-                             style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 6px 8px; border-radius: 6px;">
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <div v-for="s in (p.variants && p.variants[0]?.stocks ? Object.keys(p.variants[0].stocks) : (p.stocks ? Object.keys(p.stocks) : []))" 
+                         :key="s" 
+                         style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 6px 8px; border-radius: 6px;">
+                        
+                        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                            <span style="font-size: 12px; font-weight: 600; min-width: 25px;" 
+                                  :style="{ 
+                                      color: (p.hiddenSizes || []).includes(String(s)) ? '#ccc' : '#000', 
+                                      textDecoration: (p.hiddenSizes || []).includes(String(s)) ? 'line-through' : 'none' 
+                                  }">
+                                {{ s }}
+                            </span>
                             
-                            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                                <span style="font-size: 12px; font-weight: 600; min-width: 25px;" 
-                                      :style="{ color: p.hiddenSizes?.includes(s.trim()) ? '#ccc' : '#000', textDecoration: p.hiddenSizes?.includes(s.trim()) ? 'line-through' : 'none' }">
-                                    {{ s.trim() }}
-                                </span>
-                                
-                                <div v-if="p.stocks" style="display: flex; align-items: center; gap: 4px;">
-                                    <span style="font-size: 9px; color: #999;">ШТ:</span>
-                                    <input type="number" 
-                                           v-model.number="p.stocks[s.trim()]" 
-                                           @change="updateStock(p, s.trim())"
-                                           style="width: 40px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; font-size: 11px; font-weight: bold; text-align: center;">
-                                </div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="font-size: 9px; color: #999;">ШТ:</span>
+                                <input type="number" 
+                                       v-model.number="(p.variants && p.variants[0] ? p.variants[0].stocks : p.stocks)[s]" 
+                                       @change="updateStock(p, s)"
+                                       style="width: 45px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; font-size: 11px; font-weight: bold; text-align: center;">
                             </div>
-
-                            <button @click="toggleSizeVisibility(p, s.trim())" 
-                                    :style="{ border: 'none', background: 'none', fontSize: '10px', fontWeight: '800', color: p.hiddenSizes?.includes(s.trim()) ? '#34c759' : '#ff3b30', textTransform: 'uppercase', cursor: 'pointer' }">
-                                {{ p.hiddenSizes?.includes(s.trim()) ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
-                            </button>
                         </div>
+
+                        <button @click="toggleSizeVisibility(p, s)" 
+                                :style="{ border: 'none', background: 'none', fontSize: '10px', fontWeight: '800', color: (p.hiddenSizes || []).includes(String(s)) ? '#34c759' : '#ff3b30', textTransform: 'uppercase', cursor: 'pointer' }">
+                            {{ (p.hiddenSizes || []).includes(String(s)) ? 'ОТКРЫТЬ' : 'СКРЫТЬ' }}
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
-                    <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
-                </div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
+                <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
             </div>
         </div>
     </div>
@@ -856,28 +864,7 @@ button, a, div[role="button"] {
         </div>
     </div>
 
-   <div v-if="selP" class="modal" style="z-index: 5000;">
-    <button class="close-modal" @click="selP = null">✕</button>
-
-    <div class="slider-wrapper" style="aspect-ratio: 1/1.2; position: relative; background: #f9f9f9;">
-        <template v-if="selP.variants && selP.variants[currentVariantIndex]">
-            <div class="slider-inner" id="modalSlider" @scroll="e => handleScroll(e, selP)">
-                <img v-for="(img, idx) in selP.variants[currentVariantIndex].images" 
-                     :key="idx" :src="img" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-            
-            <div class="dots" v-if="selP.variants[currentVariantIndex].images.length > 1">
-                <span v-for="(img, i) in selP.variants[currentVariantIndex].images" 
-                      :key="i" :class="['dot', {active: i === (selP.aIdx || 0)}]">
-                </span>
-            </div>
-        </template>
-        <div v-else style="display:flex; align-items:center; justify-content:center; height:100%; color:#999; font-size:12px;">
-            ЗАГРУЗКА...
-        </div>
-    </div>
-
-    <div v-if="selP && selP.variants && selP.variants[currentVariantIndex]" style="padding: 25px;">
+    <div v-if="selP.variants && selP.variants[currentVariantIndex]" style="padding: 25px;">
         
         <div style="display:flex; justify-content:space-between; align-items: flex-start;">
             <h2 class="brand-name" style="font-size: 18px; margin:0; text-transform: uppercase;">{{ selP.title }}</h2>
@@ -887,6 +874,7 @@ button, a, div[role="button"] {
         <p style="font-size: 13px; line-height: 1.6; margin: 15px 0; color: #444;">{{ selP.desc }}</p>
         
         <div style="font-size: 10px; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">ЦВЕТ: {{ selP.variants[currentVariantIndex]?.color }}</div>
+        
         <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
             <div v-for="(v, idx) in selP.variants" :key="idx" 
                  @click="currentVariantIndex = idx; selP.tempSize = null; vib();"
@@ -897,40 +885,42 @@ button, a, div[role="button"] {
             </div>
         </div>
 
-       <div style="font-size: 10px; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">
-    РАЗМЕР: {{ selP.tempSize || 'НЕ ВЫБРАН' }}
-</div>
-
-<div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
-    <button v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || selP.variants[currentVariantIndex]?.stock || {})" 
-            :key="sz"
-            @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
-            :class="['size-btn', { active: selP.tempSize === sz }]"
-            :disabled="qty <= 0"
-            :style="{
-                height: '45px',
-                border: '1px solid #eee',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '700',
-                transition: '0.2s',
-                background: selP.tempSize === sz ? '#000' : (qty <= 0 ? '#f9f9f9' : '#fff'),
-                color: selP.tempSize === sz ? '#fff' : (qty <= 0 ? '#ccc' : '#000'),
-                opacity: qty <= 0 ? '0.6' : '1',
-                position: 'relative',
-                cursor: qty <= 0 ? 'not-allowed' : 'pointer'
-            }">
-        {{ sz }}
-        <div v-if="qty > 0 && qty < 5" 
-             style="font-size: 7px; color: #ff3b30; position: absolute; bottom: 4px; width: 100%; text-align: center;">
-            {{qty}} шт.
+        <div style="font-size: 10px; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">
+            РАЗМЕР: {{ selP.tempSize || 'НЕ ВЫБРАН' }}
         </div>
-    </button>
-</div>
+
+        <div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
+            <button v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || selP.variants[currentVariantIndex]?.stocks || {})" 
+                    :key="sz"
+                    @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
+                    :class="['size-btn', { active: selP.tempSize === sz }]"
+                    :disabled="qty <= 0"
+                    :style="{
+                        height: '45px',
+                        border: '1px solid #eee',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        transition: '0.2s',
+                        background: selP.tempSize === sz ? '#000' : (qty <= 0 ? '#f9f9f9' : '#fff'),
+                        color: selP.tempSize === sz ? '#fff' : (qty <= 0 ? '#ccc' : '#000'),
+                        opacity: qty <= 0 ? '0.6' : '1',
+                        position: 'relative',
+                        cursor: qty <= 0 ? 'not-allowed' : 'pointer'
+                    }">
+                {{ sz }}
+                <div v-if="qty > 0 && qty < 5" 
+                     style="font-size: 7px; color: #ff3b30; position: absolute; bottom: 4px; width: 100%; text-align: center;">
+                    {{qty}} шт.
+                </div>
+            </button>
+        </div>
 
         <div style="display: flex; gap: 10px;">
             <button @click="toggleFav(selP)" style="width: 60px; height: 50px; border: 1px solid #eee; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center;">
-                <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
             </button>
             
             <button class="add-to-cart-btn" 
@@ -942,16 +932,13 @@ button, a, div[role="button"] {
                 <span v-else>ВЫБЕРИТЕ РАЗМЕР</span>
             </button>
         </div>
-    </div>
-</div>
-</div>
-    <nav class="bottom-nav">
+    </div> </div> <nav class="bottom-nav">
     <button v-for="btn in nav" :key="btn.id" 
         @click="setTab(btn.id)" 
-        :class="['nav-item', {active: tab === btn.id}]"> <div v-if="btn.id === 'cart' && cart.length > 0" class="badge">
+        :class="['nav-item', {active: tab === btn.id}]"> 
+        <div v-if="btn.id === 'cart' && cart.length > 0" class="badge">
             {{cart.length}}
         </div>
-        
         <svg v-html="btn.icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
         <span>{{btn.label}}</span>
     </button>
@@ -985,68 +972,68 @@ const tg = window.Telegram.WebApp;
 
 Vue.createApp({
     data() {
-        return {
-            tab: 'catalog',
-            currentCat: '',
-            searchQuery: '',
-            searchMode: false,
-            burgerOpen: false,
-            loading: false,
-            showProductList: false,
-            activeInfo: null,
-            
-            products: [], // Инициализация пустым массивом для защиты
-            categories: [],
-            cart: JSON.parse(localStorage.getItem('naran_cart_v3') || '[]'),
-            favorites: JSON.parse(localStorage.getItem('naran_favs_v3') || '[]'),
-            
-            user: {},
-            isAdmin: false,
-            adminIds: [387881523, 5189266423],
-            
-            selP: null,
-            currentVariantIndex: 0,
-            deliv: '',
-            address: '',
-            map: null,
-            form: {
-                name: '',
-                phone: localStorage.getItem('naran_phone') || ''
-            },
-            
-            // Admin Fields
-         newP: {
-    title: '',
-    desc: '',
-    price: null,
-    oldPrice: null,
-    category: '',
-    isNew: false,
-    variants: [
-        { 
-            color: '', 
-            images: [], 
-            stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
-            isUploading: false 
-        }
-    ]
-},
-newCat: '',
-            editId: null,
-            showProductList: false,
-            allOrders: [],
-            chart: null,
-            localFiles: [], // Сюда будем сохранять объекты {file, preview}
-            myOrders: [],
-
-            nav: [
-                { id: 'catalog', label: 'Каталог', icon: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>' },
-                { id: 'favs', label: 'Избранное', icon: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' },
-                { id: 'cart', label: 'Корзина', icon: '<circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>' },
-                { id: 'profile', label: 'Профиль', icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>' }
+    return {
+        tab: 'catalog',
+        currentCat: '',
+        searchQuery: '',
+        searchMode: false,
+        burgerOpen: false,
+        loading: false,
+        showProductList: false,
+        activeInfo: null,
+        
+        products: [], 
+        categories: [],
+        cart: JSON.parse(localStorage.getItem('naran_cart_v3') || '[]'),
+        favorites: JSON.parse(localStorage.getItem('naran_favs_v3') || '[]'),
+        
+        user: {},
+        isAdmin: false,
+        adminIds: [387881523, 5189266423],
+        
+        selP: null,
+        currentVariantIndex: 0,
+        deliv: '',
+        address: '',
+        map: null,
+        form: {
+            name: '',
+            phone: localStorage.getItem('naran_phone') || ''
+        },
+        
+        // Поля для админки
+        newP: {
+            title: '',
+            desc: '',
+            price: null,
+            oldPrice: null,
+            category: '',
+            isNew: false,
+            variants: [
+                { 
+                    color: '', 
+                    images: [], 
+                    // Здесь используем STOCKS с буквой S
+                    stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
+                    isUploading: false 
+                }
             ]
-        }
-    },
+        },
+        newCat: '',
+        editId: null,
+        allOrders: [],
+        chart: null,
+        localFiles: [], 
+        myOrders: [],
+
+        nav: [
+            { id: 'catalog', label: 'Каталог', icon: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>' },
+            { id: 'favs', label: 'Избранное', icon: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' },
+            { id: 'cart', label: 'Корзина', icon: '<circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>' },
+            { id: 'profile', label: 'Профиль', icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>' }
+        ]
+    }
+},
     computed: {
         stats() {
         const now = new Date();
@@ -1155,23 +1142,41 @@ newCat: '',
     }, 0);
 },
 async updateStock(product, size) {
-    this.vib();
     try {
-        const pRef = window.fb.doc(window.db, "products", product.id);
-        const stocks = this.getStocksObject(product);
+        // Используем твой путь через window.fb, как в saveProduct
+        const productRef = window.fb.doc(window.db, "products", product.id);
         
-        if (product.variants && product.variants[0]) {
-            // Если структура новая — обновляем весь массив вариантов
-            await window.fb.updateDoc(pRef, { variants: product.variants });
+        let newValue;
+        let updatePath;
+
+        if (product.variants && product.variants[0] && product.variants[0].stocks) {
+            // Путь для новой структуры (с вариантами)
+            newValue = Number(product.variants[0].stocks[size] || 0);
+            updatePath = `variants.0.stocks.${size}`;
+        } else if (product.stocks) {
+            // Путь для старой структуры (без вариантов)
+            newValue = Number(product.stocks[size] || 0);
+            updatePath = `stocks.${size}`;
         } else {
-            // Если старая — обновляем поле stocks
-            await window.fb.updateDoc(pRef, { stocks: product.stocks });
+            console.warn("Структура stocks не найдена у товара");
+            return;
         }
-    } catch (e) {
-        console.error("Ошибка обновления остатка:", e);
+
+        // Обновляем в базе
+        await window.fb.updateDoc(productRef, {
+            [updatePath]: newValue
+        });
+        
+        console.log(`Успешно: Размер ${size} теперь ${newValue} шт.`);
+        
+        // Если есть функция вибрации для отклика
+        if (typeof this.vib === 'function') this.vib();
+
+    } catch (error) {
+        console.error("Ошибка при обновлении остатка:", error);
+        alert("Ошибка сохранения: " + error.message);
     }
 },
-        
         setCategory(name) {
             try {
                 this.vib();
@@ -1359,9 +1364,18 @@ addVariant() {
     this.newP.variants.push({
         color: '',
         images: [],
-        stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
-        isUploading: false
+        // Сразу создаем пустой объект для остатков, чтобы Vue его видел
+        stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } 
     });
+},
+getSizes(p) {
+    if (p.variants && p.variants[0] && p.variants[0].stocks) {
+        return Object.keys(p.variants[0].stocks);
+    }
+    if (p.stocks) {
+        return Object.keys(p.stocks);
+    }
+    return []; // Если размеров нет, просто вернем пустой список и ошибки не будет
 },
 
 // Загрузка фото на ImgBB для конкретного цвета
@@ -1400,7 +1414,7 @@ async uploadVariantImages(event, vIdx) {
 },
 selectFirstAvailableSize(variant) {
     // Автоматически выбираем первый размер в новом цвете, который есть на складе
-    const size = Object.keys(variant.stock).find(sz => variant.stock[sz] > 0);
+    const size = Object.keys(variant.stocks).find(sz => variant.stocks[sz] > 0);
     this.selP.tempSize = size || null;
 },
 removePhoto(index) {
@@ -1422,7 +1436,7 @@ quickAddToCart(p) {
         images: p.images || [] 
     };
 
-    const stocks = currentVariant.stocks || currentVariant.stock || {};
+    const stocks = currentVariant.stocks || currentVariant.stocks || {};
 
     // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
     // Если клиент уже кликнул на чип размера в каталоге - берем его,
@@ -1704,7 +1718,7 @@ async compressImage(file) {
             variants: this.newP.variants.map(v => ({
                 color: v.color || 'Стандарт',
                 images: v.images || [],
-                stock: v.stock || { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 }
+                stocks: v.stocks || { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 }
             })),
             // Это поле нужно для того, чтобы в списке товаров (сетке) всегда была картинка
             images: this.newP.variants[0].images, 
@@ -1737,7 +1751,7 @@ async compressImage(file) {
         isNew: p.isNew || false,
         // Если вариантов нет (старый товар), создаем один пустой для совместимости
         variants: p.variants ? JSON.parse(JSON.stringify(p.variants)) : [
-            { color: 'Стандарт', images: p.images || [], stock: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } }
+            { color: 'Стандарт', images: p.images || [], stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } }
         ]
     };
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1849,133 +1863,53 @@ async manageCategory(action, id) {
     }
 },
 
-     async checkout() {
-    // 1. Валидация контактов
-    if (this.cart.length === 0) return alert('Ваша корзина пуста');
-    if (!this.form.name) return alert('Введите имя');
-    if (!this.form.phone) return alert('Введите телефон');
-
-    // 2. Проверка доставки
-    if (!this.deliv || this.deliv === '' || this.deliv === 'Не выбран') {
-        alert('Пожалуйста, выберите способ доставки: СДЭК, ПОЧТА или 5POST');
-        return; 
+    async checkout() {
+    this.vib();
+    if (!this.form.name || !this.form.phone || !this.address) {
+        return alert("Заполните данные!");
     }
-
-    // 3. Проверка адреса
-    if (!this.address || this.address.trim() === '' || this.address.includes('Адрес не выбран')) {
-        alert('Пожалуйста, укажите адрес доставки');
-        return;
-    }
-
-    this.loading = true;
 
     try {
-        const orderId = Date.now().toString().slice(-6);
-        
-        // 4. Считаем итоговую сумму прямо здесь, чтобы не было "0"
-        const calculatedTotal = this.cart.reduce((acc, item) => {
-            return acc + (Number(item.price || 0) * Number(item.qty || 1));
-        }, 0);
+        // УМЕНЬШЕНИЕ ОСТАТКОВ В БАЗЕ
+        for (let item of this.cart) {
+            const pRef = window.fb.doc(window.db, "products", item.id);
+            const pSnap = await window.fb.getDoc(pRef);
+            if (pSnap.exists()) {
+                let d = pSnap.data();
+                if (d.variants && d.variants.length > 0) {
+                    let vds = [...d.variants];
+                    let vIdx = vds.findIndex(v => v.color === item.selColor);
+                    if (vIdx > -1 && vds[vIdx].stocks[item.selSize] !== undefined) {
+                        vds[vIdx].stocks[item.selSize] = Math.max(0, vds[vIdx].stocks[item.selSize] - item.qty);
+                        await window.fb.updateDoc(pRef, { variants: vds });
+                    }
+                } else if (d.stocks && d.stocks[item.selSize] !== undefined) {
+                    let ns = { ...d.stocks };
+                    ns[item.selSize] = Math.max(0, ns[item.selSize] - item.qty);
+                    await window.fb.updateDoc(pRef, { stocks: ns });
+                }
+            }
+        }
 
-        // 5. ОЧИСТКА ДАННЫХ КОРЗИНЫ
-        const cleanItems = this.cart.map(item => {
-            const sizeVal = (item.selSize && typeof item.selSize === 'object') 
-                ? item.selSize.value 
-                : item.selSize;
-
-            return {
-                id: String(item.id || ''),
-                title: String(item.title || ''),
-                price: Number(item.price || 0),
-                qty: Number(item.qty || 1),
-                selSize: String(sizeVal || ''),
-                selColor: String(item.selColor || '')
-            };
-        });
-
-        // Формируем текст состава заказа
-        const itemsText = cleanItems.map(i => {
-            let specs = [];
-            if (i.selSize) specs.push(i.selSize);
-            if (i.selColor) specs.push(i.selColor);
-            const details = specs.length > 0 ? `(${specs.join(', ')})` : '';
-            return `▫️ ${i.title} ${details} x${i.qty} — ${i.price * i.qty} ₽`;
-        }).join('\n');
-
+        // Сохранение самого заказа
         const orderData = {
-            order_id: orderId,
-            customer_name: String(this.form.name),
-            customer_phone: String(this.form.phone),
-            order_total: calculatedTotal, // Используем нашу гарантированную переменную
-            delivery: String(this.deliv),
-            address: String(this.address),
-            items_text: itemsText, 
-            items: cleanItems,
-            status: 'Новый',
-            user: {
-                id: Number(this.user.id) || 0,
-                username: String(this.user.username || 'n/a')
-            },
+            order_id: Math.floor(1000 + Math.random() * 9000),
+            user: this.user,
+            items: this.cart,
+            total: this.total(),
+            form: this.form,
+            address: this.address,
+            status: 'В обработке',
             createdAt: window.fb.serverTimestamp()
         };
 
-        // 6. Сохраняем в Firebase
         await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
-
-        // 7. Отправляем в Telegram
-        const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
-        // ПРАВИЛЬНО
-        const adminIds = [387881523, 5189266423];
-
-        // Экранируем никнейм, чтобы Markdown не выдавал ошибку
-        const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
-
-        const messageText = `🛍 *НОВЫЙ ЗАКАЗ №${orderId}*\n\n` +
-            `👤 Клиент: ${this.form.name}\n` +
-            `🔗 Ник: @${safeUsername}\n` +
-            `📞 Телефон: ${this.form.phone}\n` +
-            `📍 Доставка: ${this.deliv}\n` +
-            `🏠 Адрес: ${this.address}\n\n` +
-            `📦 Состав заказа:\n${itemsText}\n\n` +
-            `💰 *Итого: ${calculatedTotal} ₽*`;
-
-        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, { 
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: messageText,
-                parse_mode: 'Markdown'
-            })
-        });
-
-        if (!response.ok) throw new Error('Ошибка отправки в Telegram');
-        
-        // 8. Уведомление пользователя через Telegram UI
-        if (window.tg) {
-            window.tg.showAlert(`Заказ №${orderId} успешно оформлен!`);
-        } else {
-            alert(`Заказ №${orderId} успешно оформлен!`);
-        }
-        
-        // 9. Полная очистка только после успеха всех операций
+        alert("Заказ принят!");
         this.cart = [];
         this.saveCart();
-        this.deliv = ''; 
-        this.address = '';
-        this.showCart = false;
-        
-        // Переход в профиль или историю
-        if (this.tab) this.tab = 'profile';
-
-    } catch (e) {
-        console.error("Ошибка при оформлении:", e);
-        alert("Ошибка оформления: " + e.message);
-    } finally {
-        this.loading = false;
-    }
+        this.tab = 'profile';
+    } catch (e) { alert("Ошибка!"); console.error(e); }
 },
-
 // Метод для кнопок "В пути" и "Готов"
 async updateStatus(order, newStatus) {
     if (order.status === newStatus) return;
