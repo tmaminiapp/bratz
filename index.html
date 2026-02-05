@@ -1962,6 +1962,10 @@ async checkout() {
     this.loading = true;
     
     try {
+        // Достаем данные из Telegram
+        const tgUser = window.tg?.initDataUnsafe?.user;
+        const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
+
         // 2. СНИЖЕНИЕ ОСТАТКОВ В FIREBASE
         for (let item of this.cart) {
             const pRef = window.fb.doc(window.db, "products", item.id);
@@ -1969,23 +1973,19 @@ async checkout() {
             
             if (pSnap.exists()) {
                 let d = pSnap.data();
-                const sz = String(item.selSize || item.size); // Приводим к строке
+                const sz = String(item.selSize || item.size);
                 const qty = Number(item.qty || 1);
 
-                // Если у товара есть варианты (цвета)
                 if (d.variants && d.variants.length > 0) {
                     let updatedVariants = [...d.variants];
-                    // Ищем нужный цвет в массиве вариантов
                     let vIdx = updatedVariants.findIndex(v => v.color === (item.selColor || item.color));
                     
                     if (vIdx > -1) {
                         let targetVariant = updatedVariants[vIdx];
-                        // Проверяем наличие поля stocks или stock
                         let currentStocks = targetVariant.stocks || targetVariant.stock || {};
                         
                         if (currentStocks[sz] !== undefined) {
                             currentStocks[sz] = Math.max(0, Number(currentStocks[sz]) - qty);
-                            // Обновляем весь массив вариантов в документе
                             await window.fb.updateDoc(pRef, { variants: updatedVariants });
                         }
                     }
@@ -1993,8 +1993,9 @@ async checkout() {
             }
         }
 
-        // 3. ПОДГОТОВКА ДАННЫХ ДЛЯ ПАЙТОН-БОТА
         const finalTotal = this.total(); 
+
+        // 3. ПОДГОТОВКА ДАННЫХ (совместимо с твоим Python)
         const orderData = {
             order_id: Math.floor(1000 + Math.random() * 9000),
             customer_name: this.form.name,
@@ -2002,7 +2003,6 @@ async checkout() {
             address: this.address,
             delivery_type: 'доставка',
             delivery_price: 200,
-            // Массив товаров для бота
             items: this.cart.map(i => ({
                 id: i.id,
                 title: i.title,
@@ -2014,22 +2014,25 @@ async checkout() {
             order_total: finalTotal, 
             status: 'Новый',
             createdAt: Date.now(),
-            // СТРУКТУРА ДЛЯ ТВОЕГО ПАЙТОН СКРИПТА
             user: {
-                id: window.tg?.initDataUnsafe?.user?.id || 0
+                id: tgUser?.id || 0,
+                username: username // Сохраняем ник в базу
             }
         };
 
         // 4. СОХРАНЕНИЕ В БАЗУ
         await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
         
-        // 5. УВЕДОМЛЕНИЕ АДМИНА (через TOKEN из твоего Python-файла)
+        // 5. УВЕДОМЛЕНИЕ АДМИНА
         const botToken = '8313765701:AAG4pb1Pr351VLYTfUuuCzumMk6y96E_mdQ';
         const adminId = 387881523; 
         
         let itemsText = orderData.items.map(i => `• ${i.title} (${i.color}, ${i.size}) x${i.count}`).join('\n');
+        
+        // Добавляем ник в сообщение админу
         let adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
-                       `👤 Клиент: ${orderData.customer_name}\n` +
+                       `👤 Клиент: ${orderData.customer_name} (${username})\n` +
+                       `📞 Тел: ${orderData.customer_phone}\n` +
                        `📍 Адрес: ${orderData.address}\n\n` +
                        `📋 Состав:\n${itemsText}\n\n` +
                        `💰 Итого: *${finalTotal} ₽*`;
@@ -2042,7 +2045,6 @@ async checkout() {
 
         alert(`Заказ #${orderData.order_id} оформлен!`);
         
-        // Очистка
         this.cart = [];
         this.saveCart();
         this.tab = 'catalog'; 
@@ -2055,65 +2057,108 @@ async checkout() {
     }
 },
 // Метод для кнопок "В пути" и "Готов"
-async updateStatus(order, newStatus) {
-    if (order.status === newStatus) return;
+async checkout() {
+    this.vib();
+    
+    if (!this.form.name || !this.form.phone || !this.address) {
+        return alert("Заполните имя, телефон и адрес доставки!");
+    }
+    if (this.cart.length === 0) return alert("Корзина пуста!");
 
+    this.loading = true;
+    
     try {
-        order.isUpdating = true;
-        const orderRef = window.fb.doc(window.db, "orders", order.id);
-        await window.fb.updateDoc(orderRef, { status: newStatus });
-        
-        // --- БЛОК УВЕДОМЛЕНИЙ ---
-        const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
-        
-        // Создаем список тех, кто получит сообщение
-        const recipients = [];
-        
-        // 1. Добавляем ID клиента
-        const customerId = order.user_id || (order.user ? order.user.id : null);
-        if (customerId) recipients.push(customerId);
-        
-        // 2. Добавляем твои дополнительные ID (админы, менеджеры)
-        const extraIds = [641527014, 387881523]; // ЗАМЕНИ ЭТИ ЦИФРЫ НА НУЖНЫЕ ID
-        extraIds.forEach(id => {
-            if (!recipients.includes(id)) recipients.push(id);
-        });
+        const tgUser = window.tg?.initDataUnsafe?.user;
+        const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
 
-        let message = "";
-        if (newStatus === 'Отправлен') {
-            message = `🚀 *Заказ №${order.order_id} отправлен!*\n\n📦 Статус обновлен на: ${newStatus}`;
-        } else if (newStatus === 'Доставлен') {
-            message = `✅ *Заказ №${order.order_id} доставлен!*\n\nСтатус: ${newStatus}`;
-        }
+        // --- ГЕНЕРАЦИЯ НОВОГО ФОРМАТА НОМЕРА (ДДММ-Рандом) ---
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const randomDigits = Math.floor(1000 + Math.random() * 9000); // 4 случайные цифры
+        const newOrderId = `${day}${month}-${randomDigits}`; 
+        // ----------------------------------------------------
 
-        if (message && recipients.length > 0) {
-            // Рассылаем всем из списка recipients
-            for (const targetId of recipients) {
-                try {
-                    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: targetId,
-                            text: message,
-                            parse_mode: 'Markdown'
-                        })
-                    });
-                    console.log(`Отправлено на ID: ${targetId}`);
-                } catch (err) {
-                    console.error(`Ошибка отправки для ${targetId}:`, err);
-                }
+        // СНИЖЕНИЕ ОСТАТКОВ (оставляем твой код без изменений)
+        for (let item of this.cart) {
+            const pRef = window.fb.doc(window.db, "products", item.id);
+            const pSnap = await window.fb.getDoc(pRef);
+            if (pSnap.exists()) {
+                let d = pSnap.data();
+                const sz = String(item.selSize || item.size);
+                const qty = Number(item.qty || 1);
+                if (d.variants && d.variants.length > 0) {
+                    let vds = [...d.variants];
+                    let vIdx = vds.findIndex(v => v.color === (item.selColor || item.color));
+                    if (vIdx > -1) {
+                        let targetVariant = vds[vIdx];
+                        let currentStocks = targetVariant.stocks || targetVariant.stock || {};
+                        if (currentStocks[sz] !== undefined) {
+                            currentStocks[sz] = Math.max(0, Number(currentStocks[sz]) - qty);
+                            await window.fb.updateDoc(pRef, { variants: vds });
+                        }
+                    }
+                } 
             }
         }
-        // --- КОНЕЦ БЛОКА УВЕДОМЛЕНИЙ ---
 
-        if (window.tg?.HapticFeedback) window.tg.HapticFeedback.impactOccurred('medium');
+        const finalTotal = this.total(); 
 
+        const orderData = {
+            order_id: newOrderId, // Используем новый номер
+            customer_name: this.form.name,
+            customer_phone: this.form.phone,
+            address: this.address,
+            delivery_type: 'доставка',
+            delivery_price: 200,
+            items: this.cart.map(i => ({
+                id: i.id,
+                title: i.title,
+                count: i.qty || 1,
+                color: i.selColor || i.color || '-',
+                size: i.selSize || i.size || '-',
+                price: i.price
+            })),
+            order_total: finalTotal, 
+            status: 'Новый',
+            createdAt: Date.now(),
+            user: {
+                id: tgUser?.id || 0,
+                username: username
+            }
+        };
+
+        await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
+        
+        // УВЕДОМЛЕНИЕ АДМИНА
+        const botToken = '8313765701:AAG4pb1Pr351VLYTfUuuCzumMk6y96E_mdQ';
+        const adminId = 387881523; 
+        let itemsText = orderData.items.map(i => `• ${i.title} (${i.color}, ${i.size}) x${i.count}`).join('\n');
+        
+        let adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
+                       `👤 Клиент: ${orderData.customer_name} (${username})\n` +
+                       `📞 Тел: ${orderData.customer_phone}\n` +
+                       `📍 Адрес: ${orderData.address}\n\n` +
+                       `📋 Состав:\n${itemsText}\n\n` +
+                       `💰 Итого: *${finalTotal} ₽*`;
+
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: adminId, text: adminMsg, parse_mode: 'Markdown' })
+        }).catch(e => console.error("Ошибка:", e));
+
+        alert(`Заказ #${orderData.order_id} оформлен!`);
+        
+        this.cart = [];
+        this.saveCart();
+        this.tab = 'catalog'; 
+        
     } catch (e) {
-        console.error("Ошибка обновления:", e);
-        alert("Ошибка связи с базой.");
+        console.error("Ошибка:", e);
+        alert("Произошла ошибка.");
     } finally {
-        order.isUpdating = false;
+        this.loading = false;
     }
 },
 handleFiles(e) {
@@ -2153,14 +2198,18 @@ async deleteOrder(docId) {
 
        printOrder(o) {
     try {
-        this.vib(); // Если есть функция вибрации
+        if (this.vib) this.vib(); 
+        
+        // Форматирование даты
         const date = o.createdAt ? (o.createdAt.seconds ? new Date(o.createdAt.seconds * 1000).toLocaleString('ru-RU') : new Date(o.createdAt).toLocaleString('ru-RU')) : '---';
         
-        // 1. ОПРЕДЕЛЯЕМ МАССИВ ТОВАРОВ (важно брать из заказа 'o', а не из 'this.cart')
+        // Ник клиента (из объекта user)
+        const username = o.user && o.user.username ? `(${o.user.username})` : '';
+
+        // 1. Формируем список товаров
         const itemsList = o.items || []; 
         let itemsHtml = '';
 
-        // 2. ГЕНЕРИРУЕМ HTML ТОВАРОВ
         if (Array.isArray(itemsList) && itemsList.length > 0) {
             itemsHtml = itemsList.map(i => `
                 <tr style="border-bottom: 2px solid #f0f0f0;">
@@ -2169,77 +2218,86 @@ async deleteOrder(docId) {
                             ${i.title || 'Товар без названия'}
                         </div>
                         <div style="display: flex; gap: 30px; font-size: 14px; color: #333;">
-                            <span><b>Цвет:</b> ${i.selColor || i.color || '-'}</span>
-                            <span><b>Размер:</b> ${i.selSize || i.size || '-'}</span>
-                            <span><b>Кол-во:</b> ${i.qty || i.count || 1} шт.</span>
+                            <span><b>Цвет:</b> ${i.color || i.selColor || '-'}</span>
+                            <span><b>Размер:</b> ${i.size || i.selSize || '-'}</span>
+                            <span><b>Кол-во:</b> ${i.count || i.qty || 1} шт.</span>
                             <span><b>Цена за ед.:</b> ${i.price || 0} ₽</span>
                         </div>
                     </td>
                     <td style="padding: 20px 0; text-align: right; vertical-align: middle;">
                         <div style="font-weight: 800; font-size: 20px;">
-                            ${(i.price || 0) * (i.qty || i.count || 1)} ₽
+                            ${(i.price || 0) * (i.count || i.qty || 1)} ₽
                         </div>
                     </td>
                 </tr>
             `).join('');
+
+            // ДОБАВЛЯЕМ СТРОКУ ДОСТАВКИ (в том же стиле)
+            itemsHtml += `
+                <tr style="border-bottom: 2px solid #000;">
+                    <td style="padding: 20px 0;">
+                        <div style="font-weight: 800; font-size: 18px; text-transform: uppercase;">ДОСТАВКА КУРЬЕРОМ</div>
+                        <div style="font-size: 14px; color: #888; font-weight: 700;">ФИКСИРОВАННАЯ СТАВКА</div>
+                    </td>
+                    <td style="padding: 20px 0; text-align: right; vertical-align: middle;">
+                        <div style="font-weight: 800; font-size: 20px;">200 ₽</div>
+                    </td>
+                </tr>
+            `;
         } else {
-            // Если массив объектов пуст, используем готовый текст из items_text
-            itemsHtml = `<tr><td colspan="2" style="padding: 40px 0; font-size: 16px; white-space: pre-wrap;">${o.items_text || 'Список товаров не найден'}</td></tr>`;
+            itemsHtml = `<tr><td colspan="2" style="padding: 40px 0; font-size: 16px;">${o.items_text || 'Список товаров пуст'}</td></tr>`;
         }
 
         const win = window.open('', '_blank');
-        if (!win) {
-            alert("Пожалуйста, разрешите всплывающие окна в браузере.");
-            return;
-        }
+        if (!win) return alert("Разрешите всплывающие окна.");
 
         win.document.write(`
             <html>
             <head>
-                <title>Накладная #${o.order_id}</title>
+                <title>Заказ #${o.order_id}</title>
                 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
                 <style>
                     @page { size: A4 portrait; margin: 15mm; }
-                    body { font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; color: #000; }
+                    body { font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; color: #000; background: #fff; }
                     .wrapper { width: 100%; max-width: 210mm; margin: auto; }
                     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 4px solid #000; padding-bottom: 20px; }
-                    .brand h1 { margin: 0; font-size: 35px; font-weight: 800; letter-spacing: -1px; }
-                    .brand p { margin: 0; color: #888; font-weight: 700; font-size: 12px; }
+                    .brand h1 { margin: 0; font-size: 35px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+                    .brand p { margin: 5px 0 0 0; color: #888; font-weight: 700; font-size: 12px; text-transform: uppercase; }
                     .order-info { text-align: right; }
                     .order-info h2 { margin: 0; font-size: 24px; font-weight: 800; }
                     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; }
                     .address-box { border: 2px solid #000; padding: 20px; margin-bottom: 30px; }
                     table { width: 100%; border-collapse: collapse; }
-                    th { text-align: left; text-transform: uppercase; font-size: 12px; color: #888; border-bottom: 1px solid #000; padding-bottom: 10px; }
+                    th { text-align: left; text-transform: uppercase; font-size: 12px; color: #888; border-bottom: 1px solid #000; padding-bottom: 10px; font-weight: 700; }
                     .total-section { margin-top: 50px; text-align: right; border-top: 4px solid #000; padding-top: 20px; }
-                    .total-section h2 { margin: 0; font-size: 45px; font-weight: 800; }
+                    .total-section h2 { margin: 0; font-size: 45px; font-weight: 800; line-height: 1; }
                 </style>
             </head>
             <body>
                 <div class="wrapper">
                     <div class="header">
-                        <div class="brand"><h1>BRATZ</h1><p>ОФИЦИАЛЬНЫЙ ЧЕК ЗАКАЗА</p></div>
+                        <div class="brand"><h1>BRATZ</h1><p>Официальный чек заказа</p></div>
                         <div class="order-info"><h2>ЗАКАЗ #${o.order_id}</h2><p>Дата: ${date}</p></div>
                     </div>
                     <div class="info-grid">
                         <div>
-                            <small style="color:#888; font-weight:700;">ПОКУПАТЕЛЬ</small>
-                            <p style="font-size: 18px; font-weight: 700; margin: 5px 0;">${o.customer_name || 'Не указан'}</p>
-                            <p>${o.customer_phone || '---'}</p>
+                            <small style="color:#888; font-weight:700; text-transform: uppercase; font-size: 10px;">Покупатель</small>
+                            <p style="font-size: 18px; font-weight: 700; margin: 5px 0;">${o.customer_name || 'Не указан'} ${username}</p>
+                            <p style="margin: 0; font-weight: 400;">${o.customer_phone || '---'}</p>
                         </div>
                         <div style="text-align: right;">
-                            <small style="color:#888; font-weight:700;">СПОСОБ ДОСТАВКИ</small>
-                            <p style="font-size: 18px; font-weight: 700; margin: 5px 0;">${o.delivery || 'Стандарт'}</p>
+                            <small style="color:#888; font-weight:700; text-transform: uppercase; font-size: 10px;">Способ доставки</small>
+                            <p style="font-size: 18px; font-weight: 700; margin: 5px 0;">${o.delivery_type || 'Доставка курьером'}</p>
                         </div>
                     </div>
                     <div class="address-box">
-                        <small style="color:#888; font-weight:700;">АДРЕС ДОСТАВКИ:</small>
+                        <small style="color:#888; font-weight:700; text-transform: uppercase; font-size: 10px;">Адрес доставки:</small>
                         <p style="font-size: 22px; font-weight: 800; margin: 10px 0 0 0;">${o.address || 'Не указан'}</p>
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Описание товаров</th>
+                                <th>Описание товаров и услуг</th>
                                 <th style="text-align: right;">Сумма</th>
                             </tr>
                         </thead>
@@ -2248,7 +2306,7 @@ async deleteOrder(docId) {
                         </tbody>
                     </table>
                     <div class="total-section">
-                        <div style="font-weight: 700; color: #888;">ИТОГО К ОПЛАТЕ</div>
+                        <div style="font-weight: 700; color: #888; font-size: 14px; margin-bottom: 5px;">ИТОГО К ОПЛАТЕ (С УЧЕТОМ ДОСТАВКИ)</div>
                         <h2>${o.order_total || 0} ₽</h2>
                     </div>
                 </div>
