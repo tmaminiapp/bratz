@@ -1953,79 +1953,102 @@ async manageCategory(action, id) {
 async checkout() {
     this.vib();
     
+    // 1. Валидация
     if (!this.form.name || !this.form.phone || !this.address) {
         return alert("Заполните имя, телефон и адрес доставки!");
     }
-
     if (this.cart.length === 0) return alert("Корзина пуста!");
 
     this.loading = true;
     
     try {
-        // 1. УМЕНЬШЕНИЕ ОСТАТКОВ
+        // 2. СНИЖЕНИЕ ОСТАТКОВ В FIREBASE
         for (let item of this.cart) {
             const pRef = window.fb.doc(window.db, "products", item.id);
             const pSnap = await window.fb.getDoc(pRef);
             
             if (pSnap.exists()) {
                 let d = pSnap.data();
-                const sz = item.selSize || item.size;
-                const qty = Number(item.count || item.qty || 1);
+                const sz = String(item.selSize || item.size); // Приводим к строке
+                const qty = Number(item.qty || 1);
 
+                // Если у товара есть варианты (цвета)
                 if (d.variants && d.variants.length > 0) {
-                    let vds = [...d.variants];
-                    let vIdx = vds.findIndex(v => v.color === item.selColor || v.color === item.color);
+                    let updatedVariants = [...d.variants];
+                    // Ищем нужный цвет в массиве вариантов
+                    let vIdx = updatedVariants.findIndex(v => v.color === (item.selColor || item.color));
                     
-                    if (vIdx > -1 && vds[vIdx].stocks && vds[vIdx].stocks[sz] !== undefined) {
-                        vds[vIdx].stocks[sz] = Math.max(0, Number(vds[vIdx].stocks[sz]) - qty);
-                        await window.fb.updateDoc(pRef, { variants: vds });
+                    if (vIdx > -1) {
+                        let targetVariant = updatedVariants[vIdx];
+                        // Проверяем наличие поля stocks или stock
+                        let currentStocks = targetVariant.stocks || targetVariant.stock || {};
+                        
+                        if (currentStocks[sz] !== undefined) {
+                            currentStocks[sz] = Math.max(0, Number(currentStocks[sz]) - qty);
+                            // Обновляем весь массив вариантов в документе
+                            await window.fb.updateDoc(pRef, { variants: updatedVariants });
+                        }
                     }
-                } else if (d.stocks && d.stocks[sz] !== undefined) {
-                    let ns = { ...d.stocks };
-                    ns[sz] = Math.max(0, Number(ns[sz]) - qty);
-                    await window.fb.updateDoc(pRef, { stocks: ns });
-                }
+                } 
             }
         }
 
-        // 2. РАСЧЕТ ИТОГОВ
+        // 3. ПОДГОТОВКА ДАННЫХ ДЛЯ ПАЙТОН-БОТА
         const finalTotal = this.total(); 
-        const deliveryCharge = 200; // Фиксировано
-
-        // 3. СОХРАНЕНИЕ ЗАКАЗА
         const orderData = {
             order_id: Math.floor(1000 + Math.random() * 9000),
             customer_name: this.form.name,
             customer_phone: this.form.phone,
             address: this.address,
-            delivery_type: 'доставка', // Всегда доставка
-            delivery_price: deliveryCharge,
+            delivery_type: 'доставка',
+            delivery_price: 200,
+            // Массив товаров для бота
             items: this.cart.map(i => ({
                 id: i.id,
                 title: i.title,
-                count: i.count || i.qty || 1,
+                count: i.qty || 1,
                 color: i.selColor || i.color || '-',
                 size: i.selSize || i.size || '-',
                 price: i.price
             })),
             order_total: finalTotal, 
             status: 'Новый',
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            // СТРУКТУРА ДЛЯ ТВОЕГО ПАЙТОН СКРИПТА
+            user: {
+                id: window.tg?.initDataUnsafe?.user?.id || 0
+            }
         };
 
+        // 4. СОХРАНЕНИЕ В БАЗУ
         await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
         
-        alert(`Заказ оформлен! Итого к оплате (с учетом доставки): ${finalTotal} ₽`);
+        // 5. УВЕДОМЛЕНИЕ АДМИНА (через TOKEN из твоего Python-файла)
+        const botToken = '8313765701:AAG4pb1Pr351VLYTfUuuCzumMk6y96E_mdQ';
+        const adminId = 387881523; 
         
-        // ОЧИСТКА
+        let itemsText = orderData.items.map(i => `• ${i.title} (${i.color}, ${i.size}) x${i.count}`).join('\n');
+        let adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
+                       `👤 Клиент: ${orderData.customer_name}\n` +
+                       `📍 Адрес: ${orderData.address}\n\n` +
+                       `📋 Состав:\n${itemsText}\n\n` +
+                       `💰 Итого: *${finalTotal} ₽*`;
+
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: adminId, text: adminMsg, parse_mode: 'Markdown' })
+        }).catch(e => console.error("Ошибка уведомления:", e));
+
+        alert(`Заказ #${orderData.order_id} оформлен!`);
+        
+        // Очистка
         this.cart = [];
-        this.deliv = 'ДОСТАВКА'; // Сбрасываем на доставку по умолчанию
-        localStorage.removeItem('naran_cart_v3');
         this.saveCart();
         this.tab = 'catalog'; 
         
     } catch (e) {
-        console.error("Ошибка при оформлении:", e);
+        console.error("Ошибка:", e);
         alert("Произошла ошибка при оформлении.");
     } finally {
         this.loading = false;
