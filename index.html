@@ -750,8 +750,9 @@ button, a, div[role="button"] {
             <div v-if="showProductList" style="padding: 5px; max-height: 400px; overflow-y: auto; background: #fff;">
                 <div v-for="p in products" :key="p.id" style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;" :style="{ opacity: p.hidden ? '0.5' : '1' }">
                     <div style="display: flex; gap: 15px; align-items: start;">
-                       <img :src="p.variants && p.variants[0] && p.variants[0].images ? p.variants[0].images[0] : (p.images ? p.images[0] : '')" 
-     loading="lazy">
+                    <img :src="p.variants && p.variants[0]?.images?.length ? p.variants[0].images[0] : (p.images?.length ? p.images[0] : '')" 
+     loading="lazy" 
+     style="width: 50px; height: 65px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f0f0f0;">
                         <div style="flex: 1;">
                             <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">{{ p.title || p.name }} <span v-if="p.hidden" style="color: red; font-size: 10px;">(СКРЫТ)</span></div>
                             <div style="font-size: 11px; color: #8e8e93; margin-bottom: 8px;">Цвет: {{ p.color || '—' }}</div>
@@ -1855,17 +1856,22 @@ async updateStatus(order, newStatus) {
         
         // --- БЛОК УВЕДОМЛЕНИЯ КЛИЕНТА ---
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
-        const customerId = order.user ? order.user.id : null;
+    
+    // 1. ПРОВЕРКА: берем ID пользователя. 
+    // В Telegram WebApp ID пользователя обычно лежит в order.user_id или order.chat_id
+    const customerId = order.user_id || (order.user ? order.user.id : null);
 
-        if (customerId && customerId !== 0) {
-            let message = "";
-            if (newStatus === 'Отправлен') {
-                message = `🚀 *Ваш заказ №${order.order_id} отправлен!*\n📦 Мы передали его в службу доставки. Скоро он будет у вас! Спасибо за покупку!`;
-            } else if (newStatus === 'Доставлен') {
-                message = `✅ *Ваш заказ №${order.order_id} доставлен!*\n📦 Будем рады вашему отзыву!`;
-            }
+    if (customerId && customerId !== 0) {
+        let message = "";
+        
+        if (newStatus === 'Отправлен') {
+            message = `🚀 *Ваш заказ №${order.order_id} отправлен!*\n\n📦 Мы передали его в службу доставки. Скоро он будет у вас! Спасибо за покупку!`;
+        } else if (newStatus === 'Доставлен') {
+            message = `✅ *Ваш заказ №${order.order_id} доставлен!*\n\n📦 Будем рады вашему отзыву! ✨`;
+        }
 
             if (message) {
+            try {
                 await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1875,7 +1881,11 @@ async updateStatus(order, newStatus) {
                         parse_mode: 'Markdown'
                     })
                 });
+                console.log(`Уведомление отправлено клиенту: ${customerId}`);
+            } catch (err) {
+                console.error("Ошибка при отправке уведомления клиенту:", err);
             }
+        }
         }
         // --- КОНЕЦ БЛОКА УВЕДОМЛЕНИЯ ---
 
