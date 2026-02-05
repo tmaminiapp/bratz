@@ -1796,7 +1796,7 @@ async manageCategory(action, id) {
         // 7. Отправляем в Telegram
         const botToken = '8546116032:AAGHzNWm8ueB5ynxIgzf6OLM7EdbA2geEbk';
         // ПРАВИЛЬНО
-        const adminIds = [1485431104, 5189266423];
+        const adminIds = [387881523, 5189266423];
 
         // Экранируем никнейм, чтобы Markdown не выдавал ошибку
         const safeUsername = this.user.username ? this.user.username.replace(/_/g, '\\_') : 'не указан';
@@ -2117,7 +2117,7 @@ updateChart() {
     tg.expand();
     
     // Получаем данные пользователя
-    this.user = tg.initDataUnsafe?.user || { id: 1485431104, first_name: 'Admin_Test' };
+    this.user = tg.initDataUnsafe?.user || { id: 387881523, first_name: 'Admin_Test' };
     
     // Принудительная проверка админа
     this.isAdmin = this.adminIds.includes(Number(this.user.id));
