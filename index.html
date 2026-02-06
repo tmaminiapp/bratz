@@ -15,10 +15,10 @@
     <style>
         * { 
     box-sizing: border-box; 
+    /* Запрещает синюю подсветку для ВСЕХ элементов на мобильных */
     -webkit-tap-highlight-color: transparent !important; 
     -webkit-touch-callout: none;
-    outline: none !important;
-}
+         }
 
 button, a, div[role="button"] {
     outline: none !important;
@@ -73,6 +73,14 @@ button, a, div[role="button"] {
     transition: transform 0.1s;
 }
 
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            font-family: 'Montserrat', sans-serif; 
+            color: var(--dark); 
+            overflow-x: hidden; 
+        }
 .disabled-size {
     opacity: 0.3;
     text-decoration: line-through;
