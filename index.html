@@ -1008,9 +1008,6 @@ button, a, div[role="button"] {
             <div class="price" style="font-size: 20px; font-weight: 800;">{{ selP.price }} ₽</div>
         </div>
         
-        <p style="font-size: 13px; line-height: 1.6; margin: 15px 0; color: #444;">{{ selP.desc }}</p>
-        
-      
         
         <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
             <div v-for="(v, idx) in selP.variants" :key="idx" 
@@ -1022,9 +1019,7 @@ button, a, div[role="button"] {
             </div>
         </div>
 
-        <div style="font-size: 10px; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px;">
-            РАЗМЕР: {{ selP.tempSize || 'НЕ ВЫБРАН' }}
-        </div>
+        
 
        <div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
     <template v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || {})" :key="sz">
