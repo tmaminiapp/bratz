@@ -13,69 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-/* Добавьте этот блок в <style> */
-:root {
-    --safe-area-top: env(safe-area-inset-top, 0px);
-    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-}
 
-* {
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: none !important;
-}
-
-body {
-    position: fixed !important;
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    top: 0 !important;
-    left: 0 !important;
-    background: var(--bg) !important;
-    font-family: 'Montserrat', sans-serif !important;
-}
-
-#app {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: smooth !important;
-    padding-top: var(--safe-area-top) !important;
-    padding-bottom: var(--safe-area-bottom) !important;
-}
-
-/* Исправить контейнеры с прокруткой */
-.container {
-    min-height: calc(100vh - 100px) !important;
-    padding-bottom: 100px !important;
-    overflow-y: visible !important;
-}
-
-/* Фиксируем навигацию снизу */
-.bottom-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 1000 !important;
-    background: #fff !important;
-    padding-bottom: var(--safe-area-bottom) !important;
-}
-
-/* Фиксируем хедер сверху */
-.header {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 100 !important;
-    background: #fff !important;
-    padding-top: var(--safe-area-top) !important;
-}
         :root {
             --bg: #ffffff;
             --dark: #000000;
@@ -757,11 +695,12 @@ button, a, div[role="button"] {
 </div> </div>   <div v-if="tab === 'profile'">
     <div style="text-align:center; margin-bottom: 30px;">
         <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
-        <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">
+         <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">
             {{ isAdmin ? 'АДМИНИСТРАТОР' : (user.first_name || 'Клиент') }}
         </div>
+
         
-       <button 
+         <button 
             v-if="!isAdmin"
             @click="openSupport" 
             class="cat-tab" 
@@ -2402,7 +2341,6 @@ async deleteOrder(docId) {
     }
 },
 
-
        printOrder(o) {
     try {
         if (this.vib) this.vib(); 
@@ -2604,15 +2542,7 @@ updateChart() {
     mounted() {
     tg.ready();
     tg.expand();
-    this.fixScrolling();
     
-    // Обработчик для предотвращения "дерганий"
-    window.addEventListener('touchmove', this.preventExtraScroll, { passive: false });
-    window.addEventListener('scroll', this.lockScroll, { passive: false });
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
     // Получаем данные пользователя
     this.user = tg.initDataUnsafe?.user || { id: 387881523, first_name: 'Admin_Test' };
     
