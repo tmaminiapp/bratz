@@ -1174,7 +1174,7 @@ Vue.createApp({
                     color: '', 
                     images: [], 
                     // Здесь используем STOCKS с буквой S
-                    stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 },
+                    stocks: { '42': 0, '44': 0, '46': 0, '48': 0 },
                     isUploading: false 
                 }
             ]
@@ -1611,7 +1611,7 @@ addVariant() {
         color: '',
         images: [],
         // Сразу создаем пустой объект для остатков, чтобы Vue его видел
-        stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } 
+        stocks: { '42': 0, '44': 0, '46': 0, '48': 0 } 
     });
 },
 getSizes(p) {
@@ -1639,7 +1639,7 @@ async uploadVariantImages(e, vIdx) {
         this.newP.variants[vIdx] = {
             color: '',
             images: [],
-            stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 }
+            stocks: { '42': 0, '44': 0, '46': 0, '48': 0 }
         };
     }
 
@@ -2081,7 +2081,7 @@ async saveProduct() {
         isNew: !!cleanItem.isNew,
         hiddenSizes: cleanItem.hiddenSizes || [], // Важно подгружать, чтобы не стереть!
         variants: cleanItem.variants || [
-            { color: 'Стандарт', images: cleanItem.images || [], stocks: { '42': 0, '44': 0, '46': 0, '48': 0, '50': 0 } }
+            { color: 'Стандарт', images: cleanItem.images || [], stocks: { '42': 0, '44': 0, '46': 0, '48': 0 } }
         ]
     };
     
