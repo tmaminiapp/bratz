@@ -13,16 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        * { 
-    box-sizing: border-box; 
-    /* Запрещает синюю подсветку для ВСЕХ элементов на мобильных */
-    -webkit-tap-highlight-color: transparent !important; 
-    -webkit-touch-callout: none;
-         }
 
-button, a, div[role="button"] {
-    outline: none !important;
-         }
         :root {
             --bg: #ffffff;
             --dark: #000000;
@@ -31,6 +22,17 @@ button, a, div[role="button"] {
             --accent: #000000;
             --red: #ff3b30;
         }
+
+button, a, div[role="button"] {
+    outline: none !important;
+         }
+
+        * { 
+    box-sizing: border-box; 
+    /* Запрещает синюю подсветку для ВСЕХ элементов на мобильных */
+    -webkit-tap-highlight-color: transparent !important; 
+    -webkit-touch-callout: none;
+         }
         
     /* Общие стили для кнопок размеров */
 .size-chip { 
@@ -452,17 +454,19 @@ button, a, div[role="button"] {
                 <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
             </div>
             
-           <div class="card-sizes" v-if="p.variants && p.variants[0]">
-    <div v-for="(qty, sz) in (p.variants[0].stocks || p.variants[0].stocks)" 
-         :key="sz"
-         @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
-         :class="['size-chip', {
-            /* Подсвечиваем либо то, что выбрали, либо первый доступный если еще ничего не выбрано */
-            active: p.tempSize === sz,
-            disabled: qty <= 0
-         }]">
-        {{ sz }}
-    </div>
+           <div class="card-sizes" v-if="p && p.variants && p.variants[0]">
+    <template v-for="(qty, sz) in p.variants[0].stocks" :key="sz">
+        
+        <div v-if="p && !(p.hiddenSizes || []).includes(String(sz))"
+             @click.stop="p && qty > 0 ? (p.tempSize = sz, vib()) : null"
+             :class="['size-chip', {
+                active: p && p.tempSize === sz,
+                disabled: qty <= 0
+             }]">
+            {{ sz }}
+        </div>
+        
+    </template>
 </div>
             <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
                 В КОРЗИНУ
@@ -513,7 +517,6 @@ button, a, div[role="button"] {
                 <div class="card-sizes" v-if="p.variants && p.variants[0]">
     <div v-for="(qty, sz) in p.variants[0].stocks" 
          :key="sz"
-         /* ПРОВЕРКА: показываем только если размер НЕ в списке скрытых */
          v-if="!(p.hiddenSizes || []).includes(String(sz))"
          @click.stop="qty > 0 ? (p.tempSize = sz, vib('light')) : null"
          :class="['size-chip', {
@@ -608,13 +611,10 @@ button, a, div[role="button"] {
         </div>
 
         <button class="btn-black" style="width:100%; height:60px; font-size: 14px;" @click="checkout">
-            ОФОРМИТЬ ЗАКАЗ — {{ total().toLocaleString() }} ₽
+            ОФОРМИТЬ ЗАКАЗ
         </button>
     </div>
-</div>
-    </div>
-
-   <div v-if="tab === 'profile'">
+</div> </div>   <div v-if="tab === 'profile'">
     <div style="text-align:center; margin-bottom: 30px;">
         <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
         <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">{{user.first_name || 'Клиент'}}</div>
@@ -874,7 +874,7 @@ button, a, div[role="button"] {
     </div> </div> </main>
 
   <div v-if="selP" class="modal" style="z-index: 5000;">
-    <button class="close-modal" @click="selP = null">✕</button>
+  <button class="close-modal" @click="closeProduct">✕</button>
 
     <div class="slider-wrapper" style="aspect-ratio: 1/1.2; position: relative; background: #f9f9f9;">
         <template v-if="selP.variants && selP.variants[currentVariantIndex]">
@@ -1283,13 +1283,24 @@ getStocksObject(p) {
     return p.stocks;
 },
 
-        handleScroll(e, p) {
-            if (!p) return;
-            const idx = Math.round(e.target.scrollLeft / e.target.offsetWidth);
-            p.aIdx = idx;
-        },
+  handleScroll(e, p) {
+    // Если p равен null или undefined, немедленно выходим из функции
+    if (!p) return; 
 
+    try {
+        const target = e.target;
+        if (!target) return;
 
+        const width = target.offsetWidth;
+        if (width > 0) {
+            // Записываем индекс только если p еще существует
+            p.aIdx = Math.round(target.scrollLeft / width);
+        }
+    } catch (err) {
+        // Если ошибка всё же случилась, ловим её здесь, а не даем экрану побелеть
+        console.error("Scroll error caught");
+    }
+},
      openProduct(p) {
         this.openedProduct = p;
     this.selVariantIdx = 0; // Сбрасываем на первый цвет при открытии
@@ -1352,90 +1363,49 @@ getStocksObject(p) {
             localStorage.setItem('naran_favs_v3', JSON.stringify(this.favorites));
         },
 
-    addToCart(p) {
+   addToCart(p) {
     if (!p) return;
-
     try {
-        // 1. ОПРЕДЕЛЯЕМ ВАРИАНТ (ЦВЕТ)
-        // Гарантируем, что индекс — это число, чтобы избежать ошибок с массивом
         const vIdx = Number(this.currentVariantIndex) || 0;
-        const variant = (p.variants && p.variants[vIdx]) ? p.variants[vIdx] : null;
+        const variant = p.variants?.[vIdx];
+        if (!variant) return alert("Выберите цвет");
 
-        if (!variant) {
-            alert("Ошибка: выберите цвет товара");
-            return;
-        }
+        const stocks = variant.stock || variant.stocks || {};
+        const finalSize = p.tempSize || Object.keys(stocks).find(sz => stocks[sz] > 0);
 
-        // ИСПРАВЛЕНО: Проверяем оба варианта написания (stock и stocks) без дублей
-        const currentStock = variant.stock || variant.stocks || {};
+        if (!finalSize || !stocks[finalSize]) return alert("Размера нет в наличии");
 
-        // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
-        let finalSize = p.tempSize;
-        
-        // Если размер не выбран, берем первый доступный из объекта stock
-        if (!finalSize) {
-            finalSize = Object.keys(currentStock).find(sz => currentStock[sz] > 0);
-        }
-
-        // Проверка: есть ли такой размер и не пуст ли склад
-        if (!finalSize || !currentStock[finalSize] || currentStock[finalSize] <= 0) {
-            alert('Этого размера сейчас нет в наличии');
-            return;
-        }
-
-        // 3. УНИКАЛЬНЫЙ ID (ID + Цвет + Размер)
-        // Заменяем пробелы на подчеркивания в ID для стабильности ссылок
-        const finalColor = variant.color || 'Стандарт';
-        const cartId = `${p.id}_${finalColor}_${finalSize}`.replace(/\s+/g, '_');
-
-        // 4. ОБНОВЛЕНИЕ ИЛИ ДОБАВЛЕНИЕ
+        const cartId = `${p.id}_${variant.color}_${finalSize}`.replace(/\s+/g, '_');
         const exist = this.cart.find(i => i.cartId === cartId);
 
         if (exist) {
-            if (exist.qty < currentStock[finalSize]) {
-                exist.qty++;
-            } else {
-                alert('Достигнут лимит остатка для этого размера');
-                return;
-            }
+            if (exist.qty < stocks[finalSize]) exist.qty++;
+            else return alert("Лимит остатка");
         } else {
             this.cart.push({
                 id: p.id,
                 cartId: cartId,
-                title: p.title || 'Товар',
-                price: Number(p.price) || 0,
-                // Безопасно берем фото именно этого варианта
-                image: (variant.images && variant.images[0]) ? variant.images[0] : (p.images ? p.images[0] : ''),
+                title: p.title,
+                price: Number(p.price),
+                image: variant.images?.[0] || p.images?.[0],
                 selSize: finalSize,
-                selColor: finalColor,
+                selColor: variant.color,
                 qty: 1
             });
         }
-        
-        // 5. ЭФФЕКТЫ И СОХРАНЕНИЕ
+
         this.saveCart();
-        
-        // Тактильный отклик Telegram
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
 
         this.showCartNotify = true;
-        setTimeout(() => { this.showCartNotify = false; }, 2000);
-
-        // 6. ЗАКРЫТИЕ МОДАЛКИ И СБРОС ВЫБОРА
         setTimeout(() => {
-            this.selP = null;
-            // Сбрасываем временный размер у объекта, чтобы при следующем открытии он был чист
-            if (p) p.tempSize = null; 
-            // Сбрасываем выбор цвета на первый по умолчанию
-            this.currentVariantIndex = 0; 
-        }, 300);
+    this.closeProduct(); // Используем наш новый безопасный метод
+}, 300);
 
     } catch (err) {
-        // Защита от "белого экрана": если внутри функции что-то пойдет не так,
-        // ошибка выведется в консоль, а не "уронит" всё приложение.
-        console.error("Ошибка в addToCart:", err);
+        console.error("Cart error:", err);
     }
 },
 // Добавление нового блока цвета
@@ -2070,14 +2040,17 @@ async checkout() {
     }
 },
 closeProduct() {
-    this.vib(); // Вибрация при закрытии
-    this.showProduct = false;
-    // Очищаем выбранный товар не сразу, а через мгновение, 
-    // чтобы Vue успел закрыть окно без ошибок
+    this.vib(); // ваша вибрация
+    
+    // 1. Сначала возвращаем скролл основной странице
+    document.body.style.overflow = '';
+    
+    // 2. Обнуляем данные с микро-задержкой. 
+    // Это дает Vue время "закрыть" все активные процессы слайдера
     setTimeout(() => {
         this.selP = null;
-    }, 100);
-    document.body.style.overflow = ''; // Возвращаем прокрутку
+        this.currentVariantIndex = 0;
+    }, 50); 
 },
 async updateStatus(order, newStatus) {
     if (order.status === newStatus) return;
