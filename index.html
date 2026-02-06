@@ -324,10 +324,19 @@ button, a, div[role="button"] {
     transform: scale(0.95) !important;
     background: rgba(255, 255, 255, 0.85) !important;
 }
-        .size-grid { 
-    display: flex; 
-    gap: 10px; 
-    margin: 15px 0; 
+        .size-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 30px !important;
+}
+
+/* Или для мобильных */
+@media (max-width: 480px) {
+    .size-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 6px !important;
+    }
 }
 
 .size-btn { 
@@ -848,7 +857,7 @@ button, a, div[role="button"] {
         <div class="field">
             <label>ОСТАТКИ ПО РАЗМЕРАМ</label>
             <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                <div v-for="sz in ['42', '44', '46', '48', '50']" :key="sz" style="text-align: center;">
+                <div v-for="sz in ['42', '44', '46', '48']" :key="sz" style="text-align: center;">
                     <div style="font-size: 10px;">{{sz}}</div>
                     <input type="number" 
                            v-model.number="v.stocks[sz]" 
@@ -1026,7 +1035,7 @@ button, a, div[role="button"] {
 
         
 
-       <div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
+       <div class="size-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 30px;">
     <template v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || {})" :key="sz">
         
         <button v-if="!(selP.hiddenSizes || []).includes(String(sz).trim())"
