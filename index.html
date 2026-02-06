@@ -1352,78 +1352,91 @@ getStocksObject(p) {
             localStorage.setItem('naran_favs_v3', JSON.stringify(this.favorites));
         },
 
-     addToCart(p) {
+    addToCart(p) {
     if (!p) return;
 
-    // 1. ОПРЕДЕЛЯЕМ ВАРИАНТ
-    // Используем currentVariantIndex (убедись, что он есть в data)
-    const vIdx = this.currentVariantIndex || 0;
-    const variant = p.variants && p.variants[vIdx] ? p.variants[vIdx] : null;
+    try {
+        // 1. ОПРЕДЕЛЯЕМ ВАРИАНТ (ЦВЕТ)
+        // Гарантируем, что индекс — это число, чтобы избежать ошибок с массивом
+        const vIdx = Number(this.currentVariantIndex) || 0;
+        const variant = (p.variants && p.variants[vIdx]) ? p.variants[vIdx] : null;
 
-    if (!variant) {
-        alert("Ошибка: вариант товара не найден");
-        return;
-    }
-
-    // Универсальный доступ к остаткам (проверяем и stock, и stocks)
-    const currentStock = variant.stocks || variant.stocks || {};
-
-    // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
-    let finalSize = p.tempSize;
-    
-    // Если размер не выбран вручную, ищем первый доступный
-    if (!finalSize) {
-        finalSize = Object.keys(currentStock).find(sz => currentStock[sz] > 0);
-    }
-
-    // Проверка: есть ли вообще такой размер и не 0 ли там
-    if (!finalSize || !currentStock[finalSize] || currentStock[finalSize] <= 0) {
-        alert('Этого размера нет в наличии');
-        return;
-    }
-
-    // 3. УНИКАЛЬНЫЙ ID (ID + Цвет + Размер)
-    const finalColor = variant.color || 'Стандарт';
-    const cartId = `${p.id}_${finalColor}_${finalSize}`;
-
-    // 4. ОБНОВЛЕНИЕ ИЛИ ДОБАВЛЕНИЕ
-    const exist = this.cart.find(i => i.cartId === cartId);
-
-    if (exist) {
-        if (exist.qty < currentStock[finalSize]) {
-            exist.qty++;
-        } else {
-            alert('Достигнут лимит остатка');
+        if (!variant) {
+            alert("Ошибка: выберите цвет товара");
             return;
         }
-    } else {
-        this.cart.push({
-            id: p.id,
-            cartId: cartId,
-            title: p.title,
-            price: p.price,
-            image: (variant.images && variant.images[0]) ? variant.images[0] : (p.images ? p.images[0] : ''),
-            selSize: finalSize,
-            selColor: finalColor,
-            qty: 1
-        });
-    }
-    
-    // 5. ЭФФЕКТЫ И ЗАКРЫТИЕ
-    this.saveCart();
-    
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-    }
 
-    this.showCartNotify = true;
-    setTimeout(() => { this.showCartNotify = false; }, 2000);
+        // ИСПРАВЛЕНО: Проверяем оба варианта написания (stock и stocks) без дублей
+        const currentStock = variant.stock || variant.stocks || {};
 
-    // Плавно закрываем модалку
-    setTimeout(() => {
-        this.selP = null;
-        p.tempSize = null; 
-    }, 300);
+        // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
+        let finalSize = p.tempSize;
+        
+        // Если размер не выбран, берем первый доступный из объекта stock
+        if (!finalSize) {
+            finalSize = Object.keys(currentStock).find(sz => currentStock[sz] > 0);
+        }
+
+        // Проверка: есть ли такой размер и не пуст ли склад
+        if (!finalSize || !currentStock[finalSize] || currentStock[finalSize] <= 0) {
+            alert('Этого размера сейчас нет в наличии');
+            return;
+        }
+
+        // 3. УНИКАЛЬНЫЙ ID (ID + Цвет + Размер)
+        // Заменяем пробелы на подчеркивания в ID для стабильности ссылок
+        const finalColor = variant.color || 'Стандарт';
+        const cartId = `${p.id}_${finalColor}_${finalSize}`.replace(/\s+/g, '_');
+
+        // 4. ОБНОВЛЕНИЕ ИЛИ ДОБАВЛЕНИЕ
+        const exist = this.cart.find(i => i.cartId === cartId);
+
+        if (exist) {
+            if (exist.qty < currentStock[finalSize]) {
+                exist.qty++;
+            } else {
+                alert('Достигнут лимит остатка для этого размера');
+                return;
+            }
+        } else {
+            this.cart.push({
+                id: p.id,
+                cartId: cartId,
+                title: p.title || 'Товар',
+                price: Number(p.price) || 0,
+                // Безопасно берем фото именно этого варианта
+                image: (variant.images && variant.images[0]) ? variant.images[0] : (p.images ? p.images[0] : ''),
+                selSize: finalSize,
+                selColor: finalColor,
+                qty: 1
+            });
+        }
+        
+        // 5. ЭФФЕКТЫ И СОХРАНЕНИЕ
+        this.saveCart();
+        
+        // Тактильный отклик Telegram
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+
+        this.showCartNotify = true;
+        setTimeout(() => { this.showCartNotify = false; }, 2000);
+
+        // 6. ЗАКРЫТИЕ МОДАЛКИ И СБРОС ВЫБОРА
+        setTimeout(() => {
+            this.selP = null;
+            // Сбрасываем временный размер у объекта, чтобы при следующем открытии он был чист
+            if (p) p.tempSize = null; 
+            // Сбрасываем выбор цвета на первый по умолчанию
+            this.currentVariantIndex = 0; 
+        }, 300);
+
+    } catch (err) {
+        // Защита от "белого экрана": если внутри функции что-то пойдет не так,
+        // ошибка выведется в консоль, а не "уронит" всё приложение.
+        console.error("Ошибка в addToCart:", err);
+    }
 },
 // Добавление нового блока цвета
 addVariant() {
@@ -2055,6 +2068,16 @@ async checkout() {
     } finally {
         this.loading = false;
     }
+},
+closeProduct() {
+    this.vib(); // Вибрация при закрытии
+    this.showProduct = false;
+    // Очищаем выбранный товар не сразу, а через мгновение, 
+    // чтобы Vue успел закрыть окно без ошибок
+    setTimeout(() => {
+        this.selectedProduct = null;
+    }, 100);
+    document.body.style.overflow = ''; // Возвращаем прокрутку
 },
 async updateStatus(order, newStatus) {
     if (order.status === newStatus) return;
