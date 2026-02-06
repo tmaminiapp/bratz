@@ -13,7 +13,69 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+/* Добавьте этот блок в <style> */
+:root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
 
+* {
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: none !important;
+}
+
+body {
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    background: var(--bg) !important;
+    font-family: 'Montserrat', sans-serif !important;
+}
+
+#app {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    padding-top: var(--safe-area-top) !important;
+    padding-bottom: var(--safe-area-bottom) !important;
+}
+
+/* Исправить контейнеры с прокруткой */
+.container {
+    min-height: calc(100vh - 100px) !important;
+    padding-bottom: 100px !important;
+    overflow-y: visible !important;
+}
+
+/* Фиксируем навигацию снизу */
+.bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    background: #fff !important;
+    padding-bottom: var(--safe-area-bottom) !important;
+}
+
+/* Фиксируем хедер сверху */
+.header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background: #fff !important;
+    padding-top: var(--safe-area-top) !important;
+}
         :root {
             --bg: #ffffff;
             --dark: #000000;
@@ -221,6 +283,19 @@ button, a, div[role="button"] {
     display: block !important;
     stroke: #000 !important;
 }
+/* Базовые стили для стабильного списка */
+.stable-scroll-container {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    background: #fff !important;
+}
+
+/* Уберите лишние отступы у админ-секции */
+.admin-section {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
 /* Маленькие превью фото */
 .preview-container {
     display: flex;
@@ -262,23 +337,41 @@ button, a, div[role="button"] {
 
         /* Modal Product View */
         .modal { position: fixed; inset: 0; background: #fff; z-index: 2000; overflow-y: auto; padding-bottom: 50px; }
-       .close-modal { 
-    position: fixed; 
-    top: 15px; 
-    right: 15px; 
-    z-index: 2100; 
-    background: #fff !important; 
-    color: #000 !important; 
-    border: 1px solid #000 !important; 
-    width: 35px; 
-    height: 35px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-weight: 800;
-    /* Убирает синий цвет на телефоне */
-    -webkit-tap-highlight-color: transparent !important; 
+       /* Добавьте в секцию стилей */
+.close-modal {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    z-index: 2100 !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    color: #000 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 400 !important;
+    font-size: 18px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+    -webkit-tap-highlight-color: transparent !important;
     outline: none !important;
+}
+
+.close-modal:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+.close-modal:active {
+    transform: scale(0.95) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
 }
         .size-grid { 
     display: flex; 
@@ -335,7 +428,19 @@ button, a, div[role="button"] {
 .modal[style*="z-index: 5000"].fade-out {
     animation: modalFadeOut 0.2s ease forwards;
 }
-    
+    /* Добавьте в <style> */
+.description-container {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.description-container.collapsed {
+    max-height: 60px;
+}
+
+.description-container.expanded {
+    max-height: 500px;
+}
 
         /* Bottom Nav */
         .bottom-nav { 
@@ -652,8 +757,17 @@ button, a, div[role="button"] {
 </div> </div>   <div v-if="tab === 'profile'">
     <div style="text-align:center; margin-bottom: 30px;">
         <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
-        <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">{{user.first_name || 'Клиент'}}</div>
-        <button @click="openSupport" class="cat-tab" style="margin-top:15px; width:100%;">НАПИСАТЬ В ПОДДЕРЖКУ</button>
+        <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">
+            {{ isAdmin ? 'АДМИНИСТРАТОР' : (user.first_name || 'Клиент') }}
+        </div>
+        
+       <button 
+            v-if="!isAdmin"
+            @click="openSupport" 
+            class="cat-tab" 
+            style="margin-top:15px; width:100%;">
+            НАПИСАТЬ В ПОДДЕРЖКУ
+        </button>
     </div>
 
     <div v-if="!isAdmin">
@@ -983,7 +1097,28 @@ button, a, div[role="button"] {
         
     </template>
 </div>
-
+<div style="position: relative; margin: 20px 0 30px 0; padding-top: 15px; border-top: 1px solid #f0f0f0;">
+        <div 
+            style="font-size: 13px; line-height: 1.5; color: #444; cursor: pointer;"
+            @click="toggleDescription(selP.id)"
+        >
+            <!-- Краткое описание -->
+            <div v-if="expandedDescriptionId !== selP.id">
+                {{ getShortDescription(selP.desc) }}
+                <span style="color: #000; font-weight: 600; font-size: 11px; margin-left: 5px; text-decoration: none;">
+                    Подробнее ›
+                </span>
+            </div>
+            
+            <!-- Полное описание -->
+            <div v-else>
+                {{ selP.desc || 'Описание отсутствует' }}
+                <div style="color: #000; font-weight: 600; font-size: 11px; margin-top: 10px;">
+                    Свернуть ‹
+                </div>
+            </div>
+        </div>
+    </div>
         <div style="display: flex; gap: 10px;">
             <button @click="toggleFav(selP)" style="width: 60px; height: 50px; border: 1px solid #eee; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center;">
                 <svg :fill="isFav(selP) ? '#000' : 'none'" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2">
@@ -1041,6 +1176,7 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+        expandedDescriptionId: null, 
         selVariantIdx: 0, // Индекс выбранного цвета
         deliv: 'доставка', // Значение по умолчанию
         tab: 'catalog',
@@ -1285,7 +1421,24 @@ async updateStock(product, size) {
         console.error("Ошибка при получении списка товаров:", e);
     }
 },
-
+toggleDescription(productId) {
+        if (this.expandedDescriptionId === productId) {
+            this.expandedDescriptionId = null;
+        } else {
+            this.expandedDescriptionId = productId;
+        }
+        this.vib();
+    },
+    
+    getShortDescription(fullDesc) {
+        if (!fullDesc) return 'Нажмите для просмотра описания';
+        
+        // Обрезаем до 80 символов и добавляем "..."
+        if (fullDesc.length > 80) {
+            return fullDesc.substring(0, 80) + '...';
+        }
+        return fullDesc;
+    },
        setTab(id) {
     if (this.vib) this.vib(); 
     this.tab = id; // Используем именно tab, как у вас в data()
@@ -2198,6 +2351,34 @@ handleFiles(e) {
     });
     e.target.value = ''; // Очистка инпута
 },
+calculateListHeight() {
+    // 1. Проверка условий: работает только когда список открыт и пользователь - админ
+    if (this.showProductList && this.isAdmin) {
+        // 2. Ждем обновления DOM
+        this.$nextTick(() => {
+            // 3. Находим элементы в DOM
+            const adminSection = document.querySelector('.admin-section'); // Вся админ-панель
+            const listHeader = document.querySelector('[style*="СПИСОК ТОВАРОВ"]'); // Заголовок списка
+            const listContainer = document.querySelector('.stable-scroll-container'); // Контейнер списка
+            
+            // 4. Если все элементы найдены
+            if (adminSection && listHeader && listContainer) {
+                // 5. Вычисляем высоту заголовка
+                const headerHeight = listHeader.offsetHeight;
+                
+                // 6. Вычисляем доступную высоту:
+                //    window.innerHeight - общая высота окна
+                //    adminSection.getBoundingClientRect().top - расстояние от верха окна до админ-секции
+                //    headerHeight - высота заголовка списка
+                //    -40 - дополнительные отступы (padding/margin)
+                const availableHeight = window.innerHeight - adminSection.getBoundingClientRect().top - headerHeight - 40;
+                
+                // 7. Устанавливаем высоту контейнера (минимум 300px)
+                listContainer.style.height = Math.max(300, availableHeight) + 'px';
+            }
+        });
+    }
+},
 
 async deleteOrder(docId) {
     const confirmText = "⚠️ Удалить заказ навсегда?";
@@ -2220,6 +2401,7 @@ async deleteOrder(docId) {
         if (confirm(confirmText)) proceedDelete();
     }
 },
+
 
        printOrder(o) {
     try {
@@ -2419,10 +2601,18 @@ updateChart() {
     }
 }
     },
-     mounted() {
+    mounted() {
     tg.ready();
     tg.expand();
+    this.fixScrolling();
     
+    // Обработчик для предотвращения "дерганий"
+    window.addEventListener('touchmove', this.preventExtraScroll, { passive: false });
+    window.addEventListener('scroll', this.lockScroll, { passive: false });
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
     // Получаем данные пользователя
     this.user = tg.initDataUnsafe?.user || { id: 387881523, first_name: 'Admin_Test' };
     
@@ -2440,6 +2630,11 @@ updateChart() {
                 window.fb.query(window.fb.collection(window.db, "products"), window.fb.orderBy("createdAt", "desc")), 
                 snap => {
                     this.products = snap.docs.map(doc => ({ id: doc.id, ...doc.data(), aIdx: 0 }));
+                    
+                    // После загрузки товаров вычисляем высоту списка
+                    this.$nextTick(() => {
+                        this.calculateListHeight();
+                    });
                 },
                 err => console.error("Products leak:", err)
             );
@@ -2459,8 +2654,8 @@ updateChart() {
                     snap => {
                         this.allOrders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                         
-                        // Рисуем график только если админ сейчас видит этот экран
-                        if (this.tab === 'admin') {
+                        // Рисуем график только если админ сейчас видит профиль
+                        if (this.tab === 'profile') {
                             this.$nextTick(() => { 
                                 if (typeof this.updateChart === 'function') this.updateChart(); 
                             });
@@ -2490,9 +2685,35 @@ updateChart() {
     // Восстановление адреса из локального хранилища
     const savedAddr = localStorage.getItem('naran_last_addr');
     if (savedAddr) {
-        this.address = savedAddr; // предполагаем, что в data есть поле address
+        this.address = savedAddr;
     }
-}
+    
+    // Инициализация высоты списка товаров
+    this.$nextTick(() => {
+        this.calculateListHeight();
+    });
+    
+    // Обработчик изменения размера окна для адаптивности
+    window.addEventListener('resize', this.calculateListHeight);
+    
+    // Обработчик изменения вкладки для перерасчета высоты
+    const originalSetTab = this.setTab;
+    this.setTab = function(id) {
+        originalSetTab.call(this, id);
+        // При переключении на профиль/админку пересчитываем высоту
+        if (id === 'profile') {
+            this.$nextTick(() => {
+                setTimeout(() => this.calculateListHeight(), 300);
+            });
+        }
+    };
+},
+
+beforeDestroy() {
+    // Убираем обработчик при уничтожении компонента
+    window.removeEventListener('resize', this.calculateListHeight);
+},
+
 }).mount('#app');
 </script>
 
