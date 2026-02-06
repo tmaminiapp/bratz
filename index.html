@@ -31,10 +31,7 @@ button, a, div[role="button"] {
             --accent: #000000;
             --red: #ff3b30;
         }
-        .disabled {
-    pointer-events: none !important;
-    opacity: 0.5;
-}
+        
     /* Общие стили для кнопок размеров */
 .size-chip { 
     /* Ваши текущие стили */
@@ -59,14 +56,18 @@ button, a, div[role="button"] {
     border-color: #000000 !important;
 }
 /* Отключенный размер (серый/перечеркнутый) */
+
+/* Универсальный стиль для всех неактивных элементов (кнопки, чипсы, размеры) */
 .size-chip.disabled, 
-.size-btn.disabled {
+.size-btn.disabled,
+.disabled {
     opacity: 0.4 !important;
-    background: #f2f2f7 !important; /* Используем вашу переменную --light */
-    color: #8e8e93 !important; /* Ваша переменная --gray */
+    background: var(--light) !important; /* #f2f2f7 */
+    color: var(--gray) !important;       /* #8e8e93 */
     border-color: #d1d1d6 !important;
-    pointer-events: none; 
-    text-decoration: line-through;
+    pointer-events: none !important;      /* Полностью блокирует нажатия */
+    text-decoration: line-through;        /* Перечеркивание */
+    cursor: not-allowed;
 }
 .size-chip:active {
     transform: scale(0.92); /* Кнопка будет слегка сжиматься при нажатии */
