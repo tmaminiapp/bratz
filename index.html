@@ -166,9 +166,8 @@ button, a, div[role="button"] {
     background: #000 !important; 
     color: #fff !important; 
     border: none !important; 
-    height: 48px !important; /* Жесткая высота */
+    height: 50px !important; /* Увеличили до 50px */
     flex: 1 !important; 
-    padding: 0 !important;
     font-weight: 700 !important; 
     font-size: 11px !important; 
     text-transform: uppercase !important; 
@@ -177,6 +176,7 @@ button, a, div[role="button"] {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    padding: 0 !important;
 }
 
 .btn-fav { 
@@ -184,24 +184,21 @@ button, a, div[role="button"] {
     border: 1px solid #000 !important; 
     width: 50px !important;  
     height: 50px !important; 
-    
-    /* Эти три строки опустят сердце в центр */
+    box-sizing: border-box !important; /* Чтобы border не раздувал кнопку */
     display: flex !important; 
     align-items: center !important; 
     justify-content: center !important; 
-    
     padding: 0 !important;   
     flex-shrink: 0 !important;
+    border-radius: 2px !important;
 }
 
-/* Размер иконки внутри кнопки */
+/* Иконка внутри избранного */
 .btn-fav svg {
-    margin: 0 auto !important;
     width: 24px !important; 
     height: 24px !important;
     display: block !important;
-    stroke: #000 !important; /* Черный контур */
-    color: #000 !important;
+    stroke: #000 !important;
 }
 /* Маленькие превью фото */
 .preview-container {
@@ -1229,25 +1226,30 @@ async updateStock(product, size) {
             }
         },
        async fetchProducts() {
-        try {
-            // Запрос к коллекции products с сортировкой по дате создания
-            const q = window.fb.query(
-                window.fb.collection(window.db, "products"), 
-                window.fb.orderBy("createdAt", "desc")
-            );
-            const querySnapshot = await window.fb.getDocs(q);
-            
-            const tempProducts = [];
-            querySnapshot.forEach((doc) => {
-                tempProducts.push({ id: doc.id, ...doc.data() });
-            });
-            
-            this.products = tempProducts;
-            console.log("Успешно загружено товаров:", this.products.length);
-        } catch (e) {
-            console.error("Ошибка при получении списка товаров:", e);
-        }
-    },
+    // ПРОВЕРКА: Если fb еще не определен, ждем и пробуем снова
+    if (!window.fb || !window.fb.query) {
+        setTimeout(() => this.fetchProducts(), 100);
+        return;
+    }
+
+    try {
+        const q = window.fb.query(
+            window.fb.collection(window.db, "products"), 
+            window.fb.orderBy("createdAt", "desc")
+        );
+        const querySnapshot = await window.fb.getDocs(q);
+        
+        const tempProducts = [];
+        querySnapshot.forEach((doc) => {
+            tempProducts.push({ id: doc.id, ...doc.data() });
+        });
+        
+        this.products = tempProducts;
+        console.log("Успешно загружено товаров:", this.products.length);
+    } catch (e) {
+        console.error("Ошибка при получении списка товаров:", e);
+    }
+},
 
        setTab(id) {
     if (this.vib) this.vib(); 
@@ -2374,7 +2376,6 @@ updateChart() {
      mounted() {
     tg.ready();
     tg.expand();
-    this.fetchProducts();
     
     // Получаем данные пользователя
     this.user = tg.initDataUnsafe?.user || { id: 387881523, first_name: 'Admin_Test' };
