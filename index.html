@@ -1181,35 +1181,56 @@ Vue.createApp({
 },
     computed: {
         stats() {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-        let todayCount = 0, todayRev = 0;
-        let monthCount = 0, monthRev = 0;
-        let allCount = 0, allRev = 0;
+    let todayCount = 0, todayRev = 0;
+    let monthCount = 0, monthRev = 0;
+    let allCount = 0, allRev = 0;
 
-        this.allOrders.forEach(o => {
-            // Конвертируем дату из Firebase (Timestamp) в JavaScript Date
-            const orderDate = o.createdAt?.seconds ? o.createdAt.seconds * 1000 : 0;
-            const total = parseFloat(o.order_total) || 0;
-
-            allCount++;
-            allRev += total;
-
-            if (orderDate >= startOfMonth) {
-                monthCount++;
-                monthRev += total;
+    this.allOrders.forEach(o => {
+        // ИСПРАВЛЕННАЯ ЛОГИКА ОПРЕДЕЛЕНИЯ ДАТЫ
+        let orderDate = 0;
+        
+        if (o.createdAt) {
+            // Если это Firebase Timestamp
+            if (o.createdAt.seconds !== undefined) {
+                orderDate = o.createdAt.seconds * 1000;
             }
-
-            if (orderDate >= startOfDay) {
-                todayCount++;
-                todayRev += total;
+            // Если это просто число (Date.now())
+            else if (typeof o.createdAt === 'number') {
+                orderDate = o.createdAt;
             }
-        });
+            // Если это строка
+            else if (typeof o.createdAt === 'string') {
+                orderDate = new Date(o.createdAt).getTime();
+            }
+        }
+        
+        // Если всё равно 0, пробуем другие поля
+        if (!orderDate && o.date) {
+            orderDate = new Date(o.date).getTime();
+        }
+        
+        const total = parseFloat(o.order_total) || parseFloat(o.total) || 0;
 
-        return { todayCount, todayRev, monthCount, monthRev, allCount, allRev };
-    },
+        allCount++;
+        allRev += total;
+
+        if (orderDate >= startOfMonth) {
+            monthCount++;
+            monthRev += total;
+        }
+
+        if (orderDate >= startOfDay) {
+            todayCount++;
+            todayRev += total;
+        }
+    });
+
+    return { todayCount, todayRev, monthCount, monthRev, allCount, allRev };
+},
     cartTotal() {
     const itemsSum = this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     // Если корзина пуста, общая сумма 0, если нет — сумма товаров + 200
@@ -1595,13 +1616,36 @@ async uploadVariantImages(e, vIdx) {
 
     // ВАШ КЛЮЧ ImgBB
     const apiKey = '839e62907e9a52f0159461b7771bcb2f'; 
+    
+    // Проверяем существование массива images
+    if (!this.newP.variants[vIdx].images) {
+        this.newP.variants[vIdx].images = [];
+    }
+    
     this.newP.variants[vIdx].isUploading = true;
 
     try {
         for (let file of files) {
-            const formData = new FormData();
-            formData.append('image', file);
+            // Проверка размера файла (макс 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`Файл ${file.name} слишком большой. Максимальный размер: 10MB`);
+                continue;
+            }
 
+            // Проверка типа файла
+            if (!file.type.startsWith('image/')) {
+                alert(`Файл ${file.name} не является изображением`);
+                continue;
+            }
+
+            // Сжимаем изображение перед загрузкой
+            const compressedFile = await this.compressImage(file);
+            
+            const formData = new FormData();
+            formData.append('image', compressedFile);
+
+            console.log(`Загрузка файла: ${file.name} (${Math.round(file.size / 1024)}KB)`);
+            
             const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
                 method: 'POST',
                 body: formData
@@ -1612,17 +1656,75 @@ async uploadVariantImages(e, vIdx) {
             if (result.success) {
                 // Пушим прямую ссылку в массив картинок конкретного варианта
                 this.newP.variants[vIdx].images.push(result.data.url);
+                console.log('Фото успешно загружено:', result.data.url);
+                
+                // Вибрация при успешной загрузке
+                if (window.Telegram?.WebApp?.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                }
             } else {
-                throw new Error(result.error.message);
+                console.error('Ошибка ImgBB:', result.error);
+                throw new Error(result.error.message || 'Неизвестная ошибка ImgBB');
             }
         }
     } catch (error) {
-        console.error("Ошибка ImgBB:", error);
+        console.error("Ошибка загрузки:", error);
         alert("Ошибка загрузки: " + error.message);
     } finally {
         this.newP.variants[vIdx].isUploading = false;
         e.target.value = ''; // Очистка инпута для повторной загрузки
     }
+},
+
+// Добавьте этот метод для удаления фото
+removeVariantImage(vIdx, imgIdx) {
+    if (confirm("Удалить это фото?")) {
+        this.newP.variants[vIdx].images.splice(imgIdx, 1);
+        
+        // Вибрация
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
+    }
+},
+
+// Функция сжатия изображения (еще раз добавьте для надежности)
+async compressImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1200; // Увеличим разрешение для качества
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Качество 0.85 - хороший баланс между размером и качеством
+                canvas.toBlob((blob) => {
+                    resolve(new File([blob], file.name, { 
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    }));
+                }, 'image/jpeg', 0.85);
+            };
+        };
+        reader.onerror = () => {
+            resolve(file); // Если не удалось сжать, возвращаем исходный файл
+        };
+    });
 },
 selectFirstAvailableSize(variant) {
     // Автоматически выбираем первый размер в новом цвете, который есть на складе
@@ -2118,7 +2220,7 @@ async checkout() {
         const newOrderId = `${day}${month}-${randomDigits}`; 
         // ----------------------------------------------------
 
-        // СНИЖЕНИЕ ОСТАТКОВ (оставляем твой код без изменений)
+        // СНИЖЕНИЕ ОСТАТКОВ
         for (let item of this.cart) {
             const pRef = window.fb.doc(window.db, "products", item.id);
             const pSnap = await window.fb.getDoc(pRef);
@@ -2144,7 +2246,7 @@ async checkout() {
         const finalTotal = this.total(); 
 
         const orderData = {
-            order_id: newOrderId, // Используем новый номер
+            order_id: newOrderId,
             customer_name: this.form.name,
             customer_phone: this.form.phone,
             address: this.address,
@@ -2160,7 +2262,8 @@ async checkout() {
             })),
             order_total: finalTotal, 
             status: 'Новый',
-            createdAt: Date.now(),
+            // ИСПРАВЛЕНО: Используем серверное время Firebase
+            createdAt: window.fb.serverTimestamp ? window.fb.serverTimestamp() : Date.now(),
             user: {
                 id: tgUser?.id || 0,
                 username: username
@@ -2539,7 +2642,7 @@ updateChart() {
     }
 }
     },
-    mounted() {
+   mounted() {
     tg.ready();
     tg.expand();
     
@@ -2577,19 +2680,63 @@ updateChart() {
                 }
             );
 
-            // 3. Загрузка всех заказов (только для админа)
+            // 3. Загрузка всех заказов (только для админа) - ИСПРАВЛЕННАЯ ВЕРСИЯ
             if (this.isAdmin) {
+                console.log("Загрузка заказов для админа...");
                 window.fb.onSnapshot(
-                    window.fb.query(window.fb.collection(window.db, "orders"), window.fb.orderBy("createdAt", "desc")), 
+                    window.fb.query(window.fb.collection(window.db, "orders")), 
+                    // Убрали orderBy для тестирования
                     snap => {
-                        this.allOrders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        console.log("Получено заказов:", snap.docs.length);
+                        
+                        // Преобразуем заказы с правильной обработкой дат
+                        this.allOrders = snap.docs.map(doc => { 
+                            const data = doc.data();
+                            
+                            // ЛОГИРУЕМ структуру для отладки
+                            console.log("Заказ", doc.id, "данные:", data);
+                            console.log("createdAt:", data.createdAt);
+                            
+                            return { 
+                                id: doc.id, 
+                                ...data,
+                                // Добавляем вычисленную дату для статистики
+                                _timestamp: data.createdAt?.seconds ? 
+                                    data.createdAt.seconds * 1000 : 
+                                    (typeof data.createdAt === 'number' ? data.createdAt : Date.now())
+                            };
+                        });
+                        
+                        // Сортируем локально по убыванию даты
+                        this.allOrders.sort((a, b) => b._timestamp - a._timestamp);
+                        
+                        console.log("Всего заказов после обработки:", this.allOrders.length);
+                        console.log("Пример заказа с датой:", this.allOrders[0]?._timestamp, new Date(this.allOrders[0]?._timestamp));
                         
                         // Рисуем график только если админ сейчас видит профиль
                         if (this.tab === 'profile') {
                             this.$nextTick(() => { 
-                                if (typeof this.updateChart === 'function') this.updateChart(); 
+                                if (typeof this.updateChart === 'function') {
+                                    this.updateChart();
+                                }
                             });
                         }
+                    },
+                    (error) => {
+                        console.error("Ошибка загрузки заказов:", error);
+                        // Пробуем загрузить без orderBy
+                        window.fb.onSnapshot(
+                            window.fb.collection(window.db, "orders"),
+                            (snap) => {
+                                this.allOrders = snap.docs.map(doc => ({ 
+                                    id: doc.id, 
+                                    ...doc.data(),
+                                    _timestamp: doc.data().createdAt?.seconds ? 
+                                        doc.data().createdAt.seconds * 1000 : 
+                                        (typeof doc.data().createdAt === 'number' ? doc.data().createdAt : Date.now())
+                                })).sort((a, b) => b._timestamp - a._timestamp);
+                            }
+                        );
                     }
                 );
             }
