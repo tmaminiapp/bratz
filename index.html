@@ -2075,7 +2075,7 @@ closeProduct() {
     // Очищаем выбранный товар не сразу, а через мгновение, 
     // чтобы Vue успел закрыть окно без ошибок
     setTimeout(() => {
-        this.selectedProduct = null;
+        this.selP = null;
     }, 100);
     document.body.style.overflow = ''; // Возвращаем прокрутку
 },
