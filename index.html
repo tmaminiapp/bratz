@@ -88,6 +88,25 @@ button, a, div[role="button"] {
     background: #eee !important;
     cursor: not-allowed;
 }
+/* Анимация для модального окна */
+.modal {
+    /* ... существующие стили ... */
+    animation: modalFadeIn 0.3s ease;
+}
+
+.modal.fade-out {
+    animation: modalFadeOut 0.2s ease forwards;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modalFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; visibility: hidden; }
+}
         /* Header & Search */
         .header { 
             background: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; 
@@ -298,6 +317,24 @@ button, a, div[role="button"] {
     transform: scale(0.95);
     transition: transform 0.1s;
 }
+/* Анимации для модального окна */
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modalFadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(30px); visibility: hidden; }
+}
+
+.modal[style*="z-index: 5000"] {
+    animation: modalFadeIn 0.3s ease forwards;
+}
+
+.modal[style*="z-index: 5000"].fade-out {
+    animation: modalFadeOut 0.2s ease forwards;
+}
     
 
         /* Bottom Nav */
@@ -362,13 +399,7 @@ button, a, div[role="button"] {
 </div>
 
     <div v-if="burgerOpen" class="modal" style="padding: 40px; z-index: 3000; overflow-y: auto;">
-    <button class="close-modal" @click="closeProduct">✕</button>
-
-<div v-if="selP" class="modal" style="z-index: 5000;">
-    <template v-if="selP">
-        </template>
-</div>
-
+    <button class="close-modal" @click="burgerOpen = false">✕</button>
     <div class="brand-name" style="margin-bottom: 40px;">BRATZ</div>
     
     <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -460,19 +491,17 @@ button, a, div[role="button"] {
                 <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
             </div>
             
-          <div class="card-sizes" v-if="p && p.variants && p.variants[0]">
-    <template v-for="(qty, sz) in p.variants[0].stocks" :key="sz">
-        
-        <div v-if="p && !(p.hiddenSizes || []).includes(String(sz))"
-             @click.stop="qty > 0 ? (p.tempSize = sz, vib('light')) : null"
-             :class="['size-chip', {
-                active: p && p.tempSize === sz,
-                disabled: qty <= 0
-             }]">
-            {{ sz }}
-        </div>
-
-    </template>
+           <div class="card-sizes" v-if="p.variants && p.variants[0]">
+    <div v-for="(qty, sz) in (p.variants[0].stocks || p.variants[0].stocks)" 
+         :key="sz"
+         @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
+         :class="['size-chip', {
+            /* Подсвечиваем либо то, что выбрали, либо первый доступный если еще ничего не выбрано */
+            active: p.tempSize === sz,
+            disabled: qty <= 0
+         }]">
+        {{ sz }}
+    </div>
 </div>
             <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
                 В КОРЗИНУ
@@ -520,19 +549,17 @@ button, a, div[role="button"] {
                     <span class="price">{{p.price}} ₽</span>
                 </div>
 
-               <div class="card-sizes" v-if="p && p.variants && p.variants[0]">
-    <template v-for="(qty, sz) in p.variants[0].stocks" :key="sz">
-        
-        <div v-if="p && !(p.hiddenSizes || []).includes(String(sz))"
-             @click.stop="qty > 0 ? (p.tempSize = sz, vib('light')) : null"
-             :class="['size-chip', {
-                active: p && p.tempSize === sz,
-                disabled: qty <= 0
-             }]">
-            {{ sz }}
-        </div>
-
-    </template>
+                <div class="card-sizes" v-if="p.variants && p.variants[0]">
+    <div v-for="(qty, sz) in p.variants[0].stocks" 
+         :key="sz"
+         v-if="!(p.hiddenSizes || []).includes(String(sz))"
+         @click.stop="qty > 0 ? (p.tempSize = sz, vib('light')) : null"
+         :class="['size-chip', {
+            active: p.tempSize === sz,
+            disabled: qty <= 0
+         }]">
+        {{ sz }}
+    </div>
 </div>
 
                 <button class="btn-black" style="width: 100%; margin-top: 5px; text-transform: uppercase; font-size: 11px;" 
@@ -882,7 +909,7 @@ button, a, div[role="button"] {
     </div> </div> </main>
 
   <div v-if="selP" class="modal" style="z-index: 5000;">
-    <button class="close-modal" @click="closeProduct">✕</button>
+    <button class="close-modal" @click="closeProductModal()">✕</button>
 
     <div class="slider-wrapper" style="aspect-ratio: 1/1.2; position: relative; background: #f9f9f9;">
         <template v-if="selP.variants && selP.variants[currentVariantIndex]">
@@ -928,35 +955,32 @@ button, a, div[role="button"] {
         </div>
 
        <div class="size-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 30px;">
-    <template v-if="selP && selP.variants && selP.variants[currentVariantIndex]">
-        <template v-for="(qty, sz) in (selP.variants[currentVariantIndex].stocks || selP.variants[currentVariantIndex].stock || {})" :key="sz">
-            
-            <button v-if="selP && !(selP.hiddenSizes || []).includes(String(sz).trim())"
-                    @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
-                    :class="['size-btn', { active: selP && selP.tempSize === sz }]"
-                    :disabled="qty <= 0"
-                    :style="{
-                        height: '45px',
-                        border: '1px solid #eee',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        fontWeight: '700',
-                        transition: '0.2s',
-                        background: (selP && selP.tempSize === sz) ? '#000' : (qty <= 0 ? '#f9f9f9' : '#fff'),
-                        color: (selP && selP.tempSize === sz) ? '#fff' : (qty <= 0 ? '#ccc' : '#000'),
-                        opacity: qty <= 0 ? '0.6' : '1',
-                        position: 'relative',
-                        cursor: qty <= 0 ? 'not-allowed' : 'pointer'
-                    }">
-                {{ sz }}
-                
-                <div v-if="qty > 0 && qty < 5" 
-                     style="font-size: 7px; color: #ff3b30; position: absolute; bottom: 4px; width: 100%; text-align: center;">
-                    {{qty}} шт.
-                </div>
-            </button>
-            
-        </template>
+    <template v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || {})" :key="sz">
+        
+        <button v-if="!(selP.hiddenSizes || []).includes(String(sz).trim())"
+                @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
+                :class="['size-btn', { active: selP.tempSize === sz }]"
+                :disabled="qty <= 0"
+                :style="{
+                    height: '45px',
+                    border: '1px solid #eee',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    transition: '0.2s',
+                    background: selP.tempSize === sz ? '#000' : (qty <= 0 ? '#f9f9f9' : '#fff'),
+                    color: selP.tempSize === sz ? '#fff' : (qty <= 0 ? '#ccc' : '#000'),
+                    opacity: qty <= 0 ? '0.6' : '1',
+                    position: 'relative',
+                    cursor: qty <= 0 ? 'not-allowed' : 'pointer'
+                }">
+            {{ sz }}
+            <div v-if="qty > 0 && qty < 5" 
+                 style="font-size: 7px; color: #ff3b30; position: absolute; bottom: 4px; width: 100%; text-align: center;">
+                {{qty}} шт.
+            </div>
+        </button>
+        
     </template>
 </div>
 
@@ -1012,10 +1036,6 @@ button, a, div[role="button"] {
 </script>
 
 <script>
-    window.onerror = function(msg, url, line) {
-    alert("Ошибка JS: " + msg + "\nСтрока: " + line);
-    return false;
-};
 const tg = window.Telegram.WebApp;
 
 Vue.createApp({
@@ -1029,7 +1049,6 @@ Vue.createApp({
         searchMode: false,
         burgerOpen: false,
         loading: false,
-        showProduct: false,
         showProductList: false,
         activeInfo: null,
         
@@ -1042,7 +1061,7 @@ Vue.createApp({
         isAdmin: false,
         adminIds: [387881523, 5189266423],
         
-        selP: null,
+        selP: false,
         currentVariantIndex: 0,
         deliv: '',
         address: '',
@@ -1299,39 +1318,28 @@ getStocksObject(p) {
     return p.stocks;
 },
 
-     handleScroll(e, p) {
-    // ЗАЩИТА №1: Если объекта нет, выходим немедленно
-    if (!p) return; 
-
-    const target = e.target;
-    if (!target) return;
-
-    try {
-        const width = target.offsetWidth;
-        if (width > 0) {
-            const index = Math.round(target.scrollLeft / width);
-            // ПРОВЕРКА №2: Пишем индекс только если объект жив
-            if (p) p.aIdx = index;
-        }
-    } catch (err) {
-        console.warn("Scroll error blocked");
+        handleScroll(e, p) {
+    if (!p) return; // Обязательно!
+    const width = e.target.offsetWidth;
+    if (width > 0) {
+        p.aIdx = Math.round(e.target.scrollLeft / width);
     }
 },
 
 
      openProduct(p) {
-        this.openedProduct = p;
-    this.selVariantIdx = 0; // Сбрасываем на первый цвет при открытии
-    this.tab = 'product';   // Переход на вкладку товара
+    // УБЕРИТЕ эту строку - она вызывает проблему!
+    // this.tab = 'product';   // ❌ УДАЛИТЬ!
+    
     window.scrollTo(0,0);
-    // 1. Сначала сбрасываем индекс, чтобы он не указывал на старый товар
+    
+    // 1. Сначала сбрасываем индекс
     this.currentVariantIndex = 0;
 
     // 2. Делаем глубокую копию
     let productCopy = JSON.parse(JSON.stringify(p));
 
-    // 3. ПРОВЕРКА: Если товар старый (нет поля variants), создаем его на лету
-    // Это спасет от ошибки "reading '0' of undefined"
+    // 3. ПРОВЕРКА: Если товар старый
     if (!productCopy.variants || !Array.isArray(productCopy.variants) || productCopy.variants.length === 0) {
         productCopy.variants = [{
             color: productCopy.color || 'Стандарт',
@@ -1339,11 +1347,10 @@ getStocksObject(p) {
             stocks: {}
         }];
         
-        // Переносим старые размеры в новый формат, если они были
         if (productCopy.sizes) {
             const oldSizes = String(productCopy.sizes).split(',');
             oldSizes.forEach(s => {
-                productCopy.variants[0].stocks[s.trim()] = 10; // Ставим 10 шт по умолчанию
+                productCopy.variants[0].stocks[s.trim()] = 10;
             });
         }
     }
@@ -1351,10 +1358,10 @@ getStocksObject(p) {
     // 4. Гарантируем наличие индекса анимации
     productCopy.aIdx = 0;
 
-    // 5. Теперь безопасно сохраняем в selP
+    // 5. Сохраняем в selP (это покажет модальное окно через v-if="selP")
     this.selP = productCopy;
 
-    // 6. Выбор размера по умолчанию для ТЕКУЩЕГО (первого) варианта
+    // 6. Выбор размера по умолчанию
     const firstVar = this.selP.variants[0];
     if (firstVar && firstVar.stocks) {
         const availableSize = Object.keys(firstVar.stocks).find(sz => firstVar.stocks[sz] > 0);
@@ -1363,7 +1370,10 @@ getStocksObject(p) {
         this.selP.tempSize = null;
     }
 
-    // 7. Вибрация
+    // 7. Блокируем прокрутку основной страницы
+    document.body.style.overflow = 'hidden';
+
+    // 8. Вибрация
     if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
@@ -1454,15 +1464,12 @@ getStocksObject(p) {
 
         // 6. ЗАКРЫТИЕ МОДАЛКИ И СБРОС ВЫБОРА
         setTimeout(() => {
-    document.body.style.overflow = ''; // Возвращаем скролл
-    // Сначала чистим вложенные данные, пока объект еще жив
-    if (this.selP) {
-        this.selP.tempSize = null;
-    }
-    // Только теперь обнуляем сам товар
-    this.selP = null;
-    this.currentVariantIndex = 0;
-}, 150);
+            this.selP = null;
+            // Сбрасываем временный размер у объекта, чтобы при следующем открытии он был чист
+            if (p) p.tempSize = null; 
+            // Сбрасываем выбор цвета на первый по умолчанию
+            this.currentVariantIndex = 0; 
+        }, 300);
 
     } catch (err) {
         // Защита от "белого экрана": если внутри функции что-то пойдет не так,
@@ -2101,13 +2108,21 @@ async checkout() {
         this.loading = false;
     }
 },
-closeProduct() {
-    this.vib();
+closeProductModal() {
+    // Разблокируем прокрутку
     document.body.style.overflow = '';
-    // Даем задержку, чтобы DOM успел отработать закрытие
+    
+    // Вибрация
+    if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+    
+    // Очищаем с небольшой задержкой для избежания мерцания
     setTimeout(() => {
         this.selP = null;
         this.currentVariantIndex = 0;
+        this.openedProduct = null;
+        this.selVariantIdx = 0;
     }, 50);
 },
 async updateStatus(order, newStatus) {
