@@ -641,9 +641,10 @@ button, a, div[role="button"] {
 <div v-if="cart.length === 0" style="text-align:center; padding: 50px;">ВАША КОРЗИНА ПУСТА</div>
 <div v-else>
   <div v-for="item in cart" :key="item.cartId" class="cart-item">
-    <img :src="getItemImage(item)" 
+    
+    <img :src="item.img || item.image || ''" 
      class="cart-img" 
-     @click="openProduct(item)" 
+     @click="openProductFromCart(item)" 
      style="cursor:pointer; width: 70px; height: 90px; object-fit: cover; border-radius: 8px;">
      
 
