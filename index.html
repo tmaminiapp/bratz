@@ -631,11 +631,16 @@ button, a, div[role="button"] {
         <h2 class="brand-name" style="font-size: 16px; margin-bottom: 20px;">КОРЗИНА</h2>
 <div v-if="cart.length === 0" style="text-align:center; padding: 50px;">ВАША КОРЗИНА ПУСТА</div>
 <div v-else>
-   <div v-for="item in cart" :key="item.cartId" class="cart-item">
-    <img :src="item.image || (item.variants && item.variants[0]?.images[0])" 
-         class="cart-img" 
-         @click="openProduct(item)" 
-         style="cursor:pointer; width: 70px; height: 90px; object-fit: cover; border-radius: 8px;">
+  <div v-for="item in cart" :key="item.cartId" class="cart-item">
+    <img :src="getItemImage(item)" 
+     class="cart-img" 
+     @click="openProduct(item)" 
+     style="cursor:pointer; width: 70px; height: 90px; object-fit: cover; border-radius: 8px;">
+    <img :src="item.img || item.image || ''" 
+     class="cart-img" 
+     @click="openProductFromCart(item)" 
+     style="cursor:pointer; width: 70px; height: 90px; object-fit: cover; border-radius: 8px;">
+     
 
     <div style="flex:1; margin-left: 12px;">
         <div @click="openProduct(item)" style="cursor:pointer;">
@@ -1414,6 +1419,14 @@ toggleDescription(productId) {
         }
         return fullDesc;
     },
+    getItemImage(item) {
+    // Пробуем разные возможные поля
+    return item.img || 
+           item.image || 
+           (item.variants && item.variants[0]?.images?.[0]) || 
+           (item.images && item.images[0]) || 
+           'https://via.placeholder.com/70x90?text=No+Image';
+},
        setTab(id) {
     if (this.vib) this.vib(); 
     this.tab = id; // Используем именно tab, как у вас в data()
@@ -1444,6 +1457,24 @@ getStocksObject(p) {
     }
     if (!p.stocks) p.stocks = {};
     return p.stocks;
+},
+openProductFromCart(item) {
+    // Найти полные данные товара по ID
+    const fullProduct = this.products.find(p => p.id === item.id);
+    if (fullProduct) {
+        // Восстановить выбранный цвет и размер
+        fullProduct.tempSize = item.selSize;
+        
+        // Найти индекс выбранного цвета
+        const variantIndex = fullProduct.variants.findIndex(v => 
+            v.color === item.selColor || v.color === (item.color || '')
+        );
+        if (variantIndex > -1) {
+            this.currentVariantIndex = variantIndex;
+        }
+        
+        this.openProduct(fullProduct);
+    }
 },
 
         handleScroll(e, p) {
@@ -1572,7 +1603,7 @@ getStocksObject(p) {
                 title: p.title || 'Товар',
                 price: Number(p.price) || 0,
                 // Безопасно берем фото именно этого варианта
-                image: (variant.images && variant.images[0]) ? variant.images[0] : (p.images ? p.images[0] : ''),
+                img: (variant.images && variant.images[0]) ? variant.images[0] : (p.images ? p.images[0] : ''),
                 selSize: finalSize,
                 selColor: finalColor,
                 qty: 1
