@@ -1093,9 +1093,6 @@
         <!-- 2. ОТОБРАЖЕНИЕ СОХРАНЕННЫХ РАЗМЕРОВ (из stocks) -->
         <div v-if="Object.keys(v.stocks || {}).length > 0" 
              style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-            <div style="font-size: 11px; font-weight: 700; color: #666; margin-bottom: 10px;">
-                Сохраненные размеры:
-            </div>
             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                 <div v-for="(qty, sz) in v.stocks" :key="sz" 
                      style="display: inline-flex; align-items: center; gap: 8px; background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #34c759;">
@@ -1358,24 +1355,65 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, where, getDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { 
+        getFirestore, 
+        collection, 
+        addDoc, 
+        onSnapshot, 
+        query, 
+        orderBy, 
+        doc, 
+        deleteDoc, 
+        updateDoc, 
+        where, 
+        getDoc, 
+        getDocs,
+        serverTimestamp,  // ← ДОБАВИТЬ ЭТО!
+        Timestamp 
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyAJRStKaq5zzApwFTXLNd16B1jwLwPDHWM",
-  authDomain: "bratz-ef833.firebaseapp.com",
-  projectId: "bratz-ef833",
-  storageBucket: "bratz-ef833.firebasestorage.app",
-  messagingSenderId: "579929073122",
-  appId: "1:579929073122:web:d2925b96b792c581e985bb",
-  measurementId: "G-9BT6TX72EN"
-};
+        apiKey: "AIzaSyAJRStKaq5zzApwFTXLNd16B1jwLwPDHWM",
+        authDomain: "bratz-ef833.firebaseapp.com",
+        projectId: "bratz-ef833",
+        storageBucket: "bratz-ef833.firebasestorage.app",
+        messagingSenderId: "579929073122",
+        appId: "1:579929073122:web:d2925b96b792c581e985bb",
+        measurementId: "G-9BT6TX72EN"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const storage = getStorage(app); // инициализируем storage
+    const storage = getStorage(app);
+    
+    // Экспортируем все нужные функции
     window.db = db;
-    window.fb = { collection, addDoc, onSnapshot, query, getDoc, orderBy, doc, getFirestore, getDocs, deleteDoc, updateDoc, where, db, serverTimestamp: () => storage, getDownloadURL };
+    window.storage = storage;
+    window.fb = {
+        // Firestore функции
+        collection: collection,
+        addDoc: addDoc,
+        onSnapshot: onSnapshot,
+        query: query,
+        getDoc: getDoc,
+        orderBy: orderBy,
+        doc: doc,
+        getFirestore: getFirestore,
+        getDocs: getDocs,
+        deleteDoc: deleteDoc,
+        updateDoc: updateDoc,
+        where: where,
+        db: db,
+        serverTimestamp: serverTimestamp, // ← Теперь это правильная функция!
+        Timestamp: Timestamp,
+        
+        // Storage функции
+        getDownloadURL: getDownloadURL,
+        ref: ref,
+        uploadBytes: uploadBytes,
+        storage: storage  // ← Добавлено для полноты
+    };
 </script>
 
 <script>
@@ -2714,30 +2752,30 @@ async checkout() {
 
         const finalTotal = this.total(); 
 
-        const orderData = {
-            order_id: newOrderId,
-            customer_name: this.form.name,
-            customer_phone: this.form.phone,
-            address: this.address,
-            delivery_type: 'доставка',
-            delivery_price: 200,
-            items: this.cart.map(i => ({
-                id: i.id,
-                title: i.title,
-                count: i.qty || 1,
-                color: i.selColor || i.color || '-',
-                size: i.selSize || i.size || '-',
-                price: i.price
-            })),
-            order_total: finalTotal, 
-            status: 'Новый',
-            // ИСПРАВЛЕНО: Используем серверное время Firebase
-            createdAt: window.fb.serverTimestamp ? window.fb.serverTimestamp() : Date.now(),
-            user: {
-                id: tgUser?.id || 0,
-                username: username
-            }
-        };
+       const orderData = {
+        order_id: newOrderId,
+        customer_name: this.form.name,
+        customer_phone: this.form.phone,
+        address: this.address,
+        delivery_type: 'доставка',
+        delivery_price: 200,
+        items: this.cart.map(i => ({
+            id: i.id,
+            title: i.title,
+            count: i.qty || 1,
+            color: i.selColor || i.color || '-',
+            size: i.selSize || i.size || '-',
+            price: i.price
+        })),
+        order_total: finalTotal, 
+        status: 'Новый',
+        // ИСПРАВЛЕННЫЙ ВАРИАНТ: serverTimestamp нужно вызвать как функцию
+        createdAt: window.fb.serverTimestamp(), // ← ВЫЗВАТЬ ФУНКЦИЮ!
+        user: {
+            id: tgUser?.id || 0,
+            username: username
+        }
+    };
 
         await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
         
@@ -2767,7 +2805,7 @@ async checkout() {
         
     } catch (e) {
         console.error("Ошибка:", e);
-        alert("Произошла ошибка.");
+        alert("Произошла ошибка: " + e.message);
     } finally {
         this.loading = false;
     }
