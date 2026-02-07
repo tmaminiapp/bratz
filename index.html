@@ -557,16 +557,20 @@ button, a, div[role="button"] {
                 <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
             </div>
             
-           <div class="card-sizes" v-if="p.variants && p.variants[0]">
+         // В разделе с размерами в карточках (и в favs) добавьте:
+<div class="card-sizes" v-if="p.variants && p.variants[0]">
     <div v-for="(qty, sz) in (p.variants[0].stocks || p.variants[0].stocks)" 
          :key="sz"
-         @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
+         @click.stop="qty > 0 && !isSizeHidden(p, p.variants[0], sz) ? (p.tempSize = sz, vib()) : null"
          :class="['size-chip', {
-            /* Подсвечиваем либо то, что выбрали, либо первый доступный если еще ничего не выбрано */
             active: p.tempSize === sz,
-            disabled: qty <= 0
-         }]">
+            disabled: qty <= 0 || isSizeHidden(p, p.variants[0], sz)
+         }]"
+         :style="{
+            opacity: (qty <= 0 || isSizeHidden(p, p.variants[0], sz)) ? 0.3 : 1
+         }">
         {{ sz }}
+        <span v-if="isSizeHidden(p, p.variants[0], sz)" style="color: #ff3b30; font-size: 8px; margin-left: 2px;">(скрыт)</span>
     </div>
 </div>
             <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
@@ -969,10 +973,13 @@ button, a, div[role="button"] {
                             
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <span style="font-size: 10px; color: #999;">ШТ:</span>
-                                <input type="number" 
-                                       v-model.number="v.stocks[sz]" 
-                                       @change="updateStock(p, sz)"
-                                       style="width: 50px; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 12px; text-align: center;">
+                                <!-- В блоке с размерами в админке измените инпут: -->
+<input type="number" 
+       v-model.number="v.stocks[sz]" 
+       @change="updateStock(p, sz)"
+       :data-product="p.id"
+       :data-size="sz"
+       style="width: 50px; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 12px; text-align: center;">
                             </div>
                         </div>
 
@@ -1421,24 +1428,50 @@ async updateStock(product, size) {
         let newValue;
         let dbPath;
 
-        // Определяем значение и путь в БД
+        // Находим вариант товара
         if (product.variants && product.variants[0]) {
-            newValue = Number(product.variants[0].stocks[size]);
+            const variant = product.variants[0];
+            newValue = Number(variant.stocks[size]);
             dbPath = `variants.0.stocks.${size}`;
+            
+            // Обновляем локально
+            variant.stocks[size] = newValue;
         } else {
             newValue = Number(product.stocks[size]);
             dbPath = `stocks.${size}`;
+            product.stocks[size] = newValue;
         }
 
+        // Обновляем в БД
         await window.fb.updateDoc(productRef, {
             [dbPath]: newValue
         });
 
+        // Если количество стало 0, автоматически скрываем размер
+        if (newValue <= 0) {
+            const variant = product.variants?.[0];
+            if (variant) {
+                const sizeKey = `${variant.color}_${size}`;
+                if (!product.hiddenSizes) product.hiddenSizes = [];
+                
+                // Добавляем в скрытые, если еще не добавлен
+                if (!product.hiddenSizes.includes(sizeKey)) {
+                    product.hiddenSizes.push(sizeKey);
+                    await window.fb.updateDoc(productRef, {
+                        hiddenSizes: product.hiddenSizes
+                    });
+                }
+            }
+        }
+
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
+        
+        alert(`Остаток для размера ${size} обновлен до ${newValue}`);
     } catch (e) {
         console.error("Ошибка обновления остатка:", e);
+        alert("Ошибка обновления остатка: " + e.message);
     }
 },
  async toggleVariantVisibility(p, v) {
@@ -1474,24 +1507,25 @@ async updateStock(product, size) {
         }
     },
     // Исправленный метод для скрытия/показа размера
+// Замените текущий метод на этот:
 async toggleVariantSizeVisibility(p, v, sz) {
     try {
         const productRef = window.fb.doc(window.db, "products", p.id);
         
-        // Инициализируем hiddenSizes если их нет
+        // Инициализируем скрытые размеры, если их нет
         if (!p.hiddenSizes) {
             p.hiddenSizes = [];
         }
         
-        // ВАЖНО: используем тот же формат ключа!
+        // Формат ключа: "цвет_размер" (например: "Черный_42")
         const sizeKey = `${v.color}_${sz}`;
         const index = p.hiddenSizes.indexOf(sizeKey);
         
         if (index > -1) {
-            // Убираем из скрытых - ПОКАЗЫВАЕМ размер
+            // Если размер уже скрыт - показываем его (удаляем из скрытых)
             p.hiddenSizes.splice(index, 1);
         } else {
-            // Добавляем в скрытые - СКРЫВАЕМ размер
+            // Если размер не скрыт - скрываем его (добавляем в скрытые)
             p.hiddenSizes.push(sizeKey);
         }
         
@@ -1506,6 +1540,11 @@ async toggleVariantSizeVisibility(p, v, sz) {
             this.products[productIndex].hiddenSizes = p.hiddenSizes;
         }
         
+        // Обновляем tempSize, если скрыли выбранный размер
+        if (p.tempSize === sz) {
+            p.tempSize = null;
+        }
+        
         this.vib('light');
     } catch (e) {
         console.error("Ошибка при скрытии размера:", e);
@@ -1516,11 +1555,24 @@ async toggleVariantSizeVisibility(p, v, sz) {
    
    // Проверка скрыт ли размер
 // Проверка скрыт ли размер - ДОЛЖЕН ИСПОЛЬЗОВАТЬ ТОТ ЖЕ КЛЮЧ!
+// Замените текущий метод на этот:
 isSizeHidden(p, v, sz) {
+    if (!p || !v || !sz) return false;
+    
+    // Инициализируем hiddenSizes если их нет
     if (!p.hiddenSizes) return false;
-    // Используем тот же формат ключа, что и в openProduct
+    
+    // Формат ключа должен быть ТОЧНО таким же как в toggleVariantSizeVisibility
+    // Используем v.color для получения цвета текущего варианта
     const sizeKey = `${v.color}_${sz}`;
-    return p.hiddenSizes.includes(sizeKey);
+    
+    // Дополнительная проверка: ищем ключ без цвета
+    const simpleKey = sz.toString();
+    
+    // Проверяем оба варианта (для совместимости со старыми данными)
+    return p.hiddenSizes.includes(sizeKey) || 
+           p.hiddenSizes.includes(simpleKey) ||
+           p.hiddenSizes.includes(`${v.color}_${simpleKey}`);
 },
         setCategory(name) {
             try {
