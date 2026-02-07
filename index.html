@@ -12,437 +12,630 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     
-    <style>
-
-        :root {
-            --bg: #ffffff;
-            --dark: #000000;
-            --gray: #8e8e93;
-            --light: #f2f2f7;
-            --accent: #000000;
-            --red: #ff3b30;
-        }
-
-button, a, div[role="button"] {
-    outline: none !important;
-         }
-
-        * { 
-    box-sizing: border-box; 
-    /* Запрещает синюю подсветку для ВСЕХ элементов на мобильных */
-    -webkit-tap-highlight-color: transparent !important; 
-    -webkit-touch-callout: none;
-         }
-        
-    /* Общие стили для кнопок размеров */
-.size-chip { 
-    /* Ваши текущие стили */
-    font-size: 9px; 
-    font-weight: 700; 
-    padding: 4px 8px; 
-    border: 1px solid #ddd; 
-    color: #000;
-    border-radius: 2px; 
-    white-space: nowrap;
-    cursor: pointer;
-
-    /* ИСПРАВЛЕНИЕ СИНЕГО ЦВЕТА НА ТЕЛЕФОНЕ */
-    -webkit-tap-highlight-color: transparent !important;
-    outline: none !important;                    
-}
-
-/* Убедитесь, что активное состояние четко прописано */
-.size-chip.active { 
-    background-color: #000000 !important; 
-    color: #ffffff !important;
-    border-color: #000000 !important;
-}
-/* Отключенный размер (серый/перечеркнутый) */
-
-/* Универсальный стиль для всех неактивных элементов (кнопки, чипсы, размеры) */
-.size-chip.disabled, 
-.size-btn.disabled,
-.disabled {
-    opacity: 0.4 !important;
-    background: var(--light) !important; /* #f2f2f7 */
-    color: var(--gray) !important;       /* #8e8e93 */
-    border-color: #d1d1d6 !important;
-    pointer-events: none !important;      /* Полностью блокирует нажатия */
-    text-decoration: line-through;        /* Перечеркивание */
-    cursor: not-allowed;
-}
-.size-chip:active {
-    transform: scale(0.92); /* Кнопка будет слегка сжиматься при нажатии */
-    transition: transform 0.1s;
-}
-        body { 
-            margin: 0; 
-            background: var(--bg); 
-            font-family: 'Montserrat', sans-serif; 
-            color: var(--dark); 
-            overflow-x: hidden; 
-        }
-.disabled-size {
-    opacity: 0.3;
-    text-decoration: line-through;
-    background: #eee !important;
-    cursor: not-allowed;
-}
-/* Анимация для модального окна */
-.modal {
-    /* ... существующие стили ... */
-    animation: modalFadeIn 0.3s ease;
-}
-
-.modal.fade-out {
-    animation: modalFadeOut 0.2s ease forwards;
-}
-
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes modalFadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; visibility: hidden; }
-}
-        /* Header & Search */
-        .header { 
-            background: #fff; padding: 15px; display: flex; align-items: center; justify-content: space-between; 
-            position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #eeeeee;
-        }
-        .brand-name { font-size: 22px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
-        .search-container { padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; }
-        .search-input { 
-            width: 100%; padding: 12px; border: 1px solid #000; border-radius: 2px; 
-            font-family: inherit; font-size: 14px; text-transform: uppercase;
-        }
-
-        .container { padding: 15px; padding-bottom: 100px; min-height: 100vh; }
-
-        /* Categories */
-        .cat-row { 
-            display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; 
-            padding: 5px 0; scrollbar-width: none; 
-        }
-        .cat-row::-webkit-scrollbar { display: none; }
-        .cat-tab {
-    color: #000000 !important; /* Текст всегда черный по умолчанию */
-    cursor: pointer !important; /* Делает кнопку активной для клика */
-    transition: all 0.1s ease;
-    user-select: none;
-    touch-action: manipulation; /* Улучшает отклик на смартфонах */
-}
-
-.cat-tab:active {
-    background: #000000 !important;
-    transform: scale(0.95); /* Эффект проседания при нажатии */
-    opacity: 0.7;
-}
-
-        /* Новые стили для карточек */
-.fav-overlay { 
-    position: absolute; top: 8px; right: 8px; z-index: 10; 
-    background: rgba(255,255,255,0.7); border-radius: 50%; 
-    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-    border: none; cursor: pointer; backdrop-filter: blur(2px);
-}
-.card-sizes { 
-    display: flex; gap: 5px; overflow-x: auto; padding: 5px 0; 
-    scrollbar-width: none; margin-bottom: 8px;
-}
-
-        /* Grid */
-        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card { background: #fff; border: 1px solid #f0f0f0; position: relative; overflow: hidden; }
-        
-        /* Slider */
-        .slider-wrapper { position: relative; width: 100%; aspect-ratio: 3/4; overflow: hidden; background: #f9f9f9; }
-        .slider-inner { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 100%; }
-        .slider-inner::-webkit-scrollbar { display: none; }
-        .slider-inner img { width: 100%; height: 100%; object-fit: cover; scroll-snap-align: start; flex-shrink: 0; }
-        
-        .dots { position: absolute; bottom: 8px; width: 100%; display: flex; justify-content: center; gap: 4px; }
-        .dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.2); }
-        .dot.active { background: #000; width: 10px; border-radius: 2px; }
-
-        .card-info { padding: 12px; }
-        .card-title { font-size: 11px; font-weight: 600; height: 28px; overflow: hidden; margin-bottom: 5px; text-transform: uppercase; }
-        .price-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-        .price { font-weight: 800; font-size: 14px; }
-        .old-price { font-size: 11px; color: var(--gray); text-decoration: line-through; }
-        .sale-badge { background: #000; color: #fff; font-size: 9px; padding: 2px 4px; font-weight: 800; }
-
-     /* Buttons */
-.btn-row { 
-    display: flex !important; 
-    gap: 8px !important; 
-    margin-top: 10px !important;
-    /* Это выровняет обе кнопки по нижней линии, если они разной высоты */
-    align-items: flex-end !important; 
-}
-
-.btn-black { 
-    background: #000 !important; 
-    color: #fff !important; 
-    border: none !important; 
-    height: 50px !important; /* Увеличили до 50px */
-    flex: 1 !important; 
-    font-weight: 700 !important; 
-    font-size: 11px !important; 
-    text-transform: uppercase !important; 
-    cursor: pointer !important; 
-    border-radius: 2px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-}
-
-.btn-fav { 
-    background: #fff !important; 
-    border: 1px solid #000 !important; 
-    width: 50px !important;  
-    height: 50px !important; 
-    box-sizing: border-box !important; /* Чтобы border не раздувал кнопку */
-    display: flex !important; 
-    align-items: center !important; 
-    justify-content: center !important; 
-    padding: 0 !important;   
-    flex-shrink: 0 !important;
-    border-radius: 2px !important;
-}
-
-/* Иконка внутри избранного */
-.btn-fav svg {
-    width: 24px !important; 
-    height: 24px !important;
-    display: block !important;
-    stroke: #000 !important;
-}
-
-/* Базовые стили для стабильного списка */
-.stable-scroll-container {
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scroll-behavior: smooth !important;
-    background: #fff !important;
-}
-
-/* Уберите лишние отступы у админ-секции */
-.admin-section {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-}
-/* Маленькие превью фото */
-.preview-container {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 10px 0;
-}
-.preview-card {
-    position: relative;
-    width: 60px; /* Фиксированный размер */
-    height: 60px;
-}
-.preview-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Чтобы фото не растягивалось */
-    border-radius: 6px;
-    border: 1px solid #ddd;
-}
-
-/* Кнопка удаления на превью */
-.remove-preview-btn {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #ff3b30;
-    color: white;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    border: 1px solid white;
-    cursor: pointer;
-}
-/* Добавьте в тег <style> */
-.stable-list {
-    height: 500px !important;          /* Фиксированная высота */
-    overflow-y: auto !important;       /* Только вертикальный скролл */
-    overflow-x: hidden !important;     /* Без горизонтального */
-    -webkit-overflow-scrolling: touch !important;
-    contain: layout !important;        /* Блокирует перерисовку */
-}
-
-.fixed-item {
-    transition: none !important;       /* Отключаем анимации */
-    animation: none !important;
-    will-change: auto !important;      /* Отключаем оптимизации */
-}
-
-        /* Modal Product View */
-        .modal { position: fixed; inset: 0; background: #fff; z-index: 2000; overflow-y: auto; padding-bottom: 50px; }
-       /* Добавьте в секцию стилей */
-.close-modal {
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    z-index: 2100 !important;
-    background: rgba(255, 255, 255, 0.9) !important;
-    backdrop-filter: blur(10px) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    color: #000 !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-weight: 400 !important;
-    font-size: 18px !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
-    -webkit-tap-highlight-color: transparent !important;
-    outline: none !important;
-}
-
-.close-modal:hover {
-    background: rgba(255, 255, 255, 0.95) !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
-}
-
-.close-modal:active {
-    transform: scale(0.95) !important;
-    background: rgba(255, 255, 255, 0.85) !important;
-}
-        .size-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 8px !important;
-    margin-bottom: 30px !important;
-}
-
-/* Или для мобильных */
-@media (max-width: 480px) {
-    .size-grid {
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 6px !important;
+   <style>
+    :root {
+        --bg: #ffffff;
+        --dark: #000000;
+        --gray: #8e8e93;
+        --light: #f2f2f7;
+        --accent: #000000;
+        --red: #ff3b30;
     }
-}
 
-.size-btn { 
-    flex: 1; 
-    padding: 12px; 
-    border: 1px solid #eee !important; 
-    background: #fff !important; 
-    color: #000 !important; 
-    font-size: 12px; 
-    font-weight: 700; 
-    border-radius: 2px; 
-    cursor: pointer;
-    /* Убирает синий блик при нажатии на Айфонах/Андроидах */
-    -webkit-tap-highlight-color: transparent !important; 
-}
-.size-chip.disabled {
-    opacity: 0.3;
-    pointer-events: none; /* Чтобы нельзя было кликнуть */
-    text-decoration: line-through;
-}
+    /* ========== RESET & BASE ========== */
+    * { 
+        box-sizing: border-box; 
+        -webkit-tap-highlight-color: transparent; 
+        -webkit-touch-callout: none;
+    }
 
-/* Состояние, когда размер ВЫБРАН */
-.size-btn.active, .deliv-btn.active { 
-    border-color: #000 !important; 
-    background: #000 !important; 
-    color: #fff !important; 
-}
+    button, a, div[role="button"] {
+        outline: none;
+    }
 
-/* Эффект нажатия (чтобы кнопка визуально "прожималась") */
-.size-btn:active {
-    transform: scale(0.95);
-    transition: transform 0.1s;
-}
-/* Анимации для модального окна */
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+    body { 
+        margin: 0; 
+        background: var(--bg); 
+        font-family: 'Montserrat', sans-serif; 
+        color: var(--dark); 
+        overflow-x: hidden; 
+    }
 
-@keyframes modalFadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(30px); visibility: hidden; }
-}
+    [v-cloak] { display: none; }
 
-.modal[style*="z-index: 5000"] {
-    animation: modalFadeIn 0.3s ease forwards;
-}
+    /* ========== HEADER & SEARCH ========== */
+    .header { 
+        background: #fff; 
+        padding: 15px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        position: sticky; 
+        top: 0; 
+        z-index: 100; 
+        border-bottom: 1px solid #eeeeee;
+    }
 
-.modal[style*="z-index: 5000"].fade-out {
-    animation: modalFadeOut 0.2s ease forwards;
-}
-    /* Добавьте в <style> */
-.description-container {
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
+    .brand-name { 
+        font-size: 22px; 
+        font-weight: 800; 
+        letter-spacing: 2px; 
+        text-transform: uppercase; 
+    }
 
-.description-container.collapsed {
-    max-height: 60px;
-}
+    .search-container { 
+        padding: 10px 15px; 
+        background: #fff; 
+        border-bottom: 1px solid #eee; 
+    }
 
-.description-container.expanded {
-    max-height: 500px;
-}
+    .search-input { 
+        width: 100%; 
+        padding: 12px; 
+        border: 1px solid #000; 
+        border-radius: 2px; 
+        font-family: inherit; 
+        font-size: 14px; 
+        text-transform: uppercase;
+    }
 
-        /* Bottom Nav */
-        .bottom-nav { 
-            position: fixed; bottom: 0; left: 0; right: 0; background: #fff; 
-            display: flex; justify-content: space-around; padding: 10px 0 25px; 
-            border-top: 1px solid #eee; z-index: 1000; 
+    /* ========== LAYOUT & CONTAINERS ========== */
+    .container { 
+        padding: 15px; 
+        padding-bottom: 100px; 
+        min-height: 100vh; 
+    }
+
+    .admin-section { 
+        background: #f9f9f9; 
+        padding: 15px; 
+        border-radius: 2px; 
+        margin-top: 20px; 
+        border: 1px solid #eee; 
+    }
+
+    .field { margin-bottom: 15px; }
+    .field label { 
+        display: block; 
+        font-size: 10px; 
+        font-weight: 800; 
+        margin-bottom: 5px; 
+        text-transform: uppercase; 
+    }
+    .input-admin { 
+        width: 100%; 
+        padding: 12px; 
+        border: 1px solid #ddd; 
+        font-family: inherit; 
+        font-size: 13px; 
+        border-radius: 2px; 
+    }
+
+    /* ========== CATEGORIES ========== */
+    .cat-row { 
+        display: flex; 
+        gap: 10px; 
+        margin-bottom: 20px; 
+        overflow-x: auto; 
+        padding: 5px 0; 
+        scrollbar-width: none; 
+    }
+    .cat-row::-webkit-scrollbar { display: none; }
+
+    .cat-tab {
+        color: #000000;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        user-select: none;
+        touch-action: manipulation;
+    }
+
+    .cat-tab:active {
+        background: #000000;
+        transform: scale(0.95);
+        opacity: 0.7;
+    }
+
+    /* ========== PRODUCTS GRID ========== */
+    .products-grid { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 15px; 
+    }
+
+    .card { 
+        background: #fff; 
+        border: 1px solid #f0f0f0; 
+        position: relative; 
+        overflow: hidden; 
+    }
+
+    /* ========== CARD SLIDER ========== */
+    .slider-wrapper { 
+        position: relative; 
+        width: 100%; 
+        aspect-ratio: 3/4; 
+        overflow: hidden; 
+        background: #f9f9f9; 
+    }
+
+    .slider-inner { 
+        display: flex; 
+        overflow-x: auto; 
+        scroll-snap-type: x mandatory; 
+        scrollbar-width: none; 
+        height: 100%; 
+    }
+
+    .slider-inner::-webkit-scrollbar { display: none; }
+    
+    .slider-inner img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+        scroll-snap-align: start; 
+        flex-shrink: 0; 
+    }
+
+    .dots { 
+        position: absolute; 
+        bottom: 8px; 
+        width: 100%; 
+        display: flex; 
+        justify-content: center; 
+        gap: 4px; 
+    }
+
+    .dot { 
+        width: 4px; 
+        height: 4px; 
+        border-radius: 50%; 
+        background: rgba(0,0,0,0.2); 
+    }
+
+    .dot.active { 
+        background: #000; 
+        width: 10px; 
+        border-radius: 2px; 
+    }
+
+    /* ========== CARD CONTENT ========== */
+    .card-info { padding: 12px; }
+    
+    .card-title { 
+        font-size: 11px; 
+        font-weight: 600; 
+        height: 28px; 
+        overflow: hidden; 
+        margin-bottom: 5px; 
+        text-transform: uppercase; 
+    }
+
+    .price-row { 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        margin-bottom: 10px; 
+    }
+
+    .price { 
+        font-weight: 800; 
+        font-size: 14px; 
+    }
+
+    .old-price { 
+        font-size: 11px; 
+        color: var(--gray); 
+        text-decoration: line-through; 
+    }
+
+    .sale-badge { 
+        background: #000; 
+        color: #fff; 
+        font-size: 9px; 
+        padding: 2px 4px; 
+        font-weight: 800; 
+    }
+
+    /* ========== SIZES ========== */
+    .card-sizes { 
+        display: flex; 
+        gap: 5px; 
+        overflow-x: auto; 
+        padding: 5px 0; 
+        scrollbar-width: none; 
+        margin-bottom: 8px;
+    }
+
+    .size-chip { 
+        font-size: 9px; 
+        font-weight: 700; 
+        padding: 4px 8px; 
+        border: 1px solid #ddd; 
+        color: #000;
+        border-radius: 2px; 
+        white-space: nowrap;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .size-chip.active { 
+        background-color: #000000; 
+        color: #ffffff;
+        border-color: #000000; 
+    }
+
+    .size-chip.disabled,
+    .size-btn.disabled,
+    .disabled,
+    .disabled-size {
+        opacity: 0.3;
+        background: #eee;
+        color: var(--gray);
+        border-color: #d1d1d6;
+        pointer-events: none;
+        text-decoration: line-through;
+        cursor: not-allowed;
+    }
+
+    .size-chip:active {
+        transform: scale(0.92);
+        transition: transform 0.1s;
+    }
+
+    .size-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 30px;
+    }
+
+    .size-btn { 
+        flex: 1; 
+        padding: 12px; 
+        border: 1px solid #eee; 
+        background: #fff; 
+        color: #000; 
+        font-size: 12px; 
+        font-weight: 700; 
+        border-radius: 2px; 
+        cursor: pointer;
+    }
+
+    .size-btn.active { 
+        border-color: #000; 
+        background: #000; 
+        color: #fff; 
+    }
+
+    .size-btn:active {
+        transform: scale(0.95);
+        transition: transform 0.1s;
+    }
+
+    /* ========== BUTTONS ========== */
+    .btn-row { 
+        display: flex; 
+        gap: 8px; 
+        margin-top: 10px;
+        align-items: flex-end; 
+    }
+
+    .btn-black { 
+        background: #000; 
+        color: #fff; 
+        border: none; 
+        height: 50px; 
+        flex: 1; 
+        font-weight: 700; 
+        font-size: 11px; 
+        text-transform: uppercase; 
+        cursor: pointer; 
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .btn-fav { 
+        background: #fff; 
+        border: 1px solid #000; 
+        width: 50px;  
+        height: 50px; 
+        box-sizing: border-box;
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        padding: 0;   
+        flex-shrink: 0;
+        border-radius: 2px;
+    }
+
+    .btn-fav svg {
+        width: 24px; 
+        height: 24px;
+        display: block;
+        stroke: #000;
+    }
+
+    /* ========== FAVORITES ========== */
+    .fav-overlay { 
+        position: absolute; 
+        top: 8px; 
+        right: 8px; 
+        z-index: 10; 
+        background: rgba(255,255,255,0.7); 
+        border-radius: 50%; 
+        width: 30px; 
+        height: 30px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        border: none; 
+        cursor: pointer; 
+        backdrop-filter: blur(2px);
+    }
+
+    /* ========== MODAL WINDOWS ========== */
+    .modal { 
+        position: fixed; 
+        inset: 0; 
+        background: #fff; 
+        z-index: 2000; 
+        overflow-y: auto; 
+        padding-bottom: 50px; 
+    }
+
+    .close-modal {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 2100;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: #000;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 400;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        outline: none;
+    }
+
+    .close-modal:hover {
+        background: rgba(255, 255, 255, 0.95);
+        transform: scale(1.05);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .close-modal:active {
+        transform: scale(0.95);
+        background: rgba(255, 255, 255, 0.85);
+    }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes modalFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; visibility: hidden; }
+    }
+
+    .modal {
+        animation: modalFadeIn 0.3s ease;
+    }
+
+    .modal.fade-out {
+        animation: modalFadeOut 0.2s ease forwards;
+    }
+
+    /* ========== CART ========== */
+    .cart-item { 
+        display: flex; 
+        gap: 15px; 
+        padding: 15px 0; 
+        border-bottom: 1px solid #eee; 
+    }
+
+    .cart-img { 
+        width: 80px; 
+        aspect-ratio: 3/4; 
+        object-fit: cover; 
+    }
+
+    .qty-controls { 
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        margin-top: 10px; 
+    }
+
+    .qty-btn { 
+        width: 25px; 
+        height: 25px; 
+        border: 1px solid #000; 
+        background: none; 
+        font-weight: 800; 
+    }
+
+    /* ========== DELIVERY ========== */
+    #map { 
+        width: 100%; 
+        height: 300px; 
+        background: #f0f0f0; 
+        margin: 15px 0; 
+        border: 1px solid #000; 
+    }
+
+    .delivery-grid { 
+        display: grid; 
+        grid-template-columns: 1fr 1fr 1fr; 
+        gap: 8px; 
+        margin: 15px 0; 
+    }
+
+    /* ========== ORDERS ========== */
+    .order-card { 
+        background: #fff; 
+        border: 1px solid #eee; 
+        padding: 15px; 
+        margin-bottom: 10px; 
+        color: #000; 
+    }
+
+    .status-badge { 
+        display: inline-block; 
+        padding: 4px 8px; 
+        font-size: 9px; 
+        font-weight: 800; 
+        text-transform: uppercase; 
+        margin-top: 5px; 
+    }
+
+    .status-ready { 
+        background: #e8f5e9; 
+        color: #2e7d32; 
+    }
+
+    .status-process { 
+        background: #fff3e0; 
+        color: #ef6c00; 
+    }
+
+    /* ========== BOTTOM NAVIGATION ========== */
+    .bottom-nav { 
+        position: fixed; 
+        bottom: 0; 
+        left: 0; 
+        right: 0; 
+        background: #fff; 
+        display: flex; 
+        justify-content: space-around; 
+        padding: 10px 0 25px; 
+        border-top: 1px solid #eee; 
+        z-index: 1000; 
+    }
+
+    .nav-item { 
+        border: none; 
+        background: none; 
+        color: #a1a1a1; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        font-size: 9px; 
+        font-weight: 700; 
+        gap: 4px; 
+        text-transform: uppercase; 
+        position: relative;
+    }
+
+    .nav-item.active { color: #000; }
+    
+    .nav-item svg { 
+        width: 20px; 
+        height: 20px; 
+    }
+
+    .badge { 
+        position: absolute; 
+        top: -5px; 
+        right: -8px; 
+        background: var(--red); 
+        color: #fff; 
+        font-size: 9px; 
+        padding: 2px 5px; 
+        border-radius: 10px; 
+        font-weight: 800;
+    }
+
+    /* ========== PREVIEW IMAGES ========== */
+    .preview-container {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 10px 0;
+    }
+
+    .preview-card {
+        position: relative;
+        width: 60px;
+        height: 60px;
+    }
+
+    .preview-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+    }
+
+    .remove-preview-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ff3b30;
+        color: white;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        border: 1px solid white;
+        cursor: pointer;
+    }
+
+    /* ========== UTILITY CLASSES ========== */
+    .stable-list {
+        height: 500px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        contain: layout;
+    }
+
+    .fixed-item {
+        transition: none;
+        animation: none;
+        will-change: auto;
+    }
+
+    .description-container {
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .description-container.collapsed {
+        max-height: 60px;
+    }
+
+    .description-container.expanded {
+        max-height: 500px;
+    }
+
+    /* ========== MEDIA QUERIES ========== */
+    @media (max-width: 480px) {
+        .size-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
         }
-        .nav-item { 
-            border: none; background: none; color: #a1a1a1; display: flex; 
-            flex-direction: column; align-items: center; font-size: 9px; font-weight: 700; 
-            gap: 4px; text-transform: uppercase; position: relative;
-        }
-        .nav-item.active { color: #000; }
-        .nav-item svg { width: 20px; height: 20px; }
-        .badge { 
-            position: absolute; top: -5px; right: -8px; background: var(--red); 
-            color: #fff; font-size: 9px; padding: 2px 5px; border-radius: 10px; font-weight: 800;
-        }
-
-        /* Cart & Order Form */
-        .cart-item { display: flex; gap: 15px; padding: 15px 0; border-bottom: 1px solid #eee; }
-        .cart-img { width: 80px; aspect-ratio: 3/4; object-fit: cover; }
-        .qty-controls { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
-        .qty-btn { width: 25px; height: 25px; border: 1px solid #000; background: none; font-weight: 800; }
-
-        #map { width: 100%; height: 300px; background: #f0f0f0; margin: 15px 0; border: 1px solid #000; }
-        .delivery-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 15px 0; }
-
-        /* Admin Styles */
-        .admin-section { background: #f9f9f9; padding: 15px; border-radius: 2px; margin-top: 20px; border: 1px solid #eee; }
-        .field { margin-bottom: 15px; }
-        .field label { display: block; font-size: 10px; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; }
-        .input-admin { width: 100%; padding: 12px; border: 1px solid #ddd; font-family: inherit; font-size: 13px; border-radius: 2px; }
-        
-        .order-card { background: #fff; border: 1px solid #eee; padding: 15px; margin-bottom: 10px; color: #000; }
-        .status-badge { display: inline-block; padding: 4px 8px; font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 5px; }
-        .status-ready { background: #e8f5e9; color: #2e7d32; }
-        .status-process { background: #fff3e0; color: #ef6c00; }
-
-        [v-cloak] { display: none; }
-    </style>
+    }
+</style>
 </head>
 <body>
 
@@ -557,20 +750,15 @@ button, a, div[role="button"] {
                 <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
             </div>
             
-         // В разделе с размерами в карточках (и в favs) добавьте:
-<div class="card-sizes" v-if="p.variants && p.variants[0]">
-    <div v-for="(qty, sz) in (p.variants[0].stocks || p.variants[0].stocks)" 
+         <div class="card-sizes" v-if="p.variants && p.variants[0]">
+    <div v-for="(qty, sz) in (p.variants[0].stocks || {})" 
          :key="sz"
-         @click.stop="qty > 0 && !isSizeHidden(p, p.variants[0], sz) ? (p.tempSize = sz, vib()) : null"
+         @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
          :class="['size-chip', {
             active: p.tempSize === sz,
-            disabled: qty <= 0 || isSizeHidden(p, p.variants[0], sz)
-         }]"
-         :style="{
-            opacity: (qty <= 0 || isSizeHidden(p, p.variants[0], sz)) ? 0.3 : 1
-         }">
+            disabled: qty <= 0
+         }]">
         {{ sz }}
-        <span v-if="isSizeHidden(p, p.variants[0], sz)" style="color: #ff3b30; font-size: 8px; margin-left: 2px;">(скрыт)</span>
     </div>
 </div>
             <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
@@ -620,18 +808,17 @@ button, a, div[role="button"] {
                     <span class="price">{{p.price}} ₽</span>
                 </div>
                 
-                <!-- Размеры - такие же как в каталоге -->
-                <div class="card-sizes" v-if="p.variants && p.variants[0]">
-                    <div v-for="(qty, sz) in p.variants[0].stocks" 
-                         :key="sz"
-                         @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
-                         :class="['size-chip', {
-                            active: p.tempSize === sz,
-                            disabled: qty <= 0
-                         }]">
-                        {{ sz }}
-                    </div>
-                </div>
+               <div class="card-sizes" v-if="p.variants && p.variants[0]">
+    <div v-for="(qty, sz) in (p.variants[0].stocks || {})" 
+         :key="sz"
+         @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
+         :class="['size-chip', {
+            active: p.tempSize === sz,
+            disabled: qty <= 0
+         }]">
+        {{ sz }}
+    </div>
+</div>
                 
                 <!-- Та же кнопка "В КОРЗИНУ" -->
                 <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
@@ -856,39 +1043,91 @@ button, a, div[role="button"] {
             <input v-model="v.color" class="input-admin" placeholder="Напр: Черный">
         </div>
 
-       <div class="field" v-for="(v, vIdx) in newP.variants" :key="vIdx">
-    <label>РАЗМЕРЫ И ОСТАТКИ (нажмите + чтобы добавить свой размер)</label>
+       <!-- ЗАМЕНИТЕ ВЕСЬ БЛОК "РАЗМЕРЫ И ОСТАТКИ" НА ЭТОТ -->
+<div class="field">
+    <label>РАЗМЕРЫ И ОСТАТКИ</label>
     
-    <div style="margin-bottom: 10px;">
-        <button type="button" class="cat-tab" @click="addCustomSize(vIdx)" 
-                style="margin-bottom: 10px; font-size: 10px;">
-            + ДОБАВИТЬ РАЗМЕР
+    <div style="display: flex; flex-direction: column; gap: 12px; margin: 15px 0; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+        
+        <!-- 1. 3 ОСНОВНЫХ ПУСТЫХ ПОЛЯ (всегда показываются) -->
+        <div v-for="(sizeField, index) in tempSizes" :key="'temp_' + index" 
+             v-show="!sizeField.hidden"
+             style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #e0e0e0;">
+            
+            <!-- Поле для названия размера -->
+            <input type="text" 
+                   v-model="sizeField.name"
+                   @input="syncSizeToStocks(vIdx, index, $event)"
+                   style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center;"
+                   placeholder="Размер"
+                   @focus="sizeField.focused = true">
+            
+            <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
+            
+            <!-- Поле для количества -->
+            <input type="number" 
+                   v-model.number="sizeField.qty"
+                   min="0"
+                   @input="syncSizeToStocks(vIdx, index, $event)"
+                   style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;"
+                   placeholder="0">
+            
+            <!-- Кнопка удаления (только для дополнительных полей) -->
+            <button v-if="index >= 3" 
+                    @click="removeSizeField(vIdx, index)" 
+                    type="button" 
+                    style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
+                ×
+            </button>
+            
+            <!-- Индикатор сохранения (для отладки) -->
+            <div v-if="sizeField.savedName" 
+                 style="font-size: 9px; color: #34c759; margin-left: 5px;">
+                ✓
+            </div>
+        </div>
+        
+        <!-- 2. ОТОБРАЖЕНИЕ УЖЕ СОХРАНЕННЫХ РАЗМЕРОВ (из stocks) -->
+        <div v-for="(qty, sz) in v.stocks" :key="sz" 
+             v-if="!isSizeInTempFields(sz)"
+             style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #34c759;">
+            
+            <!-- Отображение сохраненного размера -->
+            <div style="width: 80px; padding: 8px; border: 1px solid #34c759; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center; background: #f0fff0;">
+                {{ sz }}
+            </div>
+            
+            <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
+            
+            <!-- Поле для количества сохраненного размера -->
+            <input type="number" 
+                   v-model.number="v.stocks[sz]" 
+                   min="0"
+                   style="width: 70px; padding: 8px; border: 1px solid #34c759; border-radius: 4px; font-size: 12px; text-align: center;"
+                   placeholder="0">
+            
+            <!-- Кнопка удаления сохраненного размера -->
+            <button @click="removeSize(vIdx, sz)" 
+                    type="button" 
+                    style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
+                ×
+            </button>
+        </div>
+        
+        <!-- 3. КНОПКА ДОБАВЛЕНИЯ НОВОГО ПОЛЯ -->
+        <button type="button" 
+                @click="addSizeField(vIdx)"
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 10px;">
+            <span style="font-size: 16px;">+</span>
+            ДОБАВИТЬ ЕЩЕ ОДНО ПОЛЕ РАЗМЕРА
         </button>
         
-    </div>
-    
-    <!-- Динамические размеры -->
-    <div v-for="(ds, dsIdx) in v.dynamicSizes" :key="dsIdx" 
-         style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-        
-        <input v-model="ds.size" 
-               class="input-admin" 
-               placeholder="Размер (напр: S, M, L, 42)"
-               style="width: 100px; text-transform: uppercase;">
-        
-        <input type="number" 
-               v-model.number="ds.quantity" 
-               class="input-admin" 
-               placeholder="Кол-во"
-               style="width: 80px;">
-        
-        <button type="button" @click="removeSize(vIdx, dsIdx)"
-                style="background: #ff3b30; color: white; border: none; width: 30px; height: 30px; border-radius: 4px; cursor: pointer;">
-            ✕
-        </button>
+        <!-- Информационная подсказка -->
+        <div style="font-size: 10px; color: #666; text-align: center; margin-top: 5px;">
+            Вводите названия размеров (S, M, 42, 44, 110, 120 и т.д.)
+        </div>
     </div>
 </div>
-
         <div class="field">
     <label>ФОТО ЦВЕТА (ЗАГРУЗКА)</label>
     <input type="file" multiple @change="(e) => uploadVariantImages(e, vIdx)" class="input-admin" style="padding: 8px;" accept="image/*">
@@ -922,95 +1161,56 @@ button, a, div[role="button"] {
     </div>
     
   <div v-if="showProductList" class="stable-list" style="padding: 5px; background: #fff;">
-    <template v-for="p in products" :key="p.id">
-        <div v-for="(v, vIdx) in p.variants" :key="vIdx" 
-             style="border: 1px solid #eee; padding: 15px; margin-top: 10px; background: #fafafa; display: flex; justify-content: space-between; align-items: flex-start;">
+   <template v-for="p in products" :key="p.id">
+        <div v-for="(v, vIdx) in p.variants" :key="p.id + vIdx" 
+             class="fixed-item"
+             style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;">
             
-            <!-- Левая часть с информацией -->
-            <div style="flex: 1;">
-                <!-- Фото товара -->
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <img v-if="v.images && v.images[0]" 
-                         :src="v.images[0]" 
-                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;">
-                    <div>
-                        <div style="font-weight: 800; color: #000; font-size: 12px;">
-                            {{ p.title }} 
-                            <span v-if="v.color" style="color: #666;">({{ v.color }})</span>
-                            <span v-if="p.hidden" style="color: #ff3b30; font-size: 10px;">(СКРЫТ)</span>
-                        </div>
-                        
-                        <!-- Кнопка скрыть/показать ВЕСЬ товар -->
-                        <button @click="toggleProductVisibility(p)" 
-                                :style="{ 
-                                    border: '1px solid #ccc', 
-                                    background: p.hidden ? '#34c759' : '#ff3b30', 
-                                    color: 'white',
-                                    padding: '4px 8px',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontSize: '9px',
-                                    marginTop: '5px'
-                                }">
-                            {{ p.hidden ? 'ПОКАЗАТЬ ТОВАР' : 'СКРЫТЬ ТОВАР' }}
-                        </button>
-                    </div>
-                </div>
+            <div style="display: flex; gap: 15px; align-items: start;">
+                <img :src="v.images?.[0] || ''" style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #eee;">
                 
-                <!-- Размеры -->
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <div v-for="(qty, sz) in (v.stocks || {})" :key="sz" 
-                         style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 6px;">
-                        
-                        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                            <span style="font-weight: 800; min-width: 40px;"
-                                  :style="{ 
-                                      color: isSizeHidden(p, v, sz) ? '#ccc' : '#000', 
-                                      textDecoration: isSizeHidden(p, v, sz) ? 'line-through' : 'none' 
-                                  }">
-                                {{ sz }}
-                            </span>
-                            
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <span style="font-size: 10px; color: #999;">ШТ:</span>
-                                <!-- В блоке с размерами в админке измените инпут: -->
-<input type="number" 
-       v-model.number="v.stocks[sz]" 
-       @change="updateStock(p, sz)"
-       :data-product="p.id"
-       :data-size="sz"
-       style="width: 50px; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 12px; text-align: center;">
-                            </div>
-                        </div>
-
-                        <!-- Кнопка скрыть/показать размер -->
-                        <button @click="toggleVariantSizeVisibility(p, v, sz)" 
-                                :style="{ 
-                                    border: '1px solid', 
-                                    background: isSizeHidden(p, v, sz) ? '#34c759' : '#fff', 
-                                    color: isSizeHidden(p, v, sz) ? '#fff' : '#ff3b30',
-                                    borderColor: isSizeHidden(p, v, sz) ? '#34c759' : '#ff3b30',
-                                    padding: '4px 8px',
-                                    borderRadius: '4px',
-                                    fontSize: '9px',
-                                    cursor: 'pointer'
-                                }">
-                            {{ isSizeHidden(p, v, sz) ? 'ОТКРЫТЬ' : 'СКРЫТЬ' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">{{ p.title }}</div>
+                    <div style="font-size: 11px; color: #000; font-weight: 700; margin-bottom: 8px;">ЦВЕТ: {{ v.color }}</div>
+                    
+                   <div style="display: flex; flex-direction: column; gap: 5px;">
+    <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
+         style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 6px 8px; border-radius: 6px;">
+        
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+            <span style="font-size: 12px; font-weight: 600; min-width: 25px; color: #000;">
+                {{ sz }}
+            </span>
             
-            <!-- Правая часть с кнопками редактирования и удаления -->
-            <div style="display: flex; flex-direction: column; gap: 8px; margin-left: 15px;">
-                <button @click="editProduct(p)" 
-                        style="border: none; background: #007aff; color: white; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    ✏️
-                </button>
-                <button @click="deleteProductWithConfirm(p.id)" 
-                        style="border: none; background: #ff3b30; color: white; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    🗑
-                </button>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 9px; color: #999;">ШТ:</span>
+                <input type="number" 
+                       v-model.number="v.stocks[sz]" 
+                       @change="updateStock(p)"
+                       style="width: 45px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; font-size: 11px; font-weight: bold; text-align: center;">
+            </div>
+        </div>
+    </div>
+</div>
+
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button @click="toggleProductVisibility(p)" 
+                :style="{ 
+                border: 'none', 
+                background: p.hidden ? '#34c759' : '#ff3b30', 
+                fontSize: '12px', 
+                fontWeight: '800', 
+                color: '#fff', 
+                cursor: 'pointer',
+                padding: '5px 10px',
+                borderRadius: '4px'
+            }">
+        {{ p.hidden ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
+    </button>
+                    <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
+                    <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
+
+                </div>
             </div>
         </div>
     </template>
@@ -1092,10 +1292,10 @@ button, a, div[role="button"] {
 
         
 
-      <div class="size-grid">
+       <div class="size-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 30px;">
     <template v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || {})" :key="sz">
-        <!-- Показываем размер ТОЛЬКО если он существует в stocks -->
-        <button v-if="sz !== undefined && sz !== null && sz !== ''"
+        
+        <button v-if="!(selP.hiddenSizes || []).includes(String(sz).trim())"
                 @click="qty > 0 ? (selP.tempSize = sz, vib()) : null"
                 :class="['size-btn', { active: selP.tempSize === sz }]"
                 :disabled="qty <= 0"
@@ -1118,6 +1318,7 @@ button, a, div[role="button"] {
                 {{qty}} шт.
             </div>
         </button>
+        
     </template>
 </div>
 <div style="position: relative; margin: 20px 0 30px 0; padding-top: 15px; border-top: 1px solid #f0f0f0;">
@@ -1200,6 +1401,8 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+           tempSizes: [ {}, {}, {} ], // 3 пустых поля по умолчанию
+         sizeKeys: [{}], 
         expandedDescriptionId: null, 
         selVariantIdx: 0, // Индекс выбранного цвета
         deliv: 'доставка', // Значение по умолчанию
@@ -1232,7 +1435,7 @@ Vue.createApp({
         },
         
         // Поля для админки
-       // Заменить существующий newP.variants на:
+       // data() -> newP.variants
 newP: {
     title: '',
     desc: '',
@@ -1240,20 +1443,13 @@ newP: {
     oldPrice: null,
     category: '',
     isNew: false,
-     hidden: false, // скрыть весь товар
+    hidden: false,
     variants: [
         { 
             color: '', 
             images: [], 
-            // УБИРАЕМ фиксированный объект stocks и заменяем на массив
-            dynamicSizes: [
-                { size: '42', quantity: 0 },
-                { size: '44', quantity: 0 },
-                { size: '46', quantity: 0 },
-                { size: '48', quantity: 0 }
-            ],
-            isUploading: false,
-            hidden: false // Новое поле для скрытия цвета
+            stocks: {},  // ПУСТОЙ объект вместо { '42': 0, '44': 0, '46': 0, '48': 0 }
+            isUploading: false 
         }
     ]
 },
@@ -1337,38 +1533,28 @@ newP: {
             (p.color && p.color.toLowerCase().includes(q))
         );
     },
-      filteredProducts() {
+       filteredProducts() {
+    // 1. Быстрая проверка на наличие данных
     if (!this.products || !Array.isArray(this.products)) return [];
     
     try {
+        // 2. Подготавливаем данные для поиска один раз (оптимизация)
         const query = (this.searchQuery || '').toLowerCase().trim();
         const targetCat = (this.currentCat || '').toLowerCase().trim();
 
         return this.products.filter(p => {
+            // 3. Защита: проверяем, что объект товара существует
             if (!p) return false;
 
-            // 1. Если весь товар скрыт
+            // 4. СКРЫТИЕ: Если товар помечен как hidden, не показываем его клиенту
+            // (p?.hidden корректно вернет false, если свойства еще нет в базе)
             if (p?.hidden === true) return false;
 
-            // 2. Фильтруем по цветам (скрытые не показываем)
-            if (p.variants && Array.isArray(p.variants)) {
-                // Оставляем только НЕ скрытые цвета
-                const visibleVariants = p.variants.filter(v => !v.hidden);
-                
-                // Если ВСЕ цвета скрыты - не показываем товар
-                if (visibleVariants.length === 0) return false;
-                
-                // Для отображения берем только первый видимый цвет
-                // (это нужно для отображения в каталоге)
-                const firstVisibleVariant = visibleVariants[0];
-                p.displayVariant = firstVisibleVariant;
-            }
-
-            // 3. ПОИСК
+            // 5. ПОИСК
             const titleMatch = query === '' || 
                 (p.title && String(p.title).toLowerCase().includes(query));
 
-            // 4. КАТЕГОРИЯ
+            // 6. КАТЕГОРИЯ
             let catMatch = true;
             if (targetCat !== '' && targetCat !== 'все') {
                 const prodCat = p.category ? String(p.category).toLowerCase().trim() : '';
@@ -1425,154 +1611,28 @@ total() {
 async updateStock(product, size) {
     try {
         const productRef = window.fb.doc(window.db, "products", product.id);
-        let newValue;
-        let dbPath;
-
-        // Находим вариант товара
+        
+        // Если у товара есть варианты
         if (product.variants && product.variants[0]) {
-            const variant = product.variants[0];
-            newValue = Number(variant.stocks[size]);
-            dbPath = `variants.0.stocks.${size}`;
+            // Создаем глубокую копию variants для обновления
+            const updatedVariants = JSON.parse(JSON.stringify(product.variants));
             
-            // Обновляем локально
-            variant.stocks[size] = newValue;
-        } else {
-            newValue = Number(product.stocks[size]);
-            dbPath = `stocks.${size}`;
-            product.stocks[size] = newValue;
-        }
-
-        // Обновляем в БД
-        await window.fb.updateDoc(productRef, {
-            [dbPath]: newValue
-        });
-
-        // Если количество стало 0, автоматически скрываем размер
-        if (newValue <= 0) {
-            const variant = product.variants?.[0];
-            if (variant) {
-                const sizeKey = `${variant.color}_${size}`;
-                if (!product.hiddenSizes) product.hiddenSizes = [];
+            // Обновляем stock для первого варианта (или можно адаптировать для всех)
+            if (updatedVariants[0].stocks[size] !== undefined) {
+                updatedVariants[0].stocks[size] = Number(product.variants[0].stocks[size]);
                 
-                // Добавляем в скрытые, если еще не добавлен
-                if (!product.hiddenSizes.includes(sizeKey)) {
-                    product.hiddenSizes.push(sizeKey);
-                    await window.fb.updateDoc(productRef, {
-                        hiddenSizes: product.hiddenSizes
-                    });
-                }
+                await window.fb.updateDoc(productRef, {
+                    variants: updatedVariants
+                });
             }
         }
-
+        
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
-        
-        alert(`Остаток для размера ${size} обновлен до ${newValue}`);
     } catch (e) {
         console.error("Ошибка обновления остатка:", e);
-        alert("Ошибка обновления остатка: " + e.message);
     }
-},
- async toggleVariantVisibility(p, v) {
-        try {
-            const productRef = window.fb.doc(window.db, "products", p.id);
-            
-            // Находим индекс варианта
-            const variantIndex = p.variants.findIndex(variant => 
-                variant.color === v.color || 
-                (variant.images && v.images && variant.images[0] === v.images[0])
-            );
-            
-            if (variantIndex === -1) return;
-            
-            // Переключаем статус hidden
-            p.variants[variantIndex].hidden = !p.variants[variantIndex].hidden;
-            
-            // Обновляем в БД
-            await window.fb.updateDoc(productRef, {
-                variants: p.variants
-            });
-            
-            // Обновляем локально
-            const productIndex = this.products.findIndex(prod => prod.id === p.id);
-            if (productIndex > -1) {
-                this.products[productIndex].variants = p.variants;
-            }
-            
-            this.vib('light');
-        } catch (e) {
-            console.error("Ошибка скрытия цвета:", e);
-            alert("Ошибка при скрытии цвета");
-        }
-    },
-    // Исправленный метод для скрытия/показа размера
-// Замените текущий метод на этот:
-async toggleVariantSizeVisibility(p, v, sz) {
-    try {
-        const productRef = window.fb.doc(window.db, "products", p.id);
-        
-        // Инициализируем скрытые размеры, если их нет
-        if (!p.hiddenSizes) {
-            p.hiddenSizes = [];
-        }
-        
-        // Формат ключа: "цвет_размер" (например: "Черный_42")
-        const sizeKey = `${v.color}_${sz}`;
-        const index = p.hiddenSizes.indexOf(sizeKey);
-        
-        if (index > -1) {
-            // Если размер уже скрыт - показываем его (удаляем из скрытых)
-            p.hiddenSizes.splice(index, 1);
-        } else {
-            // Если размер не скрыт - скрываем его (добавляем в скрытые)
-            p.hiddenSizes.push(sizeKey);
-        }
-        
-        // Обновляем в БД
-        await window.fb.updateDoc(productRef, {
-            hiddenSizes: p.hiddenSizes
-        });
-        
-        // Обновляем локально
-        const productIndex = this.products.findIndex(prod => prod.id === p.id);
-        if (productIndex > -1) {
-            this.products[productIndex].hiddenSizes = p.hiddenSizes;
-        }
-        
-        // Обновляем tempSize, если скрыли выбранный размер
-        if (p.tempSize === sz) {
-            p.tempSize = null;
-        }
-        
-        this.vib('light');
-    } catch (e) {
-        console.error("Ошибка при скрытии размера:", e);
-        alert("Не удалось сохранить изменения");
-    }
-},
-    
-   
-   // Проверка скрыт ли размер
-// Проверка скрыт ли размер - ДОЛЖЕН ИСПОЛЬЗОВАТЬ ТОТ ЖЕ КЛЮЧ!
-// Замените текущий метод на этот:
-isSizeHidden(p, v, sz) {
-    if (!p || !v || !sz) return false;
-    
-    // Инициализируем hiddenSizes если их нет
-    if (!p.hiddenSizes) return false;
-    
-    // Формат ключа должен быть ТОЧНО таким же как в toggleVariantSizeVisibility
-    // Используем v.color для получения цвета текущего варианта
-    const sizeKey = `${v.color}_${sz}`;
-    
-    // Дополнительная проверка: ищем ключ без цвета
-    const simpleKey = sz.toString();
-    
-    // Проверяем оба варианта (для совместимости со старыми данными)
-    return p.hiddenSizes.includes(sizeKey) || 
-           p.hiddenSizes.includes(simpleKey) ||
-           p.hiddenSizes.includes(`${v.color}_${simpleKey}`);
 },
         setCategory(name) {
             try {
@@ -1585,6 +1645,178 @@ isSizeHidden(p, v, sz) {
                 this.currentCat = '';
             }
         },
+         addSize(variantIndex) {
+        const tempKey = `new_${Date.now()}`;
+        
+        // Используем $set для реактивности
+        this.$set(this.newP.variants[variantIndex].stocks, tempKey, 0);
+        
+        // Инициализируем ключ для отображения
+        if (!this.sizeKeys[variantIndex]) {
+            this.$set(this.sizeKeys, variantIndex, {});
+        }
+        this.$set(this.sizeKeys[variantIndex], tempKey, '');
+    },
+    syncSizeToStocks(variantIndex, fieldIndex, event) {
+        const field = this.tempSizes[fieldIndex];
+        
+        // Если поле пустое - удаляем из stocks
+        if (!field.name || field.name.trim() === '') {
+            // Находим и удаляем пустые записи из stocks
+            const variant = this.newP.variants[variantIndex];
+            Object.keys(variant.stocks).forEach(key => {
+                if (key.startsWith('temp_')) {
+                    delete variant.stocks[key];
+                }
+            });
+            return;
+        }
+        
+        // Сохраняем в stocks
+        const sizeName = field.name.trim();
+        const quantity = field.qty || 0;
+        
+        // Удаляем старый временный ключ, если он был
+        if (field.tempKey) {
+            delete this.newP.variants[variantIndex].stocks[field.tempKey];
+        }
+        
+        // Создаем новый ключ
+        field.tempKey = `temp_${variantIndex}_${fieldIndex}_${Date.now()}`;
+        this.newP.variants[variantIndex].stocks[sizeName] = quantity;
+        field.savedName = sizeName;
+        
+        // Автоматически добавляем новое пустое поле, если это последнее заполненное
+        if (fieldIndex === this.tempSizes.length - 1 && sizeName && quantity > 0) {
+            this.addSizeField(variantIndex);
+        }
+    },
+    
+    // Добавить новое пустое поле для размера
+    addSizeField(variantIndex) {
+        this.tempSizes.push({
+            name: '',
+            qty: 0,
+            hidden: false,
+            focused: false,
+            tempKey: null,
+            savedName: ''
+        });
+        
+        // Фокусируемся на новом поле
+        this.$nextTick(() => {
+            const lastIndex = this.tempSizes.length - 1;
+            const inputs = document.querySelectorAll(`[v-model="sizeField.name"]`);
+            if (inputs[lastIndex]) {
+                inputs[lastIndex].focus();
+            }
+        });
+    },
+    
+    // Удалить поле размера (только для дополнительных полей)
+    removeSizeField(variantIndex, fieldIndex) {
+        const field = this.tempSizes[fieldIndex];
+        
+        // Удаляем из stocks если было сохранено
+        if (field.savedName) {
+            delete this.newP.variants[variantIndex].stocks[field.savedName];
+        }
+        
+        // Скрываем поле вместо удаления
+        this.tempSizes[fieldIndex].hidden = true;
+        
+        // Вибрация
+        this.vib();
+    },
+    
+    // Удалить сохраненный размер
+    removeSize(variantIndex, sizeName) {
+        if (confirm(`Удалить размер "${sizeName}"?`)) {
+            delete this.newP.variants[variantIndex].stocks[sizeName];
+            this.vib();
+        }
+    },
+    
+    // Проверить, есть ли размер уже в временных полях
+    isSizeInTempFields(sizeName) {
+        return this.tempSizes.some(field => field.savedName === sizeName);
+    },
+    
+    // При добавлении нового варианта цвета
+    addVariant() {
+        this.newP.variants.push({
+            color: '',
+            images: [],
+            stocks: {}
+        });
+        
+        // Сбрасываем временные поля для нового варианта
+        // (в реальности нужна более сложная логика для каждого варианта)
+        this.resetTempFields();
+    },
+    
+    // Сбросить временные поля
+    resetTempFields() {
+        this.tempSizes = [
+            { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' },
+            { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' },
+            { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' }
+        ];
+    },
+     updateSizeName(variantIndex, oldKey, event) {
+        const newName = event.target.value.trim();
+        
+        if (!newName) {
+            // Если название пустое - удаляем размер
+            this.removeSize(variantIndex, oldKey);
+            return;
+        }
+        
+        if (newName === oldKey) return; // Не изменилось
+        
+        // Создаем новый ключ с правильным именем
+        const variant = this.newP.variants[variantIndex];
+        const currentValue = variant.stocks[oldKey];
+        
+        // Добавляем новый ключ
+        this.$set(variant.stocks, newName, currentValue);
+        
+        // Удаляем старый ключ
+        this.$delete(variant.stocks, oldKey);
+        
+        // Обновляем ключ в массиве отображения
+        this.$set(this.sizeKeys[variantIndex], newName, newName);
+        this.$delete(this.sizeKeys[variantIndex], oldKey);
+    },
+    
+    // Удалить размер
+    removeSize(variantIndex, sizeName) {
+        if (confirm(`Удалить размер "${sizeName}"?`)) {
+            // Удаляем из stocks
+            this.$delete(this.newP.variants[variantIndex].stocks, sizeName);
+            
+            // Удаляем из keys
+            if (this.sizeKeys[variantIndex]) {
+                this.$delete(this.sizeKeys[variantIndex], sizeName);
+            }
+        }
+    },
+    
+    // При добавлении нового варианта цвета
+    addVariant() {
+        this.newP.variants.push({
+            color: '',
+            images: [],
+            stocks: {} // ПУСТОЙ объект
+        });
+        this.sizeKeys.push({}); // Добавляем пустой объект для ключей
+    },
+    
+    // При удалении варианта
+    removeVariant(vIdx) {
+        this.newP.variants.splice(vIdx, 1);
+        this.sizeKeys.splice(vIdx, 1);
+    },
      async fetchProducts() {
     // ПРОВЕРКА: Если fb еще не определен, ждем и пробуем снова
     if (!window.fb || !window.fb.query) {
@@ -1617,22 +1849,6 @@ isSizeHidden(p, v, sz) {
         
     } catch (e) {
         console.error("Ошибка при получении списка товаров:", e);
-    }
-},
-addCustomSize(variantIndex) {
-    const sizeName = prompt('Введите название размера (например: S, M, L, 42, 44):');
-    if (sizeName && sizeName.trim()) {
-        const newSize = { 
-            size: sizeName.trim().toUpperCase(), 
-            quantity: 0 
-        };
-        this.newP.variants[variantIndex].dynamicSizes.push(newSize);
-    }
-},
-
-removeSize(variantIndex, sizeIndex) {
-    if (confirm('Удалить этот размер?')) {
-        this.newP.variants[variantIndex].dynamicSizes.splice(sizeIndex, 1);
     }
 },
 initializeProductTempSize(product) {
@@ -1686,6 +1902,21 @@ updateFavListWithTempSize() {
         }
     });
 },
+ addSize(variantIndex) {
+        const sizeName = prompt('Введите название размера (например: 42, M, XL):');
+        if (sizeName && sizeName.trim()) {
+            // Используем Vue.set для реактивности
+            this.$set(this.newP.variants[variantIndex].stocks, sizeName.trim(), 0);
+        }
+    },
+    
+    // Удалить размер
+    removeSize(variantIndex, sizeName) {
+        if (confirm(`Удалить размер "${sizeName}"?`)) {
+            // Используем Vue.delete для реактивности
+            this.$delete(this.newP.variants[variantIndex].stocks, sizeName);
+        }
+    },
 toggleDescription(productId) {
         if (this.expandedDescriptionId === productId) {
             this.expandedDescriptionId = null;
@@ -1738,7 +1969,20 @@ toggleDescription(productId) {
 hasSelectedSize(p) {
     return !!p.tempSize;
 },
-
+ async toggleProductVisibility(p) {
+        try {
+            const productRef = window.fb.doc(window.db, "products", p.id);
+            await window.fb.updateDoc(productRef, {
+                hidden: !p.hidden
+            });
+            
+            this.vib('light');
+            alert(p.hidden ? 'Товар показан' : 'Товар скрыт');
+        } catch (e) {
+            console.error("Ошибка:", e);
+            alert("Не удалось изменить видимость товара");
+        }
+    },
 // Возвращает текст для кнопки
 getAddToCartText(p) {
     if (!p.tempSize) {
@@ -1791,19 +2035,24 @@ openProductFromCart(item) {
 },
 
 
-   openProduct(p) {
+     openProduct(p) {
+    // УБЕРИТЕ эту строку - она вызывает проблему!
+    // this.tab = 'product';   // ❌ УДАЛИТЬ!
+    
     window.scrollTo(0,0);
     
+    // 1. Сначала сбрасываем индекс
     this.currentVariantIndex = 0;
+
+    // 2. Делаем глубокую копию
     let productCopy = JSON.parse(JSON.stringify(p));
 
-    // Если старый товар без variants
+    // 3. ПРОВЕРКА: Если товар старый
     if (!productCopy.variants || !Array.isArray(productCopy.variants) || productCopy.variants.length === 0) {
         productCopy.variants = [{
             color: productCopy.color || 'Стандарт',
             images: productCopy.images || [],
-            stocks: {},
-            hidden: false
+            stocks: {}
         }];
         
         if (productCopy.sizes) {
@@ -1814,41 +2063,25 @@ openProductFromCart(item) {
         }
     }
 
-    // ФИЛЬТРАЦИЯ: скрываем полностью скрытые цвета
-    productCopy.variants = productCopy.variants.filter(v => !v.hidden);
-    
-    // Если все цвета скрыты - показываем сообщение и не открываем
-    if (productCopy.variants.length === 0) {
-        alert("Этот товар временно недоступен");
-        return;
-    }
-
+    // 4. Гарантируем наличие индекса анимации
     productCopy.aIdx = 0;
+
+    // 5. Сохраняем в selP (это покажет модальное окно через v-if="selP")
     this.selP = productCopy;
 
-    // Выбор размера по умолчанию (только не скрытые)
+    // 6. Выбор размера по умолчанию
     const firstVar = this.selP.variants[0];
     if (firstVar && firstVar.stocks) {
-        // Фильтруем скрытые размеры с учетом ВСЕХ условий:
-        const availableSizes = Object.keys(firstVar.stocks).filter(sz => {
-            // 1. Проверяем, скрыт ли размер через hiddenSizes
-            const sizeKey = `${firstVar.color}_${sz}`;
-            const isHiddenBySize = (this.selP.hiddenSizes || []).includes(sizeKey);
-            
-            // 2. Проверяем, есть ли остаток
-            const hasStock = firstVar.stocks[sz] > 0;
-            
-            // 3. Размер доступен если: не скрыт И есть остаток
-            return !isHiddenBySize && hasStock;
-        });
-        
-        // Выбираем первый доступный размер
-        this.selP.tempSize = availableSizes[0] || null;
+        const availableSize = Object.keys(firstVar.stocks).find(sz => firstVar.stocks[sz] > 0);
+        this.selP.tempSize = availableSize || Object.keys(firstVar.stocks)[0] || null;
     } else {
         this.selP.tempSize = null;
     }
 
+    // 7. Блокируем прокрутку основной страницы
     document.body.style.overflow = 'hidden';
+
+    // 8. Вибрация
     if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
@@ -2076,67 +2309,46 @@ quickAddToCart(p) {
     if (!p) return;
     this.vib();
 
-    if (selSize) {
-        const sizeKey = `${currentVariant.color}_${selSize}`;
-        if ((p.hiddenSizes || []).includes(sizeKey)) {
-            alert("Этот размер временно недоступен");
-            return;
-        }
-    }
-
-    // Берем вариант для отображения (первый не скрытый)
-    const variant = p.displayVariant || (p.variants && p.variants.find(v => !v.hidden)) || p.variants[0];
+    // 1. ОПРЕДЕЛЯЕМ ВАРИАНТ (Для каталога всегда берем ПЕРВЫЙ доступный цвет)
+    const variant = p.variants && p.variants.length > 0 ? p.variants[0] : null;
     
-    if (!variant) {
-        alert("Этот товар временно недоступен");
-        return;
-    }
-
+    // Если вариантов нет (поддержка старых товаров), создаем временный объект
     const currentVariant = variant || { 
         color: p.color || 'Стандарт', 
         stocks: p.stocks || p.stocks || {}, 
-        images: p.images || [],
-        hidden: false
+        images: p.images || [] 
     };
 
-    // Если цвет скрыт
-    if (currentVariant.hidden) {
-        alert("Этот цвет временно недоступен");
-        return;
-    }
-
+    // Используем нормализованное имя поля stock
     const currentStock = currentVariant.stocks || currentVariant.stocks || {};
 
-    // Определяем размер
+    // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
+    // Если клиент кликнул на чип в каталоге — берем его (tempSize)
+    // Если нет — ищем первый размер, где остаток > 0
     let selSize = p.tempSize;
     if (!selSize) {
-        // Ищем первый доступный НЕ скрытый размер
-        selSize = Object.keys(currentStock).find(sz => {
-            const sizeKey = `${currentVariant.color}_${sz}`;
-            const isHidden = (p.hiddenSizes || []).includes(sizeKey);
-            return currentStock[sz] > 0 && !isHidden;
-        });
+        selSize = Object.keys(currentStock).find(sz => currentStock[sz] > 0);
     }
 
-    // Проверка на скрытые размеры
-    if (selSize) {
-        const sizeKey = `${currentVariant.color}_${selSize}`;
-        if ((p.hiddenSizes || []).includes(sizeKey)) {
-            alert("Этот размер временно недоступен");
-            return;
-        }
-    }
-
+    // Если размеров нет в наличии — открываем карточку товара, чтобы клиент сам посмотрел
     if (!selSize || currentStock[selSize] <= 0) {
         return this.openProduct(p);
     }
 
+    // 3. ПРОВЕРКА СКРЫТЫХ РАЗМЕРОВ (если у тебя есть такая логика)
+    if (p.hiddenSizes && p.hiddenSizes.includes(String(selSize))) {
+        return; 
+    }
+
+    // 4. ФОРМИРУЕМ УНИКАЛЬНЫЙ ID (ID товара + Цвет + Размер)
     const currentColor = currentVariant.color;
     const cartId = `${p.id}_${currentColor}_${selSize}`;
     
+    // 5. ДОБАВЛЕНИЕ В КОРЗИНУ
     const exist = this.cart.find(i => i.cartId === cartId);
     
     if (exist) {
+        // Проверяем, не превышаем ли мы остаток на складе
         if (exist.qty < (currentStock[selSize] || 99)) {
             exist.qty++;
         } else {
@@ -2146,11 +2358,13 @@ quickAddToCart(p) {
             return;
         }
     } else {
+        // Добавляем новый товар в корзину
         this.cart.push({ 
             id: p.id,
             cartId: cartId,
             title: p.title,
             price: Number(p.price),
+            // Берем фото именно выбранного цвета
             img: currentVariant.images[0] || (p.images ? p.images[0] : ''),
             selSize: selSize,
             selColor: currentColor,
@@ -2160,10 +2374,12 @@ quickAddToCart(p) {
 
     this.saveCart();
     
+    // Telegram фидбек
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     }
     
+    // Анимация плашки "Добавлено"
     this.showCartNotify = true;
     setTimeout(() => { this.showCartNotify = false; }, 2000);
 },
@@ -2376,25 +2592,10 @@ async saveProduct() {
         return alert('Загрузите хотя бы одно фото!');
     }
 
-    this.loading = true;
+    this.loading = true; // Включаем индикатор загрузки (предотвращает белый экран)
     
     try {
-        // ПРЕОБРАЗУЕМ dynamicSizes в stocks для совместимости
-        const variantsForSave = JSON.parse(JSON.stringify(this.newP.variants));
-        
-        variantsForSave.forEach(variant => {
-            // Преобразуем dynamicSizes в формат stocks
-            const stocksObj = {};
-            variant.dynamicSizes.forEach(ds => {
-                stocksObj[ds.size] = ds.quantity;
-            });
-            variant.stocks = stocksObj;
-            
-            // Удаляем dynamicSizes, т.к. не храним в БД
-            delete variant.dynamicSizes;
-        });
-
-        // Подготовка данных
+        // Подготовка данных с глубоким копированием
         const productData = {
             title: this.newP.title.trim(),
             desc: this.newP.desc || '',
@@ -2404,66 +2605,88 @@ async saveProduct() {
             isNew: !!this.newP.isNew,
             hidden: !!this.newP.hidden,
             hiddenSizes: this.newP.hiddenSizes || [],
-            variants: variantsForSave,
+            variants: JSON.parse(JSON.stringify(this.newP.variants)),
             images: [this.newP.variants[0].images[0]], 
             updatedAt: Date.now()
         };
 
         if (this.editId) {
-            // Редактирование
+            // Редактирование существующего товара
             const docRef = window.fb.doc(window.db, "products", this.editId);
             await window.fb.updateDoc(docRef, productData);
             
-            // Обновляем локально
             const idx = this.products.findIndex(p => p.id === this.editId);
             if (idx !== -1) {
                 this.products.splice(idx, 1, { id: this.editId, ...productData });
             }
             alert('Обновлено успешно!');
         } else {
-            // Создание нового
+            // Создание нового товара
             productData.createdAt = Date.now();
             const docRef = await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
-            this.products.unshift({ id: docRef.id, ...productData });
+            
+            // Добавляем в локальный массив для мгновенного отображения
+            this.products.unshift({ id: docRef.id, ...productData }); 
             alert('Товар успешно создан!');
         }
 
-        // Сбрасываем форму
-        this.cancelEdit();
-        this.tab = 'profile';
+        // --- ПЕРЕХОД ПОСЛЕ УСПЕХА ---
+        this.cancelEdit();       // Сбрасываем форму и переменные
+        this.tab = 'profile';    // ОТКРЫВАЕМ ВКЛАДКУ ПРОФИЛЯ (убедитесь, что имя вкладки совпадает)
         
     } catch (e) {
         console.error("Ошибка сохранения:", e);
         alert('Критическая ошибка: ' + e.message);
     } finally {
+        // Гарантируем отключение лоадера, чтобы не висел белый экран
         this.loading = false;
     }
 },
-    editProduct(p) {
+  editProduct(p) {
+    const list = document.querySelector('.stable-list');
+    const scrollPos = list ? list.scrollTop : 0;
+    
+    const cleanItem = JSON.parse(JSON.stringify(p));
     this.editId = p.id;
     
-    // Копируем товар
-    const cleanItem = JSON.parse(JSON.stringify(p));
+    // Инициализируем tempSizes на основе существующих размеров
+    this.tempSizes = [
+        { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' },
+        { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' },
+        { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' }
+    ];
     
-    // Преобразуем stocks обратно в dynamicSizes для редактирования
-    if (cleanItem.variants && Array.isArray(cleanItem.variants)) {
-        cleanItem.variants.forEach(variant => {
-            if (variant.stocks) {
-                // Преобразуем stocks в dynamicSizes
-                variant.dynamicSizes = Object.keys(variant.stocks).map(size => ({
-                    size: size,
-                    quantity: variant.stocks[size] || 0
-                }));
-            } else {
-                // Если нет stocks, создаем пустой массив
-                variant.dynamicSizes = [
-                    { size: '42', quantity: 0 },
-                    { size: '44', quantity: 0 },
-                    { size: '46', quantity: 0 },
-                    { size: '48', quantity: 0 }
-                ];
+    // Заполняем первые 3 поля существующими размерами
+    const firstVariant = cleanItem.variants && cleanItem.variants[0];
+    if (firstVariant && firstVariant.stocks) {
+        const sizeKeys = Object.keys(firstVariant.stocks);
+        
+        sizeKeys.slice(0, 3).forEach((sizeName, index) => {
+            if (this.tempSizes[index]) {
+                this.tempSizes[index] = {
+                    name: sizeName,
+                    qty: firstVariant.stocks[sizeName] || 0,
+                    hidden: false,
+                    focused: false,
+                    tempKey: null,
+                    savedName: sizeName
+                };
             }
         });
+        
+        // Если размеров больше 3, добавляем дополнительные поля
+        if (sizeKeys.length > 3) {
+            sizeKeys.slice(3).forEach((sizeName, index) => {
+                this.tempSizes.push({
+                    name: sizeName,
+                    qty: firstVariant.stocks[sizeName] || 0,
+                    hidden: false,
+                    focused: false,
+                    tempKey: null,
+                    savedName: sizeName
+                });
+            });
+        }
     }
     
     this.newP = {
@@ -2473,30 +2696,23 @@ async saveProduct() {
         oldPrice: cleanItem.oldPrice || null,
         category: cleanItem.category || '',
         isNew: !!cleanItem.isNew,
-        hidden: !!cleanItem.hidden,
         hiddenSizes: cleanItem.hiddenSizes || [],
         variants: cleanItem.variants || [
-            { 
-                color: '', 
-                images: [], 
-                dynamicSizes: [
-                    { size: '42', quantity: 0 },
-                    { size: '44', quantity: 0 },
-                    { size: '46', quantity: 0 },
-                    { size: '48', quantity: 0 }
-                ],
-                isUploading: false,
-                hidden: false
-            }
+            { color: 'Стандарт', images: cleanItem.images || [], stocks: {} }
         ]
     };
     
     this.showProductList = false;
     window.scrollTo(0, 0);
+    
+    this.$nextTick(() => {
+        if (list) list.scrollTop = scrollPos;
+    });
 },
 cancelEdit() {
     this.editId = null;
     this.showProductList = true;
+    this.resetTempFields(); // Сбрасываем поля
     
     this.newP = {
         title: '',
@@ -2505,25 +2721,13 @@ cancelEdit() {
         oldPrice: null,
         category: '',
         isNew: false,
-        hidden: false,
         hiddenSizes: [],
         variants: [
-            { 
-                color: '', 
-                images: [], 
-                dynamicSizes: [
-                    { size: '42', quantity: 0 },
-                    { size: '44', quantity: 0 },
-                    { size: '46', quantity: 0 },
-                    { size: '48', quantity: 0 }
-                ],
-                isUploading: false,
-                hidden: false
-            }
+            { color: '', images: [], stocks: {} }
         ]
     };
     
-    if (this.localFiles) this.localFiles = [];
+    if (this.localFiles) this.localFiles = []; 
 },
 
         async deleteProduct(id) {
@@ -2548,46 +2752,8 @@ cancelEdit() {
         if (confirm(msg)) runDelete();
     }
 },
-// В методах Vue приложения
 
-// Метод для скрытия/показа всего товара
-async toggleProductVisibility(p) {
-    try {
-        const productRef = window.fb.doc(window.db, "products", p.id);
-        const newHiddenStatus = !p.hidden;
-        
-        // Если скрываем весь товар - скрываем все цвета
-        if (newHiddenStatus && p.variants) {
-            p.variants.forEach(v => {
-                v.hidden = true;
-            });
-        }
-        // Если показываем товар - показываем все цвета
-        else if (!newHiddenStatus && p.variants) {
-            p.variants.forEach(v => {
-                v.hidden = false;
-            });
-        }
-        
-        // Обновляем в БД
-        await window.fb.updateDoc(productRef, {
-            hidden: newHiddenStatus,
-            variants: p.variants
-        });
-        
-        // Обновляем локально
-        const productIndex = this.products.findIndex(prod => prod.id === p.id);
-        if (productIndex > -1) {
-            this.products[productIndex].hidden = newHiddenStatus;
-            this.products[productIndex].variants = p.variants;
-        }
-        
-        this.vib('light');
-    } catch (e) {
-        console.error("Ошибка скрытия товара:", e);
-        alert("Ошибка при скрытии товара");
-    }
-},
+
 async deleteProductWithConfirm(productId) {
     if (confirm("Вы уверены, что хотите навсегда удалить этот товар из облака?")) {
         try {
