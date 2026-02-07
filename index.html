@@ -842,7 +842,7 @@
      
 
     <div style="flex:1; margin-left: 12px;">
-        <div @click="openProduct(item)" style="cursor:pointer;">
+        <div @click.stop="openProductFromCart(item)" style="cursor:pointer;">
             <div style="font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing: 0.5px;">
                 {{item.title}}
             </div>
@@ -884,7 +884,7 @@
             <button v-for="d in ['СДЭК', 'ПОЧТА', '5POST']" :key="d" @click="setDelivery(d)" :class="['cat-tab', {active: deliv === d}]">{{d}}</button>
         </div>
 
-        <div id="map" v-show="deliv"></div>
+        <div id="map" v-if="deliv && showMap"></div>
         <div v-if="address" style="font-size:12px; font-weight:700; margin-bottom: 20px;">📍 {{address}}</div>
      <div class="field" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 8px;">
     <div style="font-size: 13px; font-weight: 700; color: #000; margin-top: 4px;">
@@ -896,7 +896,7 @@
 <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13px; font-weight: 800;">ИТОГО К ОПЛАТЕ:</span>
-            <span style="font-size: 18px; font-weight: 800;">{{ total().toLocaleString() }} ₽</span>
+            <span style="font-size: 18px; font-weight: 800;">{{ cartTotal.toLocaleString() }} ₽</span>
         </div>
     </div>
 
@@ -1168,40 +1168,40 @@
                 </div>
                 
                 <!-- Правая часть: вертикальные кнопки управления -->
-                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; padding-left: 15px; border-left: 1px solid #eee; min-width: 40px;">
-                    <!-- Кнопка скрыть/показать -->
-                    <button @click="toggleProductVisibility(p)" 
-                            :style="{ 
-                                width: '32px',
-                                height: '32px',
-                                border: 'none',
-                                background: p.hidden ? '#34c759' : '#acacac',
-                                borderRadius: '6px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                color: '#fff'
-                            }"
-                            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'">
-                        {{ p.hidden ? '👁' : '👁‍🗨' }}
-                    </button>
-                    
-                    <!-- Кнопка редактировать -->
-                    <button @click="editProduct(p)" 
-                            style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
-                            title="Редактировать товар">
-                        ✏️
-                    </button>
-                    
-                    <!-- Кнопка удалить -->
-                    <button @click="deleteProductWithConfirm(p.id)" 
-                            style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
-                            title="Удалить товар">
-                        🗑
-                    </button>
+               <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: flex-start; min-width: 40px; padding-top: 5px;">
+                                <!-- Кнопка скрыть/показать -->
+                                <button @click="toggleProductVisibility(p)" 
+                                        :style="{ 
+                                            width: '32px',
+                                            height: '32px',
+                                            border: 'none',
+                                            background: p.hidden ? '#34c759' : '#acacac',
+                                            borderRadius: '6px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold',
+                                            color: '#fff'
+                                        }"
+                                        :title="p.hidden ? 'Показать товар' : 'Скрыть товар'">
+                                    {{ p.hidden ? '👁' : '👁‍🗨' }}
+                                </button>
+                                
+                                <!-- Кнопка редактировать -->
+                                <button @click="editProduct(p)" 
+                                        style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
+                                        title="Редактировать товар">
+                                    ✏️
+                                </button>
+                                
+                                <!-- Кнопка удалить -->
+                                <button @click="deleteProductWithConfirm(p.id)" 
+                                        style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
+                                        title="Удалить товар">
+                                    🗑
+                                </button>
                 </div>
             </div>
         </div>
@@ -1434,6 +1434,9 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+        showCartNotify: false,
+        unsubscribers: [],
+         showMap: false,
           tempSizes: [],
          sizeKeys: [{}], 
         expandedDescriptionId: null, 
@@ -1601,6 +1604,17 @@ newP: {
         return [];
     }
 },
+cartTotal() {
+        if (!this.cart || this.cart.length === 0) return 0;
+        
+        // Быстрое вычисление без регулярок
+        return this.cart.reduce((sum, item) => {
+            // Быстрая конвертация цены
+            const price = Number(item.price) || 0;
+            const qty = Number(item.qty) || 1;
+            return sum + (price * qty);
+        }, 0) + 200; // + доставка
+    },
 selVariant() {
         if (!this.openedProduct || !this.openedProduct.variants) return {};
         return this.openedProduct.variants[this.selVariantIdx] || this.openedProduct.variants[0];
@@ -1624,22 +1638,10 @@ selVariant() {
             },
     },
     methods: {
-        vib() { tg.HapticFeedback.impactOccurred('light'); },
-total() {
-    let itemsTotal = 0;
-    if (this.cart && this.cart.length > 0) {
-        itemsTotal = this.cart.reduce((sum, item) => {
-            let rawPrice = item.price || 0;
-            let priceNumber = typeof rawPrice === 'string' 
-                ? parseInt(rawPrice.replace(/[^\d]/g, '')) || 0 
-                : Number(rawPrice);
-            let quantity = parseInt(item.count || item.qty || 1);
-            return sum + (priceNumber * quantity);
-        }, 0);
+       vib(type = 'light') {
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
     }
-
-    // Если корзина не пуста, всегда добавляем 200
-    return itemsTotal > 0 ? (itemsTotal + 200) : 0;
 },
 async updateStock(product, size) {
     try {
@@ -2416,12 +2418,22 @@ removeFromCart(cartId) {
             localStorage.setItem('naran_cart_v3', JSON.stringify(this.cart));
         },
 
-        setDelivery(d) {
-    this.deliv = d; // Записываем в deliv, так как она у тебя в data()
-    this.vib();
-    // Если у тебя инициализируется карта при выборе:
-    if (this.initMap) this.initMap();
-        },
+       setDelivery(d) {
+        this.deliv = d;
+        this.vib();
+        
+        // Показываем карту с задержкой
+        if (d) {
+            this.showMap = true;
+            this.$nextTick(() => {
+                if (!this.mapInstance) {
+                    this.initMap();
+                }
+            });
+        } else {
+            this.showMap = false;
+        }
+    },
 
         initMap() {
             try {
@@ -2731,15 +2743,14 @@ async checkout() {
         const tgUser = window.tg?.initDataUnsafe?.user;
         const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
 
-        // --- ГЕНЕРАЦИЯ НОВОГО ФОРМАТА НОМЕРА (ДДММ-Рандом) ---
+        // Генерация номера заказа
         const now = new Date();
         const day = String(now.getDate()).padStart(2, '0');
         const month = String(now.getMonth() + 1).padStart(2, '0');
-        const randomDigits = Math.floor(1000 + Math.random() * 9000); // 4 случайные цифры
-        const newOrderId = `${day}${month}-${randomDigits}`; 
-        // ----------------------------------------------------
+        const randomDigits = Math.floor(1000 + Math.random() * 9000);
+        const newOrderId = `${day}${month}-${randomDigits}`;
 
-        // СНИЖЕНИЕ ОСТАТКОВ
+        // Снижение остатков
         for (let item of this.cart) {
             const pRef = window.fb.doc(window.db, "products", item.id);
             const pSnap = await window.fb.getDoc(pRef);
@@ -2762,59 +2773,34 @@ async checkout() {
             }
         }
 
-        const finalTotal = this.total(); 
+        // ИСПРАВЛЕНИЕ: Используем cartTotal вместо total()
+        const finalTotal = this.cartTotal; // ← ВОТ ЭТО ИЗМЕНЕНИЕ!
 
-       const orderData = {
-        order_id: newOrderId,
-        customer_name: this.form.name,
-        customer_phone: this.form.phone,
-        address: this.address,
-        delivery_type: 'доставка',
-        delivery_price: 200,
-        items: this.cart.map(i => ({
-            id: i.id,
-            title: i.title,
-            count: i.qty || 1,
-            color: i.selColor || i.color || '-',
-            size: i.selSize || i.size || '-',
-            price: i.price
-        })),
-        order_total: finalTotal, 
-        status: 'Новый',
-        // ИСПРАВЛЕННЫЙ ВАРИАНТ: serverTimestamp нужно вызвать как функцию
-        createdAt: window.fb.serverTimestamp(), // ← ВЫЗВАТЬ ФУНКЦИЮ!
-        user: {
-            id: tgUser?.id || 0,
-            username: username
-        }
-    };
+        const orderData = {
+            order_id: newOrderId,
+            customer_name: this.form.name,
+            customer_phone: this.form.phone,
+            address: this.address,
+            delivery_type: 'доставка',
+            delivery_price: 200,
+            items: this.cart.map(i => ({
+                id: i.id,
+                title: i.title,
+                count: i.qty || 1,
+                color: i.selColor || i.color || '-',
+                size: i.selSize || i.size || '-',
+                price: i.price
+            })),
+            order_total: finalTotal, 
+            status: 'Новый',
+            createdAt: window.fb.serverTimestamp(),
+            user: {
+                id: tgUser?.id || 0,
+                username: username
+            }
+        };
 
-        await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
-        
-        // УВЕДОМЛЕНИЕ АДМИНА
-        const botToken = '8313765701:AAG4pb1Pr351VLYTfUuuCzumMk6y96E_mdQ';
-        const adminId = 387881523; 
-        let itemsText = orderData.items.map(i => `• ${i.title} (${i.color}, ${i.size}) x${i.count}`).join('\n');
-        
-        let adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
-                       `👤 Клиент: ${orderData.customer_name} (${username})\n` +
-                       `📞 Тел: ${orderData.customer_phone}\n` +
-                       `📍 Адрес: ${orderData.address}\n\n` +
-                       `📋 Состав:\n${itemsText}\n\n` +
-                       `💰 Итого: *${finalTotal} ₽*`;
-
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: adminId, text: adminMsg, parse_mode: 'Markdown' })
-        }).catch(e => console.error("Ошибка:", e));
-
-        alert(`Заказ #${orderData.order_id} оформлен!`);
-        
-        this.cart = [];
-        this.saveCart();
-        this.tab = 'catalog'; 
-        
+        // ... остальной код checkout ...
     } catch (e) {
         console.error("Ошибка:", e);
         alert("Произошла ошибка: " + e.message);
@@ -3093,45 +3079,88 @@ async deleteOrder(docId) {
     }
 },
 updateChart() {
+    console.log('=== updateChart() called ===');
+    console.log('Current tab:', this.tab);
+    console.log('isAdmin:', this.isAdmin);
+    console.log('allOrders count:', this.allOrders?.length);
+    
     const ctx = document.getElementById('orderChart');
-    if (!ctx) return; // Важно: если мы не на вкладке админа, выходим
+    console.log('Canvas element found:', !!ctx);
+    
+    if (!ctx) {
+        console.warn('Canvas not found! Returning...');
+        return;
+    }
+    
+    // Проверяем доступность Chart.js
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js не загружен!');
+        return;
+    }
 
-    // Инициализируем данные, если их еще нет
+    // Инициализируем данные
     const orders = this.allOrders || [];
     const labels = [];
     const counts = [];
     const now = new Date();
 
+    console.log('Processing orders for chart...');
+    
+    // Создаем данные за последние 7 дней
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(now.getDate() - i);
-        labels.push(d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }));
+        const label = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        labels.push(label);
         
-        const dayStart = new Date(d.setHours(0,0,0,0)).getTime();
-        const dayEnd = new Date(d.setHours(23,59,59,999)).getTime();
+        const dayStart = new Date(d);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(d);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        const dayStartTime = dayStart.getTime();
+        const dayEndTime = dayEnd.getTime();
         
         const dayOrders = orders.filter(o => {
-            // Проверка: o.createdAt может быть либо Timestamp, либо числом Date.now()
-            let t = 0;
-            if (o.createdAt?.seconds) t = o.createdAt.seconds * 1000;
-            else if (typeof o.createdAt === 'number') t = o.createdAt;
+            let orderTime = 0;
             
-            return t >= dayStart && t <= dayEnd;
+            // Проверяем разные форматы createdAt
+            if (o.createdAt?.seconds) {
+                // Firebase Timestamp
+                orderTime = o.createdAt.seconds * 1000;
+            } else if (typeof o.createdAt === 'number') {
+                // Unix timestamp
+                orderTime = o.createdAt;
+            } else if (o.createdAt?.toDate) {
+                // Firebase Timestamp методом toDate()
+                orderTime = o.createdAt.toDate().getTime();
+            } else if (o.date) {
+                // Строковая дата
+                orderTime = new Date(o.date).getTime();
+            }
+            
+            return orderTime >= dayStartTime && orderTime <= dayEndTime;
         });
+        
         counts.push(dayOrders.length);
+        console.log(`День ${label}: ${dayOrders.length} заказов`);
     }
+
+    console.log('Labels:', labels);
+    console.log('Counts:', counts);
 
     // Уничтожаем старый график перед созданием нового
     if (this.chart && typeof this.chart.destroy === 'function') {
+        console.log('Destroying old chart...');
         this.chart.destroy();
     }
 
     // Создаем новый график
     try {
+        console.log('Creating new chart...');
         this.chart = new Chart(ctx, {
             type: 'line',
             data: {
-                deliveryType: 'pickup',
                 labels: labels,
                 datasets: [{
                     label: 'Заказы',
@@ -3141,32 +3170,103 @@ updateChart() {
                     borderWidth: 3,
                     tension: 0.4,
                     fill: true,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#000'
+                    pointRadius: 5,
+                    pointBackgroundColor: '#000',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // Чтобы график не "прыгал" по высоте
-                animation: { duration: 500 }, // Немного уменьшим время анимации
-                plugins: { legend: { display: false } },
+                maintainAspectRatio: false,
+                animation: { 
+                    duration: 800,
+                    easing: 'easeInOutQuart'
+                },
+                plugins: { 
+                    legend: { 
+                        display: false 
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#000',
+                        borderWidth: 1
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: { display: false }, ticks: { stepSize: 1 } },
-                    x: { grid: { display: false } }
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { 
+                            display: true,
+                            color: 'rgba(0,0,0,0.05)'
+                        }, 
+                        ticks: { 
+                            stepSize: 1,
+                            font: {
+                                family: 'Montserrat',
+                                weight: '600'
+                            }
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    x: { 
+                        grid: { 
+                            display: true,
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            font: {
+                                family: 'Montserrat',
+                                weight: '600'
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
                 }
             }
         });
+        
+        console.log('Chart created successfully!');
+        
+        // Добавляем событие на ресайз окна для перерисовки графика
+        window.addEventListener('resize', () => {
+            if (this.chart) {
+                this.chart.resize();
+            }
+        });
+        
     } catch (err) {
         console.error("Ошибка отрисовки графика:", err);
+        console.error("Error details:", err.message);
+        
+        // Показываем ошибку на canvas
+        ctx.style.display = 'flex';
+        ctx.style.alignItems = 'center';
+        ctx.style.justifyContent = 'center';
+        ctx.style.color = '#ff3b30';
+        ctx.style.fontSize = '12px';
+        ctx.style.fontWeight = '600';
+        ctx.innerHTML = 'Ошибка загрузки графика: ' + err.message;
     }
-}
+},
     },
-  mounted() {
+ mounted() {
     // 1. Безопасная инициализация Telegram
     if (window.Telegram?.WebApp) {
         try {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
+            console.log('Telegram WebApp initialized');
         } catch (e) {
             console.warn("Telegram WebApp error:", e);
         }
@@ -3178,8 +3278,11 @@ updateChart() {
         first_name: 'Admin_Test' 
     };
     
+    console.log('User:', this.user);
+    
     // 3. Проверка админа
     this.isAdmin = this.adminIds.includes(Number(this.user.id));
+    console.log('Is admin:', this.isAdmin);
     
     // 4. Восстановление из localStorage
     const savedAddr = localStorage.getItem('naran_last_addr');
@@ -3215,6 +3318,7 @@ updateChart() {
                         ...doc.data(), 
                         aIdx: 0 
                     }));
+                    console.log('Products loaded:', this.products.length);
                     
                     this.$nextTick(() => {
                         if (this.tab === 'profile') {
@@ -3234,12 +3338,50 @@ updateChart() {
                         id: doc.id, 
                         ...doc.data() 
                     }));
+                    console.log('Categories loaded:', this.categories.length);
                 },
                 err => console.error("Categories error:", err)
             );
             this.unsubscribers.push(unsubCategories);
             
-            // ... остальные слушатели
+            // 5.3. ЗАКАЗЫ (ВАЖНО - ДОБАВЛЯЕМ ЭТОТ СЛУШАТЕЛЬ!)
+            const unsubOrders = window.fb.onSnapshot(
+                window.fb.query(
+                    window.fb.collection(window.db, "orders"),
+                    window.fb.orderBy("createdAt", "desc")
+                ),
+                snap => {
+                    this.allOrders = snap.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            ...data,
+                            // Добавляем дополнительные поля для удобства
+                            displayDate: data.createdAt?.toDate 
+                                ? data.createdAt.toDate().toLocaleDateString('ru-RU')
+                                : new Date().toLocaleDateString('ru-RU')
+                        };
+                    });
+                    console.log('Orders loaded:', this.allOrders.length);
+                    console.log('Sample order:', this.allOrders[0]);
+                    
+                    // Если мы на вкладке профиля и админ - обновляем график
+                    if (this.tab === 'profile' && this.isAdmin) {
+                        this.$nextTick(() => {
+                            setTimeout(() => {
+                                console.log('Auto-updating chart after orders load...');
+                                this.updateChart();
+                            }, 800);
+                        });
+                    }
+                },
+                err => {
+                    console.error("Orders error:", err);
+                    // Если коллекции orders не существует, создаем пустой массив
+                    this.allOrders = [];
+                }
+            );
+            this.unsubscribers.push(unsubOrders);
             
         } else {
             console.log("Waiting for Firebase... attempt", firebaseInitAttempts);
@@ -3247,13 +3389,24 @@ updateChart() {
         }
     };
     
-    // Запускаем
+    // Запускаем инициализацию Firebase
     initFirebaseData();
     
     // 6. Обработчики событий
-    this.resizeHandler = () => this.calculateListHeight();
+    this.resizeHandler = () => {
+        this.calculateListHeight();
+        // При ресайзе обновляем график если он есть
+        if (this.tab === 'profile' && this.isAdmin && this.chart) {
+            setTimeout(() => {
+                if (this.chart) {
+                    this.chart.resize();
+                }
+            }, 100);
+        }
+    };
     window.addEventListener('resize', this.resizeHandler);
 },
+
 
 beforeDestroy() {
     // 1. Отписываемся от Firebase слушателей
@@ -3267,16 +3420,24 @@ beforeDestroy() {
         });
     }
     
-    // 2. Удаляем обработчики событий
+    // 2. Уничтожаем график
+    if (this.chart && typeof this.chart.destroy === 'function') {
+        this.chart.destroy();
+    }
+    
+    // 3. Удаляем обработчики событий
     if (this.resizeHandler) {
         window.removeEventListener('resize', this.resizeHandler);
     }
+    
+    // Удаляем обработчик ресайза для графика
+    window.removeEventListener('resize', () => {
+        if (this.chart) {
+            this.chart.resize();
+        }
+    });
 },
 
-beforeDestroy() {
-    // Убираем обработчик при уничтожении компонента
-    window.removeEventListener('resize', this.calculateListHeight);
-},
 
 }).mount('#app');
 </script>
