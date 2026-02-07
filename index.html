@@ -1044,87 +1044,71 @@
         </div>
 
        <!-- ЗАМЕНИТЕ ВЕСЬ БЛОК "РАЗМЕРЫ И ОСТАТКИ" НА ЭТОТ -->
+<!-- РАЗМЕРЫ И ОСТАТКИ -->
 <div class="field">
     <label>РАЗМЕРЫ И ОСТАТКИ</label>
     
     <div style="display: flex; flex-direction: column; gap: 12px; margin: 15px 0; background: #f9f9f9; padding: 15px; border-radius: 8px;">
         
-        <!-- 1. 3 ОСНОВНЫХ ПУСТЫХ ПОЛЯ (всегда показываются) -->
-        <div v-for="(sizeField, index) in tempSizes" :key="'temp_' + index" 
-             v-show="!sizeField.hidden"
-             style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #e0e0e0;">
+        <!-- 1. ПОЛЯ ДЛЯ ВВОДА РАЗМЕРОВ (динамические) -->
+       <div v-for="(sizeField, index) in (tempSizes[vIdx] || [])" 
+     :key="'size_' + vIdx + '_' + index" 
+     style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #e0e0e0;">
+    
             
             <!-- Поле для названия размера -->
-            <input type="text" 
-                   v-model="sizeField.name"
-                   @input="syncSizeToStocks(vIdx, index, $event)"
-                   style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center;"
-                   placeholder="Размер"
-                   @focus="sizeField.focused = true">
+           <input type="text" 
+           v-model="sizeField.name"
+           @input="syncSizeToStocks(vIdx, index)"
+           :data-variant="vIdx"
+           :data-field="index"
+           style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center;"
+           placeholder="Размер">
+    
+    <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
             
-            <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
-            
-            <!-- Поле для количества -->
             <input type="number" 
-                   v-model.number="sizeField.qty"
-                   min="0"
-                   @input="syncSizeToStocks(vIdx, index, $event)"
-                   style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;"
-                   placeholder="0">
-            
-            <!-- Кнопка удаления (только для дополнительных полей) -->
-            <button v-if="index >= 3" 
-                    @click="removeSizeField(vIdx, index)" 
-                    type="button" 
-                    style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
-                ×
-            </button>
-            
-            <!-- Индикатор сохранения (для отладки) -->
-            <div v-if="sizeField.savedName" 
-                 style="font-size: 9px; color: #34c759; margin-left: 5px;">
-                ✓
+           v-model.number="sizeField.qty"
+           min="0"
+           @input="syncSizeToStocks(vIdx, index)"
+           style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;"
+           placeholder="0">
+    
+    <!-- Кнопка удаления -->
+    <button v-if="index > 0" 
+            @click="removeSizeField(vIdx, index)" 
+            type="button" 
+            style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
+        ×
+    </button>
+</div>
+
+<!-- Кнопка добавления -->
+<button type="button" 
+        @click="addSizeField(vIdx)"
+        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 10px;">
+    <span style="font-size: 16px;">+</span>
+    ДОБАВИТЬ ЕЩЕ ОДНО ПОЛЕ РАЗМЕРА
+</button>
+        
+        <!-- 3. ОТОБРАЖЕНИЕ СОХРАНЕННЫХ РАЗМЕРОВ (из stocks) -->
+        <div v-if="Object.keys(v.stocks || {}).length > 0" 
+             style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+            <div style="font-size: 11px; font-weight: 700; color: #666; margin-bottom: 10px;">
+                Сохраненные размеры:
             </div>
-        </div>
-        
-        <!-- 2. ОТОБРАЖЕНИЕ УЖЕ СОХРАНЕННЫХ РАЗМЕРОВ (из stocks) -->
-        <div v-for="(qty, sz) in v.stocks" :key="sz" 
-             v-if="!isSizeInTempFields(sz)"
-             style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #34c759;">
-            
-            <!-- Отображение сохраненного размера -->
-            <div style="width: 80px; padding: 8px; border: 1px solid #34c759; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center; background: #f0fff0;">
-                {{ sz }}
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <div v-for="(qty, sz) in v.stocks" :key="sz" 
+                     style="display: inline-flex; align-items: center; gap: 8px; background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #34c759;">
+                    <span style="font-weight: 700; font-size: 12px;">{{ sz }}</span>
+                    <span style="color: #999;">×</span>
+                    <span style="font-size: 12px;">{{ qty }} шт.</span>
+                    <button @click="removeSavedSize(vIdx, sz)" 
+                            style="background: #ff3b30; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 5px;">
+                        ×
+                    </button>
+                </div>
             </div>
-            
-            <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
-            
-            <!-- Поле для количества сохраненного размера -->
-            <input type="number" 
-                   v-model.number="v.stocks[sz]" 
-                   min="0"
-                   style="width: 70px; padding: 8px; border: 1px solid #34c759; border-radius: 4px; font-size: 12px; text-align: center;"
-                   placeholder="0">
-            
-            <!-- Кнопка удаления сохраненного размера -->
-            <button @click="removeSize(vIdx, sz)" 
-                    type="button" 
-                    style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
-                ×
-            </button>
-        </div>
-        
-        <!-- 3. КНОПКА ДОБАВЛЕНИЯ НОВОГО ПОЛЯ -->
-        <button type="button" 
-                @click="addSizeField(vIdx)"
-                style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 10px;">
-            <span style="font-size: 16px;">+</span>
-            ДОБАВИТЬ ЕЩЕ ОДНО ПОЛЕ РАЗМЕРА
-        </button>
-        
-        <!-- Информационная подсказка -->
-        <div style="font-size: 10px; color: #666; text-align: center; margin-top: 5px;">
-            Вводите названия размеров (S, M, 42, 44, 110, 120 и т.д.)
         </div>
     </div>
 </div>
@@ -1401,7 +1385,7 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
-           tempSizes: [ {}, {}, {} ], // 3 пустых поля по умолчанию
+          tempSizes: [],
          sizeKeys: [{}], 
         expandedDescriptionId: null, 
         selVariantIdx: 0, // Индекс выбранного цвета
@@ -1645,6 +1629,38 @@ async updateStock(product, size) {
                 this.currentCat = '';
             }
         },
+        addSizeField(vIdx) {
+    // Создаем копию массива tempSizes
+    const newTempSizes = [...this.tempSizes];
+    
+    // Инициализируем массив для этого варианта, если его нет
+    if (!newTempSizes[vIdx]) {
+        newTempSizes[vIdx] = [];
+    }
+    
+    // Добавляем новое пустое поле
+    newTempSizes[vIdx].push({
+        name: '',
+        qty: 0,
+        hidden: false,
+        focused: false,
+        tempKey: null,
+        savedName: ''
+    });
+    
+    // Присваиваем обратно (это реактивно)
+    this.tempSizes = newTempSizes;
+    
+    // Фокус на новом поле
+    this.$nextTick(() => {
+        const lastIndex = this.tempSizes[vIdx].length - 1;
+        const inputSelector = `[data-variant="${vIdx}"][data-field="${lastIndex}"]`;
+        const input = document.querySelector(inputSelector);
+        if (input) {
+            input.focus();
+        }
+    });
+},
          addSize(variantIndex) {
         const tempKey = `new_${Date.now()}`;
         
@@ -1691,28 +1707,161 @@ async updateStock(product, size) {
             this.addSizeField(variantIndex);
         }
     },
-    
-    // Добавить новое пустое поле для размера
-    addSizeField(variantIndex) {
-        this.tempSizes.push({
+   initTempSizesForVariant(vIdx) {
+    if (!this.tempSizes[vIdx]) {
+        Vue.set(this.tempSizes, vIdx, [{
             name: '',
             qty: 0,
-            hidden: false,
             focused: false,
             tempKey: null,
             savedName: ''
-        });
-        
-        // Фокусируемся на новом поле
-        this.$nextTick(() => {
-            const lastIndex = this.tempSizes.length - 1;
-            const inputs = document.querySelectorAll(`[v-model="sizeField.name"]`);
-            if (inputs[lastIndex]) {
-                inputs[lastIndex].focus();
-            }
-        });
+        }]);
+    }
+},
+    // Добавить новое пустое поле для размера
+   
+    initTempSizesForVariant(vIdx) {
+        if (!this.tempSizes[vIdx]) {
+            this.$set(this.tempSizes, vIdx, [{
+                name: '',
+                qty: 0,
+                focused: false
+            }]);
+        }
     },
     
+     removeSizeField(vIdx, fieldIndex) {
+        if (fieldIndex === 0) return; // Не удаляем первое поле
+        
+        const field = this.tempSizes[vIdx][fieldIndex];
+        
+        // Если поле было заполнено, удаляем из stocks
+        if (field.name && field.name.trim()) {
+            const sizeName = field.name.trim();
+            if (this.newP.variants[vIdx].stocks[sizeName] !== undefined) {
+                delete this.newP.variants[vIdx].stocks[sizeName];
+            }
+        }
+        
+        // Удаляем поле из массива
+        this.tempSizes[vIdx].splice(fieldIndex, 1);
+        this.vib();
+    },
+    
+    // Синхронизация поля с stocks
+  syncSizeToStocks(vIdx, fieldIndex) {
+    if (!this.tempSizes[vIdx] || !this.tempSizes[vIdx][fieldIndex]) {
+        return;
+    }
+    
+    const field = this.tempSizes[vIdx][fieldIndex];
+    
+    // Если поле пустое - удаляем из stocks
+    if (!field.name || field.name.trim() === '') {
+        if (field.savedName) {
+            delete this.newP.variants[vIdx].stocks[field.savedName];
+            field.savedName = '';
+        }
+        return;
+    }
+    
+    const sizeName = field.name.trim();
+    const quantity = field.qty || 0;
+    
+    // Если у поля уже был сохраненный размер, удаляем старую запись
+    if (field.savedName && field.savedName !== sizeName) {
+        delete this.newP.variants[vIdx].stocks[field.savedName];
+    }
+    
+    // Вместо this.$set используем Vue.set или прямое присваивание
+    // Способ 1: Vue.set
+    Vue.set(this.newP.variants[vIdx].stocks, sizeName, quantity);
+    // Или способ 2: Object.assign для реактивности
+    // this.newP.variants[vIdx].stocks = Object.assign({}, this.newP.variants[vIdx].stocks, {[sizeName]: quantity});
+    
+    field.savedName = sizeName;
+    
+    // Автоматически добавляем новое пустое поле, если это последнее заполненное
+    const lastFieldIndex = this.tempSizes[vIdx].length - 1;
+    if (fieldIndex === lastFieldIndex && sizeName && quantity > 0) {
+        this.addSizeField(vIdx);
+    }
+},
+    addSizeField(vIdx) {
+    // Инициализируем массив для этого варианта, если его нет
+    if (!this.tempSizes[vIdx]) {
+        this.$set(this.tempSizes, vIdx, []);
+    }
+    
+    // Добавляем новое пустое поле
+    this.tempSizes[vIdx].push({
+        name: '',
+        qty: 0,
+        hidden: false,
+        focused: false,
+        tempKey: null,
+        savedName: ''
+    });
+    
+    // Фокус на новом поле
+    this.$nextTick(() => {
+        const lastIndex = this.tempSizes[vIdx].length - 1;
+        const inputSelector = `[data-variant="${vIdx}"][data-field="${lastIndex}"]`;
+        const input = document.querySelector(inputSelector);
+        if (input) {
+            input.focus();
+        }
+    });
+},
+
+// Обновленный метод addVariant для добавления нового цвета
+addVariant() {
+    const newIndex = this.newP.variants.length;
+    this.newP.variants.push({
+        color: '',
+        images: [],
+        stocks: {}
+    });
+    
+    // Используем Vue.set
+    Vue.set(this.tempSizes, newIndex, [{
+        name: '',
+        qty: 0,
+        focused: false,
+        tempKey: null,
+        savedName: ''
+    }]);
+},
+    // Удалить сохраненный размер
+    removeSavedSize(vIdx, sizeName) {
+        if (confirm(`Удалить размер "${sizeName}"?`)) {
+            delete this.newP.variants[vIdx].stocks[sizeName];
+            this.vib();
+        }
+    },
+    
+    // При добавлении нового варианта цвета
+    addVariant() {
+        const newIndex = this.newP.variants.length;
+        this.newP.variants.push({
+            color: '',
+            images: [],
+            stocks: {}
+        });
+        
+        // Инициализируем одно пустое поле для этого варианта
+        this.$set(this.tempSizes, newIndex, [{
+            name: '',
+            qty: 0,
+            focused: false
+        }]);
+    },
+    
+    // При удалении варианта цвета
+    removeVariant(vIdx) {
+        this.newP.variants.splice(vIdx, 1);
+        this.tempSizes.splice(vIdx, 1);
+    },
     // Удалить поле размера (только для дополнительных полей)
     removeSizeField(variantIndex, fieldIndex) {
         const field = this.tempSizes[fieldIndex];
@@ -2583,19 +2732,49 @@ async compressImage(file) {
     });
 },
 async saveProduct() {
-    // 1. Валидация
+    // 1. ОЧИСТКА ВРЕМЕННЫХ КЛЮЧЕЙ ПЕРЕД СОХРАНЕНИЕМ
+    const cleanedVariants = JSON.parse(JSON.stringify(this.newP.variants));
+    
+    cleanedVariants.forEach(variant => {
+        const cleanedStocks = {};
+        Object.keys(variant.stocks || {}).forEach(key => {
+            // Убираем ключи, которые начинаются с "temp_" (временные)
+            if (!key.startsWith('temp_')) {
+                cleanedStocks[key] = variant.stocks[key];
+            }
+        });
+        variant.stocks = cleanedStocks;
+        
+        // Также удаляем временные поля из самого объекта
+        delete variant.tempKey;
+        delete variant.savedName;
+    });
+    
+    // 2. Валидация
     if (!this.newP.title || !this.newP.price || !this.newP.category) {
         return alert('Заполните название, цену и категорию!');
+    }
+    
+    // Проверяем, есть ли хотя бы один размер с ненулевым количеством
+    let hasValidSizes = false;
+    cleanedVariants.forEach(variant => {
+        Object.values(variant.stocks || {}).forEach(qty => {
+            if (qty > 0) hasValidSizes = true;
+        });
+    });
+    
+    if (!hasValidSizes) {
+        return alert('Добавьте хотя бы один размер с количеством больше 0!');
     }
     
     if (!this.newP.variants?.[0]?.images?.length) {
         return alert('Загрузите хотя бы одно фото!');
     }
 
-    this.loading = true; // Включаем индикатор загрузки (предотвращает белый экран)
+    this.loading = true;
     
     try {
-        // Подготовка данных с глубоким копированием
+        // Подготовка данных с ОЧИЩЕННЫМИ вариантами
         const productData = {
             title: this.newP.title.trim(),
             desc: this.newP.desc || '',
@@ -2605,7 +2784,7 @@ async saveProduct() {
             isNew: !!this.newP.isNew,
             hidden: !!this.newP.hidden,
             hiddenSizes: this.newP.hiddenSizes || [],
-            variants: JSON.parse(JSON.stringify(this.newP.variants)),
+            variants: cleanedVariants, // Используем ОЧИЩЕННЫЕ варианты
             images: [this.newP.variants[0].images[0]], 
             updatedAt: Date.now()
         };
@@ -2619,7 +2798,7 @@ async saveProduct() {
             if (idx !== -1) {
                 this.products.splice(idx, 1, { id: this.editId, ...productData });
             }
-            alert('Обновлено успешно!');
+            alert('Товар обновлен успешно!');
         } else {
             // Создание нового товара
             productData.createdAt = Date.now();
@@ -2632,13 +2811,13 @@ async saveProduct() {
 
         // --- ПЕРЕХОД ПОСЛЕ УСПЕХА ---
         this.cancelEdit();       // Сбрасываем форму и переменные
-        this.tab = 'profile';    // ОТКРЫВАЕМ ВКЛАДКУ ПРОФИЛЯ (убедитесь, что имя вкладки совпадает)
+        this.tab = 'profile';    // ОТКРЫВАЕМ ВКЛАДКУ ПРОФИЛЯ
         
     } catch (e) {
         console.error("Ошибка сохранения:", e);
         alert('Критическая ошибка: ' + e.message);
     } finally {
-        // Гарантируем отключение лоадера, чтобы не висел белый экран
+        // Гарантируем отключение лоадера
         this.loading = false;
     }
 },
@@ -2649,46 +2828,10 @@ async saveProduct() {
     const cleanItem = JSON.parse(JSON.stringify(p));
     this.editId = p.id;
     
-    // Инициализируем tempSizes на основе существующих размеров
-    this.tempSizes = [
-        { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' },
-        { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' },
-        { name: '', qty: 0, hidden: false, focused: false, tempKey: null, savedName: '' }
-    ];
+    // 1. Инициализируем tempSizes как ПУСТОЙ массив массивов
+    this.tempSizes = [];
     
-    // Заполняем первые 3 поля существующими размерами
-    const firstVariant = cleanItem.variants && cleanItem.variants[0];
-    if (firstVariant && firstVariant.stocks) {
-        const sizeKeys = Object.keys(firstVariant.stocks);
-        
-        sizeKeys.slice(0, 3).forEach((sizeName, index) => {
-            if (this.tempSizes[index]) {
-                this.tempSizes[index] = {
-                    name: sizeName,
-                    qty: firstVariant.stocks[sizeName] || 0,
-                    hidden: false,
-                    focused: false,
-                    tempKey: null,
-                    savedName: sizeName
-                };
-            }
-        });
-        
-        // Если размеров больше 3, добавляем дополнительные поля
-        if (sizeKeys.length > 3) {
-            sizeKeys.slice(3).forEach((sizeName, index) => {
-                this.tempSizes.push({
-                    name: sizeName,
-                    qty: firstVariant.stocks[sizeName] || 0,
-                    hidden: false,
-                    focused: false,
-                    tempKey: null,
-                    savedName: sizeName
-                });
-            });
-        }
-    }
-    
+    // 2. Заполняем newP данными товара
     this.newP = {
         title: cleanItem.title || '',
         desc: cleanItem.desc || '',
@@ -2697,10 +2840,85 @@ async saveProduct() {
         category: cleanItem.category || '',
         isNew: !!cleanItem.isNew,
         hiddenSizes: cleanItem.hiddenSizes || [],
-        variants: cleanItem.variants || [
-            { color: 'Стандарт', images: cleanItem.images || [], stocks: {} }
-        ]
+        variants: []
     };
+    
+    // 3. Копируем варианты цветов
+    if (cleanItem.variants && cleanItem.variants.length > 0) {
+        this.newP.variants = cleanItem.variants.map(variant => ({
+            color: variant.color || 'Стандарт',
+            images: variant.images || [],
+            stocks: variant.stocks || variant.stock || {}
+        }));
+        
+        // 4. Для КАЖДОГО варианта создаем tempSizes
+        this.newP.variants.forEach((variant, vIdx) => {
+            // Создаем массив полей для этого варианта
+            const fields = [];
+            
+            // Если есть сохраненные размеры, добавляем их как заполненные поля
+            const stocks = variant.stocks || {};
+            Object.keys(stocks).forEach(sizeName => {
+                fields.push({
+                    name: sizeName,
+                    qty: stocks[sizeName] || 0,
+                    hidden: false,
+                    focused: false,
+                    tempKey: null,
+                    savedName: sizeName
+                });
+            });
+            
+            // Добавляем ОДНО пустое поле в конце для новых размеров
+            fields.push({
+                name: '',
+                qty: 0,
+                hidden: false,
+                focused: false,
+                tempKey: null,
+                savedName: ''
+            });
+            
+            // Сохраняем в tempSizes для этого варианта
+            this.$set(this.tempSizes, vIdx, fields);
+        });
+    } else {
+        // Для старых товаров без вариантов создаем один вариант
+        this.newP.variants = [
+            { 
+                color: cleanItem.color || 'Стандарт', 
+                images: cleanItem.images || [], 
+                stocks: cleanItem.stocks || cleanItem.stock || {} 
+            }
+        ];
+        
+        // Создаем поля для первого варианта
+        const fields = [];
+        const stocks = this.newP.variants[0].stocks || {};
+        
+        Object.keys(stocks).forEach(sizeName => {
+            fields.push({
+                name: sizeName,
+                qty: stocks[sizeName] || 0,
+                hidden: false,
+                focused: false,
+                tempKey: null,
+                savedName: sizeName
+            });
+        });
+        
+        // Добавляем одно пустое поле
+        fields.push({
+            name: '',
+            qty: 0,
+            hidden: false,
+            focused: false,
+            tempKey: null,
+            savedName: ''
+        });
+        
+        this.$set(this.tempSizes, 0, fields);
+    }
     
     this.showProductList = false;
     window.scrollTo(0, 0);
@@ -2712,7 +2930,9 @@ async saveProduct() {
 cancelEdit() {
     this.editId = null;
     this.showProductList = true;
-    this.resetTempFields(); // Сбрасываем поля
+    
+    // Сбрасываем временные поля для размеров
+    this.resetTempFields();
     
     this.newP = {
         title: '',
