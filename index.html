@@ -1091,21 +1091,7 @@
         </button>
         
         <!-- 2. ОТОБРАЖЕНИЕ СОХРАНЕННЫХ РАЗМЕРОВ (из stocks) -->
-        <div v-if="Object.keys(v.stocks || {}).length > 0" 
-             style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                <div v-for="(qty, sz) in v.stocks" :key="sz" 
-                     style="display: inline-flex; align-items: center; gap: 8px; background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #34c759;">
-                    <span style="font-weight: 700; font-size: 12px;">{{ sz }}</span>
-                    <span style="color: #999;">×</span>
-                    <span style="font-size: 12px;">{{ qty }} шт.</span>
-                    <button @click="removeSavedSize(vIdx, sz)" 
-                            style="background: #ff3b30; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 5px;">
-                        ×
-                    </button>
-                </div>
-            </div>
-        </div>
+        
     </div>
 </div>
         <div class="field">
@@ -1140,56 +1126,82 @@
         <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
     </div>
     
-  <div v-if="showProductList" class="stable-list" style="padding: 5px; background: #fff;">
-   <template v-for="p in products" :key="p.id">
+ <div v-if="showProductList" class="stable-list" style="padding: 5px; background: #fff;">
+    <template v-for="p in products" :key="p.id">
         <div v-for="(v, vIdx) in p.variants" :key="p.id + vIdx" 
              class="fixed-item"
              style="padding: 15px; border-bottom: 2px solid #f2f2f7; background: #fff;">
             
-            <div style="display: flex; gap: 15px; align-items: start;">
-                <img :src="v.images?.[0] || ''" style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #eee;">
-                
-                <div style="flex: 1;">
-                    <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">{{ p.title }}</div>
-                    <div style="font-size: 11px; color: #000; font-weight: 700; margin-bottom: 8px;">ЦВЕТ: {{ v.color }}</div>
+            <div style="display: flex; gap: 15px;">
+                <!-- Левая часть: фото и информация -->
+                <div style="display: flex; gap: 15px; flex: 1;">
+                    <img :src="v.images?.[0] || ''" style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #eee;">
                     
-                   <div style="display: flex; flex-direction: column; gap: 5px;">
-    <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
-         style="display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 6px 8px; border-radius: 6px;">
-        
-        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-            <span style="font-size: 12px; font-weight: 600; min-width: 25px; color: #000;">
-                {{ sz }}
-            </span>
-            
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="font-size: 9px; color: #999;">ШТ:</span>
-                <input type="number" 
-                       v-model.number="v.stocks[sz]" 
-                       @change="updateStock(p)"
-                       style="width: 45px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; font-size: 11px; font-weight: bold; text-align: center;">
-            </div>
-        </div>
-    </div>
-</div>
-
-                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 5px;">{{ p.title }}</div>
+                        <div style="font-size: 11px; color: #000; font-weight: 700; margin-bottom: 12px;">ЦВЕТ: {{ v.color }}</div>
+                        
+                        <!-- СЕТКА РАЗМЕРОВ -->
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
+                                 style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee;">
+                                
+                                <!-- Размер и остаток -->
+                                <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                                    <span style="font-size: 13px; font-weight: 700; min-width: 30px; color: #000;">
+                                        {{ sz }}
+                                    </span>
+                                    
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 10px; color: #999; font-weight: 600;">ОСТАТОК:</span>
+                                        <input type="number" 
+                                               v-model.number="v.stocks[sz]" 
+                                               @change="updateStock(p)"
+                                               style="width: 55px; border: 1px solid #ddd; border-radius: 6px; padding: 6px 8px; font-size: 12px; font-weight: bold; text-align: center;">
+                                    </div>
+                                </div>
+                                
+                                <!-- Кнопки управления - ПУСТО, они теперь сбоку -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Правая часть: вертикальные кнопки управления -->
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; padding-left: 15px; border-left: 1px solid #eee; min-width: 40px;">
+                    <!-- Кнопка скрыть/показать -->
                     <button @click="toggleProductVisibility(p)" 
-                :style="{ 
-                border: 'none', 
-                background: p.hidden ? '#34c759' : '#ff3b30', 
-                fontSize: '12px', 
-                fontWeight: '800', 
-                color: '#fff', 
-                cursor: 'pointer',
-                padding: '5px 10px',
-                borderRadius: '4px'
-            }">
-        {{ p.hidden ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
-    </button>
-                    <button @click="editProduct(p)" style="border:none; background:none; font-size: 20px; cursor: pointer;">✏️</button>
-                    <button @click="deleteProductWithConfirm(p.id)" style="border:none; background:none; font-size: 20px; cursor: pointer;">🗑</button>
-
+                            :style="{ 
+                                width: '32px',
+                                height: '32px',
+                                border: 'none',
+                                background: p.hidden ? '#34c759' : '#acacac',
+                                borderRadius: '6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                color: '#fff'
+                            }"
+                            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'">
+                        {{ p.hidden ? '👁' : '👁‍🗨' }}
+                    </button>
+                    
+                    <!-- Кнопка редактировать -->
+                    <button @click="editProduct(p)" 
+                            style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
+                            title="Редактировать товар">
+                        ✏️
+                    </button>
+                    
+                    <!-- Кнопка удалить -->
+                    <button @click="deleteProductWithConfirm(p.id)" 
+                            style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
+                            title="Удалить товар">
+                        🗑
+                    </button>
                 </div>
             </div>
         </div>
