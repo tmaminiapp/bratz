@@ -539,6 +539,55 @@
         background: #fff3e0; 
         color: #ef6c00; 
     }
+    /* В блоке стилей добавьте или замените следующие правила */
+
+.control-buttons-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    padding-left: 15px;
+    border-left: 1px solid #eee;
+    min-width: 55px !important; /* Увеличиваем минимальную ширину */
+    margin-left: 10px; /* Добавляем отступ слева */
+}
+
+.control-btn-compact {
+    width: 45px !important; /* Увеличиваем размер кнопок */
+    height: 45px !important;
+    border: none;
+    background: #ececec;
+    border-radius: 10px !important; /* Более скругленные углы */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px !important; /* Увеличиваем иконки */
+    color: #000 !important; /* Делаем иконки черными для контраста */
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Легкая тень для объема */
+}
+
+.control-btn-compact:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Улучшаем отображение на маленьких экранах */
+@media (max-width: 480px) {
+    .control-buttons-compact {
+        min-width: 50px !important;
+        padding-left: 10px;
+        margin-left: 8px;
+    }
+    
+    .control-btn-compact {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 16px !important;
+    }
+}
 
     /* ========== BOTTOM NAVIGATION ========== */
     .bottom-nav { 
@@ -1392,68 +1441,45 @@
                 </div>
                 
                 <!-- Правая часть: вертикальные кнопки управления -->
-                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; padding-left: 15px; border-left: 1px solid #eee; min-width: 45px;"
-                     class="control-buttons-compact">
-                    
-                    <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
-                    <button @click="toggleQuickEdit(p, vIdx)" 
-                            :style="{ 
-                                width: '35px',
-                                height: '35px',
-                                border: 'none',
-                                background: (p.editingVariant === vIdx && !p.fullEditMode) ? '#007aff' : '#ececec',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                fontSize: '16px',
-                                fontWeight: 'bold',
-                                color: '#fff',
-                                transition: 'all 0.2s'
-                            }"
-                            :title="(p.editingVariant === vIdx && !p.fullEditMode) ? 'Сохранить остатки' : 'Быстрое редактирование остатков'"
-                            class="control-btn-compact">
-                        {{ (p.editingVariant === vIdx && !p.fullEditMode) ? '💾' : '✏️' }}
-                    </button>
-                    
-                    <!-- Кнопка 2: Полное редактирование карточки 📝 -->
-                    <button @click="editFullProduct(p)" 
-                            style="width: 35px; height: 35px; border: none; background: #ececec; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
-                            title="Полное редактирование карточки"
-                            class="control-btn-compact">
-                        📝
-                    </button>
-                    
-                    <!-- Кнопка 3: Скрыть/показать товар -->
-                    <button @click="toggleProductVisibility(p)" 
-                            :style="{ 
-                                width: '35px',
-                                height: '35px',
-                                border: 'none',
-                                background: p.hidden ? '#34c759' : '#ecececc',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                fontSize: '16px',
-                                fontWeight: 'bold',
-                                color: '#fff'
-                            }"
-                            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'"
-                            class="control-btn-compact">
-                        {{ p.hidden ? '👁' : '👁‍🗨' }}
-                    </button>
-                    
-                    <!-- Кнопка 4: Удалить товар -->
-                    <button @click="deleteProductWithConfirm(p.id)" 
-                            style="width: 35px; height: 35px; border: none; background: #ececec; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
-                            title="Удалить товар"
-                            class="control-btn-compact">
-                        🗑
-                    </button>
-                </div>
+               <!-- Правая часть: вертикальные кнопки управления -->
+<div class="control-buttons-compact">
+    
+    <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
+    <button @click="toggleQuickEdit(p, vIdx)" 
+            :style="{ 
+                background: (p.editingVariant === vIdx && !p.fullEditMode) ? '#007aff' : '#f5f5f5',
+            }"
+            :title="(p.editingVariant === vIdx && !p.fullEditMode) ? 'Сохранить остатки' : 'Быстрое редактирование остатков'"
+            class="control-btn-compact">
+        {{ (p.editingVariant === vIdx && !p.fullEditMode) ? '💾' : '✏️' }}
+    </button>
+    
+    <!-- Кнопка 2: Полное редактирование карточки 📝 -->
+    <button @click="editFullProduct(p)" 
+            style="background: #f5f5f5;"
+            title="Полное редактирование карточки"
+            class="control-btn-compact">
+        📝
+    </button>
+    
+    <!-- Кнопка 3: Скрыть/показать товар -->
+    <button @click="toggleProductVisibility(p)" 
+            :style="{ 
+                background: p.hidden ? '#34c759' : '#f5f5f5',
+            }"
+            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'"
+            class="control-btn-compact">
+        {{ p.hidden ? '👁' : '👁‍🗨' }}
+    </button>
+    
+    <!-- Кнопка 4: Удалить товар -->
+    <button @click="deleteProductWithConfirm(p.id)" 
+            style="background: #f5f5f5;"
+            title="Удалить товар"
+            class="control-btn-compact">
+        🗑
+    </button>
+</div>
             </div>
         </div>
     </template>
