@@ -2272,66 +2272,98 @@ async handleEditFiles(e) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     
-    this.editUploading = true;
+    // Если editNewFiles еще не инициализирован, создаем пустой массив
+    if (!this.editNewFiles) {
+        this.editNewFiles = [];
+    }
+    
+    console.log('handleEditFiles: получено файлов:', files.length);
     
     for (let file of files) {
-        // Создаем превью
+        // Проверяем тип файла
+        if (!file.type.startsWith('image/')) {
+            alert(`Файл "${file.name}" не является изображением. Пропускаем.`);
+            continue;
+        }
+        
+        // Проверяем размер файла (максимум 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 10MB.`);
+            continue;
+        }
+        
+        // Только создаем превью, загрузку откладываем до saveProduct()
         const previewUrl = URL.createObjectURL(file);
+        
+        console.log('Создано превью для файла:', file.name, 'URL:', previewUrl.substring(0, 50) + '...');
         
         // Добавляем в массив новых файлов
         this.editNewFiles.push({
+            id: Date.now() + Math.random(), // Уникальный ID
             file: file,
             preview: previewUrl,
-            status: 'pending'
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            status: 'pending', // Будет 'uploaded' после загрузки в saveProduct()
+            serverUrl: null,
+            uploadProgress: 0
         });
-        
-        // Можно сразу загрузить на сервер или отложить до сохранения
-        try {
-            // Сжимаем изображение
-            const compressedFile = await this.compressImage(file);
-            
-            // Загружаем на сервер
-            const imageUrl = await this.uploadFile(compressedFile);
-            
-            // Обновляем статус
-            const fileIndex = this.editNewFiles.findIndex(f => f.preview === previewUrl);
-            if (fileIndex > -1) {
-                this.editNewFiles[fileIndex].status = 'uploaded';
-                this.editNewFiles[fileIndex].serverUrl = imageUrl;
-            }
-            
-        } catch (error) {
-            console.error('Ошибка загрузки фото:', error);
-            const fileIndex = this.editNewFiles.findIndex(f => f.preview === previewUrl);
-            if (fileIndex > -1) {
-                this.editNewFiles[fileIndex].status = 'error';
-            }
-        }
     }
     
-    this.editUploading = false;
-    e.target.value = ''; // Очищаем input
+    // Очищаем input для возможности повторной загрузки тех же файлов
+    e.target.value = '';
+    
+    console.log('Всего новых файлов после добавления:', this.editNewFiles.length);
+    
+    // Опционально: можно сразу создать сжатые версии для быстрой загрузки
+    // Но основную загрузку на сервер делаем только в saveProduct()
+    
+    // Показываем уведомление
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
 },
-
+// Удалить фото из базы данных
 // Удалить фото из базы данных
 removeEditImage(index) {
     if (confirm("Удалить это фото из товара?")) {
+        const removedImage = this.editImages[index];
+        console.log('Удаление фото из базы:', removedImage);
+        
         this.editImages.splice(index, 1);
-        this.vib();
+        
+        // Тактильный отклик
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
     }
 },
 
 // Удалить новое загруженное фото
+// Удалить новое загруженное фото
 removeEditNewFile(index) {
     const file = this.editNewFiles[index];
     
-    // Освобождаем память
+    if (!file) return;
+    
+    console.log('Удаление файла:', file.name);
+    
+    // Освобождаем память браузера
     if (file.preview) {
         URL.revokeObjectURL(file.preview);
+        console.log('Превью URL освобожден');
     }
     
+    // Удаляем из массива
     this.editNewFiles.splice(index, 1);
-    this.vib();
+    
+    // Тактильный отклик
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+    
+    console.log('Осталось файлов:', this.editNewFiles.length);
 },
 
 
@@ -3034,6 +3066,11 @@ async compressImage(file) {
     });
 },
 async saveProduct() {
+    console.log('Перед сохранением:');
+    console.log('editImages:', this.editImages);
+    console.log('editNewFiles:', this.editNewFiles);
+    console.log('editNewFiles с serverUrl:', this.editNewFiles.filter(f => f.serverUrl).length);
+    
     // 1. ОЧИСТКА ВРЕМЕННЫХ КЛЮЧЕЙ ПЕРЕД СОХРАНЕНИЕМ
     const cleanedVariants = JSON.parse(JSON.stringify(this.newP.variants));
     
@@ -3050,7 +3087,7 @@ async saveProduct() {
         delete variant.savedName;
     });
     
-    // 2. Валидация
+    // 2. Валидация основных полей
     if (!this.newP.title || !this.newP.price || !this.newP.category) {
         return alert('Заполните название, цену и категорию!');
     }
@@ -3067,64 +3104,63 @@ async saveProduct() {
         return alert('Добавьте хотя бы один размер с количеством больше 0!');
     }
     
-    // 3. ПРОВЕРКА ФОТО - ИСПРАВЛЕННАЯ ВЕРСИЯ
-    if (this.editId) {
-        // Режим редактирования: проверяем editImages и editNewFiles
-        const totalImages = this.editImages.length + 
-                           this.editNewFiles.filter(f => f.serverUrl).length;
-        
-        if (totalImages === 0) {
-            return alert('Загрузите хотя бы одно фото!');
-        }
-    } else {
-        // Режим создания нового товара: проверяем фото для первого варианта
-        const firstVariant = this.newP.variants?.[0];
-        if (!firstVariant?.images || firstVariant.images.length === 0) {
-            return alert('Загрузите хотя бы одно фото!');
-        }
-    }
-
     this.loading = true;
     
     try {
-        // 4. ЗАГРУЗКА НОВЫХ ФОТО (если есть)
+        // 3. ЗАГРУЗКА НОВЫХ ФОТО (только если они еще не загружены)
         const uploadedNewUrls = [];
         if (this.editId && this.editNewFiles.length > 0) {
+            console.log('Начинаем загрузку новых фото...');
             for (let fileObj of this.editNewFiles) {
-                if (fileObj.status !== 'uploaded' && fileObj.file) {
+                // Проверяем, загружен ли файл
+                if (fileObj.status === 'uploaded' && fileObj.serverUrl) {
+                    // Файл уже загружен в handleEditFiles (если вы оставили там загрузку)
+                    uploadedNewUrls.push(fileObj.serverUrl);
+                    console.log('Фото уже загружено:', fileObj.serverUrl);
+                } else if (fileObj.file && fileObj.status !== 'uploaded') {
+                    // Файл еще не загружен - загружаем сейчас
                     try {
+                        console.log('Загружаем новое фото:', fileObj.file.name);
                         const compressedFile = await this.compressImage(fileObj.file);
                         const imageUrl = await this.uploadFile(compressedFile);
                         fileObj.serverUrl = imageUrl;
                         fileObj.status = 'uploaded';
                         uploadedNewUrls.push(imageUrl);
+                        console.log('Фото успешно загружено:', imageUrl);
                     } catch (error) {
                         console.error('Ошибка загрузки фото:', error);
+                        // Не прерываем весь процесс, просто пропускаем этот файл
+                        // Можно добавить уведомление пользователю
+                        alert(`Не удалось загрузить фото ${fileObj.file.name}. Пропускаем...`);
                     }
-                } else if (fileObj.serverUrl) {
-                    uploadedNewUrls.push(fileObj.serverUrl);
                 }
             }
         }
         
-        // 5. ОБЪЕДИНЕНИЕ ВСЕХ ФОТО
+        // 4. ОБЪЕДИНЕНИЕ ВСЕХ ФОТО
         let allImages = [];
         
         if (this.editId) {
             // Режим редактирования: старые + новые фото
             allImages = [
-                ...this.editImages, // Существующие фото
+                ...this.editImages, // Существующие фото из базы
                 ...uploadedNewUrls  // Новые загруженные фото
             ];
+            console.log('Режим редактирования - всего фото:', allImages.length);
         } else {
-            // Режим создания: фото из формы
+            // Режим создания: фото из формы (должны быть уже загружены ранее)
             allImages = this.newP.variants?.[0]?.images || [];
+            console.log('Режим создания - фото из формы:', allImages.length);
         }
+        
+        // 5. УНИКАЛЬНЫЙ СПИСОК (удаляем дубликаты)
+        allImages = [...new Set(allImages.filter(img => img && img.trim() !== ''))];
+        console.log('Уникальных фото после фильтрации:', allImages.length);
         
         // 6. ПРОВЕРКА, ЧТО ЕСТЬ ХОТЯ БЫ ОДНО ФОТО
         if (allImages.length === 0) {
             this.loading = false;
-            return alert('Нет ни одного фото для сохранения!');
+            return alert('Загрузите хотя бы одно фото!');
         }
         
         // 7. СОЗДАНИЕ ОБЪЕКТА ДЛЯ СОХРАНЕНИЯ
@@ -3172,7 +3208,16 @@ async saveProduct() {
             alert('Товар успешно создан!');
         }
 
-        // 10. ОЧИСТКА ПОСЛЕ УСПЕХА
+        // 10. ОЧИСТКА ПАМЯТИ БРАУЗЕРА (освобождаем URL превью)
+        if (this.editNewFiles.length > 0) {
+            this.editNewFiles.forEach(fileObj => {
+                if (fileObj.preview) {
+                    URL.revokeObjectURL(fileObj.preview);
+                }
+            });
+        }
+
+        // 11. ОЧИСТКА ПОСЛЕ УСПЕХА
         this.cancelEdit();       // Сбрасываем форму и переменные
         this.tab = 'profile';    // ОТКРЫВАЕМ ВКЛАДКУ ПРОФИЛЯ
         
