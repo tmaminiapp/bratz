@@ -1326,7 +1326,7 @@
     <button v-if="editId" class="cat-tab" style="width:100%; margin-top:10px;" @click="cancelEdit">ОТМЕНА</button>
 </div>
 
-       <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
+     <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
   <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
     <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">
         📦 СПИСОК ТОВАРОВ ({{ products.length }})
@@ -1359,139 +1359,144 @@
                         </div>
                         
                         <!-- СЕТКА РАЗМЕРОВ С РЕДАКТИРОВАНИЕМ -->
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <!-- Если редактирование остатков активно -->
-                            <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
-                                <div class="size-editing-container">
-                                    <!-- РЕДАКТИРОВАНИЕ ТОЛЬКО ОСТАТКОВ -->
-                                    <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
-                                         style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 8px;"
-                                         class="editing-size-item">
-                                        
-                                        <!-- Размер (не редактируется) -->
-                                        <span style="font-size: 14px; font-weight: 700; min-width: 40px; color: #000; text-transform: uppercase;"
-                                              class="size-name">
-                                            {{ sz }}
-                                        </span>
-                                        
-                                        <div style="display: flex; align-items: center; gap: 15px;"
-                                             class="editing-size-controls">
-                                            <!-- Поле для изменения количества -->
-                                            <div style="display: flex; align-items: center; gap: 8px;"
-                                                 class="stock-input-wrapper">
-                                                <span style="font-size: 11px; color: #999; font-weight: 600;">ОСТАТОК:</span>
-                                                <input type="number" 
-                                                       v-model.number="v.stocks[sz]" 
-                                                       min="0"
-                                                       step="1"
-                                                       @input="v.editState = true"
-                                                       style="width: 65px; border: 1px solid #ddd; border-radius: 6px; padding: 8px; font-size: 12px; font-weight: bold; text-align: center; background: #fff;">
-                                            </div>
-                                            
-                                            <!-- Кнопка удалить размер -->
-                                            <div class="size-action-buttons">
-                                                <button @click="removeSizeFromVariant(p, vIdx, sz)" 
-                                                        type="button" 
-                                                        style="width: 28px; height: 28px; border-radius: 6px; border: none; background: #ff3b30; color: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
-                                                        class="compact-btn">
-                                                    ×
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Поле для добавления нового размера -->
-                                <div style="display: flex; align-items: center; gap: 10px; background: #f0f0f0; padding: 10px; border-radius: 8px; margin-top: 5px;"
-                                     class="add-size-compact">
-                                    <div class="add-size-fields">
-                                        <input type="text" 
-                                               v-model="v.newSizeName"
-                                               placeholder="Новый размер"
-                                               style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                                        <input type="number" 
-                                               v-model.number="v.newSizeQty"
-                                               min="0"
-                                               placeholder="Кол-во"
-                                               style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;">
-                                    </div>
-                                    <button @click="addSizeToVariant(p, vIdx)" 
-                                            style="padding: 8px 12px; background: #34c759; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;"
-                                            class="add-size-button">
-                                        + Добавить размер
-                                    </button>
-                                </div>
-                            </template>
-                            
-                            <!-- Если редактирование не активно (только просмотр) -->
-                            <template v-else>
-                                <!-- ПРОСМОТР ОСТАТКОВ -->
-                                <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
-                                     style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee;"
-                                     class="viewing-size-item">
-                                    
-                                    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
-                                        <span style="font-size: 13px; font-weight: 700; min-width: 30px; color: #000;"
-                                              class="size-name-compact">
-                                            {{ sz }}
-                                        </span>
-                                        
-                                        <div style="display: flex; align-items: center; gap: 8px;"
-                                             class="stock-info-compact">
-                                            <span style="font-size: 10px; color: #999; font-weight: 600;"
-                                                  class="stock-label-compact">ОСТАТОК:</span>
-                                            <span style="font-size: 13px; font-weight: 700; color: #000; min-width: 40px;"
-                                                  class="stock-value-compact">
-                                                {{ qty }} шт.
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+                        <!-- СЕТКА РАЗМЕРОВ С РЕДАКТИРОВАНИЕМ -->
+<div style="display: flex; flex-direction: column; gap: 8px;">
+    <!-- Для всех размеров (и при редактировании, и при просмотре) -->
+    <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
+         style="display: flex; align-items: center; justify-content: space-between; 
+                background: #f9f9f9; padding: 8px 12px; border-radius: 8px; 
+                border: 1px solid #eee;"
+         class="size-item">
+        
+        <!-- Левая часть: размер + остаток рядом -->
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <!-- Название размера -->
+            <span style="font-size: 13px; font-weight: 700; min-width: 30px; 
+                         color: #000; text-transform: uppercase;"
+                  class="size-name">
+                {{ sz }}
+            </span>
+            
+            <!-- Область с количеством (меняется в зависимости от режима) -->
+            <div style="display: flex; align-items: center; gap: 8px;"
+                 class="stock-area">
+                
+                <span style="font-size: 10px; color: #999; font-weight: 600;"
+                      class="stock-label">
+                    ОСТАТОК:
+                </span>
+                
+                <!-- Если редактирование активно для этого варианта -->
+                <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+                    <!-- Поле ввода для редактирования -->
+                    <input type="number" 
+                           v-model.number="v.stocks[sz]" 
+                           min="0"
+                           step="1"
+                           @input="v.editState = true"
+                           style="width: 60px; border: 1px solid #007aff; 
+                                  border-radius: 6px; padding: 6px; 
+                                  font-size: 12px; font-weight: bold; 
+                                  text-align: center; background: #fff; 
+                                  box-shadow: 0 0 0 1px #007aff;">
+                    <!-- Кнопка удаления размера (только при редактировании) -->
+                    <button @click="removeSizeFromVariant(p, vIdx, sz)" 
+                            type="button" 
+                            style="width: 22px; height: 22px; border-radius: 4px; 
+                                   border: none; background: #ff3b30; color: white; 
+                                   font-weight: bold; font-size: 14px; cursor: pointer; 
+                                   display: flex; align-items: center; justify-content: center;"
+                            class="delete-size-btn">
+                        ×
+                    </button>
+                </template>
+                
+                <!-- Если только просмотр -->
+                <template v-else>
+                    <!-- Просто отображаем количество -->
+                    <span style="font-size: 13px; font-weight: 700; color: #000; 
+                                 min-width: 40px;" class="stock-value">
+                        {{ qty }} шт.
+                    </span>
+                </template>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Блок добавления нового размера (только при редактировании) -->
+    <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+        <div style="display: flex; align-items: center; gap: 8px; 
+                    background: #f0f0f0; padding: 8px; border-radius: 8px; 
+                    margin-top: 5px; border: 1px dashed #ddd;"
+             class="add-new-size">
+            <input type="text" 
+                   v-model="v.newSizeName"
+                   placeholder="Новый размер"
+                   style="flex: 1; padding: 8px; border: 1px solid #ddd; 
+                          border-radius: 4px; font-size: 12px; font-weight: 600;">
+            <input type="number" 
+                   v-model.number="v.newSizeQty"
+                   min="0"
+                   placeholder="Кол-во"
+                   style="width: 70px; padding: 8px; border: 1px solid #ddd; 
+                          border-radius: 4px; font-size: 12px; text-align: center;">
+            <button @click="addSizeToVariant(p, vIdx)" 
+                    style="padding: 8px 12px; background: #34c759; color: white; 
+                           border: none; border-radius: 4px; font-size: 12px; 
+                           font-weight: 600; cursor: pointer;"
+                    class="add-size-button">
+                + Добавить
+            </button>
+        </div>
+    </template>
+</div>
                     </div>
                 </div>
                 
-                <!-- Правая часть: вертикальные кнопки управления -->
-               <!-- Правая часть: вертикальные кнопки управления -->
-<div class="control-buttons-compact">
-    
-    <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
-    <button @click="toggleQuickEdit(p, vIdx)" 
-            :style="{ 
-                background: (p.editingVariant === vIdx && !p.fullEditMode) ? '#007aff' : '#f5f5f5',
-            }"
-            :title="(p.editingVariant === vIdx && !p.fullEditMode) ? 'Сохранить остатки' : 'Быстрое редактирование остатков'"
-            class="control-btn-compact">
-        {{ (p.editingVariant === vIdx && !p.fullEditMode) ? '💾' : '✏️' }}
-    </button>
-    
-    <!-- Кнопка 2: Полное редактирование карточки 📝 -->
-    <button @click="editFullProduct(p)" 
-            style="background: #f5f5f5;"
-            title="Полное редактирование карточки"
-            class="control-btn-compact">
-        📝
-    </button>
-    
-    <!-- Кнопка 3: Скрыть/показать товар -->
-    <button @click="toggleProductVisibility(p)" 
-            :style="{ 
-                background: p.hidden ? '#34c759' : '#f5f5f5',
-            }"
-            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'"
-            class="control-btn-compact">
-        {{ p.hidden ? '👁' : '👁‍🗨' }}
-    </button>
-    
-    <!-- Кнопка 4: Удалить товар -->
-    <button @click="deleteProductWithConfirm(p.id)" 
-            style="background: #f5f5f5;"
-            title="Удалить товар"
-            class="control-btn-compact">
-        🗑
-    </button>
-</div>
+                <!-- Правая часть: вертикальные кнопки управления (ВСЕГДА ВИДИМЫЕ) -->
+                <div class="control-buttons-compact">
+                    
+                    <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
+                    <button @click="toggleQuickEdit(p, vIdx)" 
+                            :style="{ 
+                                background: (p.editingVariant === vIdx && !p.fullEditMode) ? '#007aff' : '#f5f5f5',
+                                color: (p.editingVariant === vIdx && !p.fullEditMode) ? '#fff' : '#000'
+                            }"
+                            :title="(p.editingVariant === vIdx && !p.fullEditMode) ? 'Сохранить остатки' : 'Быстрое редактирование остатков'"
+                            class="control-btn-compact">
+                        {{ (p.editingVariant === vIdx && !p.fullEditMode) ? '💾' : '✏️' }}
+                    </button>
+                    
+                    <!-- Кнопка 2: Полное редактирование карточки 📝 -->
+                    <button @click="editFullProduct(p)" 
+                            :style="{ 
+                                background: p.fullEditMode ? '#007aff' : '#f5f5f5',
+                                color: p.fullEditMode ? '#fff' : '#000'
+                            }"
+                            :title="p.fullEditMode ? 'Редактирование активно' : 'Полное редактирование карточки'"
+                            class="control-btn-compact">
+                        📝
+                    </button>
+                    
+                    <!-- Кнопка 3: Скрыть/показать товар -->
+                    <button @click="toggleProductVisibility(p)" 
+                            :style="{ 
+                                background: p.hidden ? '#34c759' : '#f5f5f5',
+                                color: p.hidden ? '#fff' : '#000'
+                            }"
+                            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'"
+                            class="control-btn-compact">
+                        {{ p.hidden ? '👁' : '👁‍🗨' }}
+                    </button>
+                    
+                    <!-- Кнопка 4: Удалить товар -->
+                    <button @click="deleteProductWithConfirm(p.id)" 
+                            style="background: #f5f5f5;"
+                            title="Удалить товар"
+                            class="control-btn-compact">
+                        🗑
+                    </button>
+                </div>
             </div>
         </div>
     </template>
