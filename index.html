@@ -1124,32 +1124,132 @@
 <div class="field">
     <label>ФОТО ТОВАРА</label>
     
-    <!-- Кнопка загрузки новых фото -->
-    <input type="file" multiple @change="handleEditFiles" class="input-admin" style="padding: 8px;" accept="image/*">
+    <!-- Кнопка загрузки -->
+    <input type="file" multiple @change="handleFiles($event, true)" 
+           class="input-admin" style="padding: 8px;" accept="image/*">
     
-    <!-- СЕТКА ЗАГРУЖЕННЫХ ФОТО -->
+    <!-- СЕТКА ПРЕВЬЮ С ИНДИКАТОРАМИ -->
     <div class="preview-container" style="margin-top: 15px;">
-        <!-- ФОТО ИЗ БАЗЫ ДАННЫХ -->
+        
+        <!-- СУЩЕСТВУЮЩИЕ ФОТО ИЗ БАЗЫ -->
         <div v-for="(img, imgIdx) in editImages" :key="'db_' + imgIdx" class="preview-card">
-            <img :src="img" alt="Превью" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
-            <button @click="removeEditImage(imgIdx)" class="remove-preview-btn">✕</button>
-            <div style="position: absolute; bottom: 2px; left: 2px; background: rgba(0,0,0,0.7); color: white; font-size: 8px; padding: 1px 3px; border-radius: 3px;">
-                Существует
+            <div style="position: relative;">
+                <img :src="img" alt="Превью" 
+                     style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+                <button @click="removeEditImage(imgIdx)" class="remove-preview-btn">✕</button>
+                <div style="position: absolute; bottom: 2px; left: 2px; background: #34c759; color: white; 
+                            font-size: 8px; padding: 1px 3px; border-radius: 3px;">
+                    ✓ Загружено
+                </div>
             </div>
         </div>
         
-        <!-- НОВЫЕ ФОТО (загруженные при редактировании) -->
-        <div v-for="(file, fileIdx) in editNewFiles" :key="'new_' + fileIdx" class="preview-card">
-            <img :src="file.preview" alt="Новое фото" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #007aff;">
-            <button @click="removeEditNewFile(fileIdx)" class="remove-preview-btn" style="background: #007aff;">✕</button>
-            <div style="position: absolute; bottom: 2px; left: 2px; background: #007aff; color: white; font-size: 8px; padding: 1px 3px; border-radius: 3px;">
-                Новое
+        <!-- НОВЫЕ ФОТО С ИНДИКАТОРАМИ -->
+        <div v-for="file in editNewFiles" :key="file.id" class="preview-card">
+            <div style="position: relative;">
+                
+                <!-- Превью изображения -->
+                <img :src="file.preview" alt="Превью"
+                     style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;"
+                     :style="{ 
+                         opacity: file.status === 'uploading' ? 0.5 : 1,
+                         border: file.status === 'completed' ? '2px solid #34c759' : 
+                                 file.status === 'failed' ? '2px solid #ff3b30' : 
+                                 file.status === 'uploading' ? '2px solid #007aff' : 
+                                 file.status === 'fallback' ? '2px solid #ff9500' : '1px solid #ddd'
+                     }">
+                
+                <!-- ИНДИКАТОР ЗАГРУЗКИ -->
+                <div v-if="file.status === 'uploading'" 
+                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                            display: flex; align-items: center; justify-content: center; 
+                            background: rgba(255,255,255,0.8); border-radius: 8px;">
+                    
+                    <!-- Круговой индикатор прогресса -->
+                    <div style="position: relative; width: 40px; height: 40px;">
+                        <svg width="40" height="40" viewBox="0 0 40 40">
+                            <!-- Фон круга -->
+                            <circle cx="20" cy="20" r="18" 
+                                    stroke="#f0f0f0" stroke-width="3" fill="none"/>
+                            <!-- Прогресс -->
+                            <circle cx="20" cy="20" r="18" 
+                                    stroke="#007aff" stroke-width="3" fill="none"
+                                    :stroke-dasharray="113"
+                                    :stroke-dashoffset="113 - (113 * file.progress / 100)"
+                                    transform="rotate(-90 20 20)"/>
+                        </svg>
+                        <!-- Процент в центре -->
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                    font-size: 9px; font-weight: 800; color: #007aff;">
+                            {{ file.progress }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- СТАТУС ИКОНКИ -->
+                <div v-if="file.status === 'completed'" 
+                     style="position: absolute; top: -5px; right: -5px; background: #34c759; 
+                            color: white; width: 20px; height: 20px; border-radius: 50%; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 12px; font-weight: bold; border: 2px solid white;">
+                    ✓
+                </div>
+                
+                <div v-if="file.status === 'failed'" 
+                     style="position: absolute; top: -5px; right: -5px; background: #ff3b30; 
+                            color: white; width: 20px; height: 20px; border-radius: 50%; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 12px; font-weight: bold; border: 2px solid white;">
+                    !
+                </div>
+                
+                <div v-if="file.status === 'fallback'" 
+                     style="position: absolute; top: -5px; right: -5px; background: #ff9500; 
+                            color: white; width: 20px; height: 20px; border-radius: 50%; 
+                            display: flex; align-items: center; justify-content: center; 
+                            font-size: 12px; font-weight: bold; border: 2px solid white;">
+                    ⚠
+                </div>
+                
+                <!-- Кнопка удаления -->
+                <button @click="removeEditNewFileById(file.id)" 
+                        style="position: absolute; bottom: -5px; right: -5px; 
+                               background: #ff3b30; color: white; width: 18px; height: 18px; 
+                               border-radius: 50%; border: 1px solid white; 
+                               font-size: 10px; cursor: pointer;">
+                    ✕
+                </button>
+            </div>
+            
+            <!-- Название файла и статус -->
+            <div style="font-size: 9px; text-align: center; margin-top: 4px; 
+                        font-weight: 600; overflow: hidden; text-overflow: ellipsis; 
+                        white-space: nowrap; max-width: 70px;">
+                {{ file.name.substring(0, 10) }}{{ file.name.length > 10 ? '...' : '' }}
+                <div :style="{ 
+                    color: file.status === 'completed' ? '#34c759' : 
+                           file.status === 'failed' ? '#ff3b30' : 
+                           file.status === 'uploading' ? '#007aff' : 
+                           file.status === 'fallback' ? '#ff9500' : '#999',
+                    fontSize: '8px'
+                }">
+                    {{ 
+                        file.status === 'pending' ? 'Ожидает' :
+                        file.status === 'uploading' ? 'Загружается...' :
+                        file.status === 'completed' ? 'Готово' :
+                        file.status === 'failed' ? 'Ошибка' :
+                        file.status === 'fallback' ? 'Локальное' : ''
+                    }}
+                </div>
             </div>
         </div>
         
-        <!-- ИНДИКАТОР ЗАГРУЗКИ -->
-        <div v-if="editUploading" class="preview-card" style="display: flex; align-items: center; justify-content: center; background: #f0f0f0; border: 1px dashed #999;">
-            <div class="loader-mini"></div>
+        <!-- LOCAL FILES (для создания нового товара) -->
+        <div v-if="!editId && localFiles && localFiles.length > 0">
+            <div v-for="file in localFiles" :key="file.id" class="preview-card">
+                <!-- Тот же код индикаторов, что и для editNewFiles -->
+                <!-- ... -->
+            </div>
         </div>
     </div>
 </div>
@@ -1585,8 +1685,7 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
-         editImages: [],          // Фото из базы данных
-        editNewFiles: [],        // Новые загруженные файлы
+         uploadFiles: [], 
         editUploading: false,
           tempSizes: [],
          sizeKeys: [{}], 
@@ -1883,6 +1982,62 @@ toggleEditSizes(product, variantIndex) {
         variant.editState = false;
     }
     this.vib();
+},
+// Удаление файла по ID
+removeEditNewFileById(fileId) {
+    const index = this.editNewFiles.findIndex(f => f.id === fileId);
+    if (index > -1) {
+        const file = this.editNewFiles[index];
+        
+        // Освобождаем память
+        if (file.preview && file.preview.startsWith('blob:')) {
+            URL.revokeObjectURL(file.preview);
+        }
+        
+        this.editNewFiles.splice(index, 1);
+        
+        // Вибрация
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
+    }
+},
+
+// Удаление локального файла
+removeLocalFileById(fileId) {
+    const index = this.localFiles.findIndex(f => f.id === fileId);
+    if (index > -1) {
+        const file = this.localFiles[index];
+        
+        if (file.preview && file.preview.startsWith('blob:')) {
+            URL.revokeObjectURL(file.preview);
+        }
+        
+        this.localFiles.splice(index, 1);
+        
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
+    }
+},
+removeFile(fileId) {
+    const index = this.uploadFiles.findIndex(f => f.id === fileId);
+    if (index > -1) {
+        const file = this.uploadFiles[index];
+        
+        // Освобождаем память
+        if (file.preview && file.preview.startsWith('blob:')) {
+            URL.revokeObjectURL(file.preview);
+        }
+        
+        // Удаляем из массива
+        this.uploadFiles.splice(index, 1);
+        
+        // Вибрация
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
+    }
 },
 
 // Сохранить размеры варианта в Firebase
@@ -3034,140 +3189,209 @@ removeFromCart(cartId) {
         }
     },
  async uploadFile(file) {
-        return new Promise((resolve, reject) => {
-            const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
-            
-            // Проверка размера файла
-            if (file.size > 32 * 1024 * 1024) { // 32MB лимит ImgBB
-                reject(new Error('Файл слишком большой. Максимум 32MB.'));
-                return;
+         return new Promise((resolve, reject) => {
+        const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
+        
+        // 1. Обновляем статус на "загрузка"
+        fileObj.status = 'uploading';
+        fileObj.progress = 0;
+        
+        // 2. Создаем FormData
+        const formData = new FormData();
+        formData.append('image', fileObj.file);
+        
+        // 3. Создаем XMLHttpRequest для отслеживания прогресса
+        const xhr = new XMLHttpRequest();
+        
+        // Отслеживание прогресса
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                fileObj.progress = Math.round((event.loaded / event.total) * 100);
+                // Форсируем обновление Vue
+                this.$forceUpdate();
             }
-            
-            // Проверка типа файла
-            if (!file.type.startsWith('image/')) {
-                reject(new Error('Файл должен быть изображением'));
-                return;
-            }
-            
-            console.log('Загружаем файл:', file.name, 'размер:', (file.size / 1024 / 1024).toFixed(2), 'MB');
-            
-            const formData = new FormData();
-            formData.append('image', file);
-            
-            // Устанавливаем таймаут 30 секунд
-            const timeout = setTimeout(() => {
-                reject(new Error('Таймаут загрузки (30 секунд)'));
-                xhr.abort();
-            }, 30000);
-            
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
-            
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const percentComplete = Math.round((event.loaded / event.total) * 100);
-                    console.log(`Прогресс загрузки ${file.name}: ${percentComplete}%`);
-                }
-            };
-            
-            xhr.onload = () => {
-                clearTimeout(timeout);
-                console.log('Ответ получен, статус:', xhr.status);
-                
-                if (xhr.status === 200) {
-                    try {
-                        const result = JSON.parse(xhr.responseText);
-                        console.log('Полный ответ ImgBB:', result);
-                        
-                        if (result.success) {
-                            console.log('✅ Файл загружен:', result.data.url);
-                            resolve(result.data.url);
-                        } else {
-                            console.error('Ошибка ImgBB:', result.error);
-                            reject(new Error(result.error?.message || `ImgBB error: ${JSON.stringify(result.error)}`));
-                        }
-                    } catch (parseError) {
-                        console.error('Ошибка парсинга JSON:', parseError, 'Ответ:', xhr.responseText);
-                        reject(new Error('Некорректный ответ от сервера'));
-                    }
-                } else if (xhr.status === 400) {
-                    console.error('Ошибка 400 Bad Request');
-                    reject(new Error('Неправильный запрос к ImgBB API'));
-                } else if (xhr.status === 403) {
-                    console.error('Ошибка 403 Forbidden');
-                    reject(new Error('Ключ ImgBB недействителен или заблокирован'));
-                } else if (xhr.status === 429) {
-                    console.error('Ошибка 429 Too Many Requests');
-                    reject(new Error('Слишком много запросов к ImgBB'));
-                } else {
-                    console.error(`HTTP ошибка ${xhr.status}:`, xhr.statusText);
-                    reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
-                }
-            };
-            
-            xhr.onerror = () => {
-                clearTimeout(timeout);
-                console.error('Сетевая ошибка при загрузке');
-                reject(new Error('Сетевая ошибка. Проверьте подключение к интернету.'));
-            };
-            
-            xhr.onabort = () => {
-                clearTimeout(timeout);
-                reject(new Error('Загрузка отменена'));
-            };
-            
-            xhr.send(formData);
-        });
-    },
-  async compressImage(file) {
-        console.log('Сжимаем изображение:', file.name);
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1200; // Увеличим для лучшего качества
-                    const MAX_HEIGHT = 1600;
-                    
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
+        };
+        
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                try {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.success) {
+                        fileObj.status = 'completed';
+                        fileObj.progress = 100;
+                        fileObj.serverUrl = result.data.url;
+                        resolve(result.data.url);
                     } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
+                        fileObj.status = 'failed';
+                        reject(new Error(result.error?.message || 'ImgBB error'));
                     }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    canvas.toBlob((blob) => {
-                        const compressedFile = new File([blob], file.name, { 
-                            type: 'image/jpeg',
-                            lastModified: Date.now()
-                        });
-                        console.log('Сжатый файл:', {
+                } catch (e) {
+                    fileObj.status = 'failed';
+                    reject(e);
+                }
+            } else {
+                fileObj.status = 'failed';
+                reject(new Error(`HTTP ${xhr.status}`));
+            }
+            this.$forceUpdate();
+        };
+        
+        xhr.onerror = () => {
+            fileObj.status = 'failed';
+            this.$forceUpdate();
+            reject(new Error('Network error'));
+        };
+        
+        xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
+        xhr.send(formData);
+    });
+},
+async uploadFileWithProgress(file, fileObj) {
+    return new Promise((resolve, reject) => {
+        const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
+        
+        // Создаем FormData
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        // Создаем XMLHttpRequest для отслеживания прогресса
+        const xhr = new XMLHttpRequest();
+        
+        // Отслеживание прогресса загрузки
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                fileObj.progress = percent;
+                // Форсируем обновление Vue для отображения прогресса
+                this.$forceUpdate();
+                
+                console.log(`Прогресс ${file.name || 'файла'}: ${percent}%`);
+            }
+        };
+        
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                try {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.success) {
+                        resolve(result.data.url);
+                    } else {
+                        reject(new Error(result.error?.message || 'ImgBB error'));
+                    }
+                } catch (e) {
+                    reject(new Error('Некорректный ответ от сервера'));
+                }
+            } else if (xhr.status === 400) {
+                reject(new Error('Неправильный запрос к ImgBB API'));
+            } else if (xhr.status === 403) {
+                reject(new Error('Ключ ImgBB недействителен или заблокирован'));
+            } else if (xhr.status === 429) {
+                reject(new Error('Слишком много запросов к ImgBB'));
+            } else {
+                reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+            }
+        };
+        
+        xhr.onerror = () => {
+            reject(new Error('Сетевая ошибка при загрузке'));
+        };
+        
+        xhr.onabort = () => {
+            reject(new Error('Загрузка отменена'));
+        };
+        
+        // Устанавливаем таймаут 60 секунд
+        const timeout = setTimeout(() => {
+            reject(new Error('Таймаут загрузки (60 секунд)'));
+            xhr.abort();
+        }, 60000);
+        
+        xhr.onloadend = () => {
+            clearTimeout(timeout);
+        };
+        
+        xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
+        xhr.send(formData);
+    });
+},
+ async compressImage(file) {
+    console.log('Сжимаем изображение:', file.name);
+    
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Максимальные размеры
+                const MAX_WIDTH = 1200;
+                const MAX_HEIGHT = 1600;
+                
+                let width = img.width;
+                let height = img.height;
+                
+                // Изменяем размеры, сохраняя пропорции
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Рисуем изображение на canvas
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Создаем сжатый blob
+                canvas.toBlob(
+                    (blob) => {
+                        if (!blob) {
+                            reject(new Error('Не удалось сжать изображение'));
+                            return;
+                        }
+                        
+                        console.log('Сжатие завершено:', {
                             оригинал: (file.size / 1024 / 1024).toFixed(2) + 'MB',
                             сжатый: (blob.size / 1024 / 1024).toFixed(2) + 'MB',
                             сжатие: Math.round((1 - blob.size / file.size) * 100) + '%'
                         });
+                        
+                        const compressedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        
                         resolve(compressedFile);
-                    }, 'image/jpeg', 0.85); // Качество 85%
-                };
+                    },
+                    'image/jpeg',
+                    0.85 // Качество 85%
+                );
             };
-        });
-    },
+            
+            img.onerror = () => {
+                reject(new Error('Ошибка загрузки изображения для сжатия'));
+            };
+        };
+        
+        reader.onerror = () => {
+            reject(new Error('Ошибка чтения файла'));
+        };
+        
+        reader.readAsDataURL(file);
+    });
+},
 async saveProduct() {
     console.log('=== НАЧАЛО СОХРАНЕНИЯ ===');
     console.log('Режим:', this.editId ? 'Редактирование' : 'Создание');
@@ -3221,7 +3445,8 @@ async saveProduct() {
             
             // Добавляем новые файлы для загрузки
             this.editNewFiles.forEach(fileObj => {
-                if (fileObj.file && fileObj.status !== 'uploaded') {
+                if (fileObj.file && fileObj.status !== 'uploaded' && fileObj.status !== 'completed') {
+                    fileObj.status = 'pending';
                     filesToUpload.push(fileObj);
                 } else if (fileObj.serverUrl) {
                     // Файл уже загружен ранее
@@ -3239,52 +3464,50 @@ async saveProduct() {
             }
             
         } else {
-            // СОЗДАНИЕ НОВОГО: используем localFiles ИЛИ uploadFiles
+            // СОЗДАНИЕ НОВОГО: используем localFiles ИЛИ editNewFiles
             console.log('Режим создания нового товара');
             
-            // Вариант A: Если есть localFiles (старая система)
+            // Объединяем все файлы в один массив для загрузки
+            const allFileObjects = [];
+            
             if (this.localFiles && this.localFiles.length > 0) {
-                console.log('Используем localFiles:', this.localFiles.length);
+                console.log('Добавляем localFiles:', this.localFiles.length);
                 this.localFiles.forEach(fileObj => {
                     if (fileObj.file) {
-                        filesToUpload.push({
-                            file: fileObj.file,
-                            preview: fileObj.preview,
-                            name: fileObj.file.name || 'image',
-                            status: 'pending'
+                        allFileObjects.push({
+                            ...fileObj,
+                            status: 'pending',
+                            progress: 0
                         });
                     }
                 });
             }
-            // Вариант B: Если файлы уже в editNewFiles (новая система)
-            else if (this.editNewFiles && this.editNewFiles.length > 0) {
-                console.log('Используем editNewFiles:', this.editNewFiles.length);
+            
+            if (this.editNewFiles && this.editNewFiles.length > 0) {
+                console.log('Добавляем editNewFiles:', this.editNewFiles.length);
                 this.editNewFiles.forEach(fileObj => {
-                    if (fileObj.file && fileObj.status !== 'uploaded') {
-                        filesToUpload.push(fileObj);
+                    if (fileObj.file && fileObj.status !== 'uploaded' && fileObj.status !== 'completed') {
+                        fileObj.status = 'pending';
+                        fileObj.progress = 0;
+                        allFileObjects.push(fileObj);
                     } else if (fileObj.serverUrl) {
                         uploadedUrls.push(fileObj.serverUrl);
                     }
                 });
             }
-            // Вариант C: Если файлы уже в variants (прямая загрузка)
-            else if (this.newP.variants && this.newP.variants.length > 0) {
-                this.newP.variants.forEach(variant => {
-                    if (variant.images && variant.images.length > 0) {
-                        variant.images.forEach(img => {
-                            if (img && img.startsWith('http') && !uploadedUrls.includes(img)) {
-                                uploadedUrls.push(img);
-                            }
-                        });
-                    }
-                });
-            }
+            
+            // Преобразуем в единый формат
+            filesToUpload.push(...allFileObjects.map(fileObj => ({
+                ...fileObj,
+                status: 'pending',
+                progress: 0
+            })));
         }
         
         console.log('Файлов для загрузки:', filesToUpload.length);
         console.log('Уже загруженных URL:', uploadedUrls.length);
         
-        // 4. ЗАГРУЗКА ФАЙЛОВ
+        // 4. ЗАГРУЗКА ФАЙЛОВ С ИНДИКАТОРАМИ
         if (filesToUpload.length > 0) {
             console.log(`Начинаю загрузку ${filesToUpload.length} файлов...`);
             
@@ -3292,42 +3515,62 @@ async saveProduct() {
                 try {
                     console.log('Загружаю:', fileObj.name || fileObj.file?.name);
                     
-                    // Проверяем, есть ли уже serverUrl
-                    if (fileObj.serverUrl && fileObj.status === 'uploaded') {
+                    // Проверяем, есть ли уже serverUrl и загружен ли файл
+                    if (fileObj.serverUrl && (fileObj.status === 'uploaded' || fileObj.status === 'completed')) {
                         console.log('Файл уже загружен ранее, URL:', fileObj.serverUrl);
                         uploadedUrls.push(fileObj.serverUrl);
                         continue;
                     }
                     
+                    // Обновляем статус на "загрузка"
+                    fileObj.status = 'uploading';
+                    fileObj.progress = 0;
+                    this.$forceUpdate(); // Принудительное обновление для отображения прогресса
+                    
                     // Сжимаем изображение
                     console.log('Сжимаем изображение...');
                     const compressedFile = await this.compressImage(fileObj.file);
                     
-                    // Загружаем на сервер
+                    // Загружаем на сервер с отслеживанием прогресса
                     console.log('Отправляем на сервер...');
-                    const imageUrl = await this.uploadFile(compressedFile);
+                    const imageUrl = await this.uploadFileWithProgress(compressedFile, fileObj);
                     
                     console.log('✅ Успешно загружено, URL:', imageUrl);
                     uploadedUrls.push(imageUrl);
                     
                     // Обновляем статус файла
+                    fileObj.status = 'completed';
+                    fileObj.progress = 100;
                     fileObj.serverUrl = imageUrl;
-                    fileObj.status = 'uploaded';
+                    this.$forceUpdate();
+                    
+                    // Небольшая пауза для отображения прогресса
+                    await new Promise(resolve => setTimeout(resolve, 200));
                     
                 } catch (uploadError) {
                     console.error('❌ Ошибка загрузки файла:', uploadError);
                     
-                    // Fallback: создаем Data URL
-                    const fallbackUrl = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(fileObj.file);
-                    });
+                    // Обновляем статус на "ошибка"
+                    fileObj.status = 'failed';
+                    fileObj.error = uploadError.message;
+                    this.$forceUpdate();
                     
-                    console.log('Используем Data URL как fallback');
-                    uploadedUrls.push(fallbackUrl);
-                    fileObj.serverUrl = fallbackUrl;
-                    fileObj.status = 'fallback';
+                    // Fallback: создаем Data URL
+                    try {
+                        const fallbackUrl = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.readAsDataURL(fileObj.file);
+                        });
+                        
+                        console.log('Используем Data URL как fallback');
+                        uploadedUrls.push(fallbackUrl);
+                        fileObj.serverUrl = fallbackUrl;
+                        fileObj.status = 'fallback';
+                        this.$forceUpdate();
+                    } catch (fallbackError) {
+                        console.error('Ошибка создания Data URL:', fallbackError);
+                    }
                 }
             }
         }
@@ -3434,28 +3677,28 @@ async saveProduct() {
 
 // Добавьте этот метод для очистки памяти
 cleanupMemory() {
-    // Освобождаем превью URL
-    if (this.editNewFiles && this.editNewFiles.length > 0) {
-        this.editNewFiles.forEach(fileObj => {
-            if (fileObj.preview && fileObj.preview.startsWith('blob:')) {
-                URL.revokeObjectURL(fileObj.preview);
-            }
-        });
-    }
+    // Освобождаем превью URL из всех массивов
+    const freePreviewUrls = (filesArray) => {
+        if (filesArray && Array.isArray(filesArray)) {
+            filesArray.forEach(fileObj => {
+                if (fileObj.preview && fileObj.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(fileObj.preview);
+                }
+            });
+        }
+    };
     
-    if (this.localFiles && this.localFiles.length > 0) {
-        this.localFiles.forEach(fileObj => {
-            if (fileObj.preview && fileObj.preview.startsWith('blob:')) {
-                URL.revokeObjectURL(fileObj.preview);
-            }
-        });
-    }
+    freePreviewUrls(this.editNewFiles);
+    freePreviewUrls(this.localFiles);
     
     // Очищаем массивы
     this.editNewFiles = [];
     this.localFiles = [];
     this.editImages = [];
+    
+    console.log('Память очищена');
 },
+
 
 // Обновите метод cancelEdit
 cancelEdit() {
@@ -3725,18 +3968,62 @@ async updateStatus(order, newStatus) {
         order.isUpdating = false;
     }
 },
-handleFiles(e) {
+async handleFiles(e, isEdit = false) {
     const files = Array.from(e.target.files);
-    if (!this.newP.localFiles) this.newP.localFiles = [];
     
-    files.forEach(file => {
-        this.newP.localFiles.push({
+    for (const file of files) {
+        // Проверяем тип файла
+        if (!file.type.startsWith('image/')) {
+            alert(`Файл "${file.name}" не является изображением. Пропускаем.`);
+            continue;
+        }
+        
+        // Проверяем размер файла (максимум 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 10MB.`);
+            continue;
+        }
+        
+        // Создаем превью
+        const previewUrl = URL.createObjectURL(file);
+        
+        const fileObj = {
+            id: Date.now() + Math.random(),
             file: file,
-            preview: URL.createObjectURL(file) // Ссылка для отображения в <img>
-        });
-    });
-    e.target.value = ''; // Очистка инпута
+            preview: previewUrl,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            status: 'pending', // pending, uploading, completed, failed, fallback
+            progress: 0,
+            serverUrl: null,
+            error: null
+        };
+        
+        // Добавляем в соответствующий массив
+        if (isEdit) {
+            if (!this.editNewFiles) this.editNewFiles = [];
+            this.editNewFiles.push(fileObj);
+        } else {
+            if (!this.localFiles) this.localFiles = [];
+            this.localFiles.push(fileObj);
+        }
+        
+        // Вибрация для каждого файла
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
+        
+        console.log('Добавлен файл:', file.name);
+    }
+    
+    // Очищаем input для возможности повторной загрузки
+    e.target.value = '';
+    
+    // Форсируем обновление Vue
+    this.$forceUpdate();
 },
+
 calculateListHeight() {
     // 1. Проверка условий: работает только когда список открыт и пользователь - админ
     if (this.showProductList && this.isAdmin) {
