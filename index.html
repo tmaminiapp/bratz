@@ -2164,32 +2164,26 @@ editProduct(p) {
             this.tempSizes[vIdx] = fields;
         });
         
-        // 6. ЗАГРУЖАЕМ ВСЕ ФОТО В editImages (ВАЖНО!)
-        // Собираем все уникальные фото из всех вариантов
-        const allImages = new Set();
-        this.newP.variants.forEach(variant => {
-            if (variant.images && Array.isArray(variant.images)) {
-                variant.images.forEach(img => {
-                    if (img && typeof img === 'string' && img.trim() !== '') {
-                        allImages.add(img);
-                    }
-                });
+       // 6. ЗАГРУЖАЕМ ВСЕ ФОТО В editImages (ВАЖНО!)
+// Собираем все фото из всех вариантов
+this.editImages = [];
+const seenImages = new Set();
+
+this.newP.variants.forEach(variant => {
+    if (variant.images && Array.isArray(variant.images)) {
+        variant.images.forEach(img => {
+            if (img && typeof img === 'string' && img.trim() !== '') {
+                // Убедимся, что это валидный URL
+                if ((img.startsWith('http') || img.startsWith('https') || img.startsWith('data:')) && !seenImages.has(img)) {
+                    seenImages.add(img);
+                    this.editImages.push(img);
+                }
             }
         });
-        
-        // Преобразуем Set обратно в массив
-        this.editImages = Array.from(allImages);
-        
-    } else {
-        // Для старых товаров без вариантов создаем один вариант
-        this.newP.variants = [
-            { 
-                color: cleanItem.color || 'Стандарт', 
-                images: cleanItem.images || [], 
-                stocks: cleanItem.stocks || cleanItem.stock || {} 
-            }
-        ];
-        
+    }
+});
+
+console.log('editImages после загрузки:', this.editImages);
         // 7. ЗАГРУЖАЕМ ФОТО ИЗ СТАРОГО ФОРМАТА
         if (cleanItem.images && Array.isArray(cleanItem.images)) {
             this.editImages = [...cleanItem.images].filter(img => 
@@ -2292,23 +2286,40 @@ async handleEditFiles(e) {
             continue;
         }
         
-        // Только создаем превью, загрузку откладываем до saveProduct()
-        const previewUrl = URL.createObjectURL(file);
-        
-        console.log('Создано превью для файла:', file.name, 'URL:', previewUrl.substring(0, 50) + '...');
-        
-        // Добавляем в массив новых файлов
-        this.editNewFiles.push({
-            id: Date.now() + Math.random(), // Уникальный ID
-            file: file,
-            preview: previewUrl,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            status: 'pending', // Будет 'uploaded' после загрузки в saveProduct()
-            serverUrl: null,
-            uploadProgress: 0
-        });
+        // 7. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ
+const productData = {
+    title: this.newP.title.trim(),
+    desc: this.newP.desc || '',
+    price: Number(this.newP.price),
+    oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
+    category: this.newP.category,
+    isNew: !!this.newP.isNew,
+    hidden: !!this.newP.hidden,
+    hiddenSizes: this.newP.hiddenSizes || [],
+    variants: [],
+    updatedAt: Date.now()
+};
+
+// 8. СОЗДАЕМ ВАРИАНТЫ С ФОТО И РАЗМЕРАМИ
+cleanedVariants.forEach((variant, index) => {
+    const newVariant = {
+        color: variant.color || 'Стандарт',
+        images: [...allImages], // ВСЕ фото идут в КАЖДЫЙ вариант
+        stocks: variant.stocks || {}
+    };
+    
+    // Сохраняем дополнительные поля, если есть
+    if (variant.isUploading !== undefined) newVariant.isUploading = variant.isUploading;
+    
+    productData.variants.push(newVariant);
+});
+
+console.log('Финальные данные для сохранения:', {
+    title: productData.title,
+    variantsCount: productData.variants.length,
+    firstVariant: productData.variants[0],
+    hasImages: productData.variants[0]?.images?.length || 0
+});
     }
     
     // Очищаем input для возможности повторной загрузки тех же файлов
@@ -3227,16 +3238,18 @@ async saveProduct() {
                 });
             }
             // Вариант B: Если файлы уже в editNewFiles (новая система)
-            else if (this.editNewFiles && this.editNewFiles.length > 0) {
-                console.log('Используем editNewFiles:', this.editNewFiles.length);
-                this.editNewFiles.forEach(fileObj => {
-                    if (fileObj.file && fileObj.status !== 'uploaded') {
-                        filesToUpload.push(fileObj);
-                    } else if (fileObj.serverUrl) {
-                        uploadedUrls.push(fileObj.serverUrl);
-                    }
-                });
-            }
+            else if (this.newP.variants && this.newP.variants.some(v => v.images && v.images.length > 0)) {
+    // Используем фото, которые уже есть в вариантах
+    this.newP.variants.forEach(variant => {
+        if (variant.images && variant.images.length > 0) {
+            variant.images.forEach(img => {
+                if (img && img.startsWith('http') && !uploadedUrls.includes(img)) {
+                    uploadedUrls.push(img);
+                }
+            });
+        }
+    });
+}
             // Вариант C: Если файлы уже в variants (прямая загрузка)
             else if (this.newP.variants && this.newP.variants.length > 0) {
                 this.newP.variants.forEach(variant => {
@@ -3302,50 +3315,75 @@ async saveProduct() {
             }
         }
         
-        // 5. ФОРМИРОВАНИЕ СПИСКА ВСЕХ ФОТО
-        let allImages = [...uploadedUrls];
-        
-        // Добавляем существующие фото из базы (только для редактирования)
-        if (this.editId && this.editImages && this.editImages.length > 0) {
-            this.editImages.forEach(img => {
-                if (img && img.startsWith('http') && !allImages.includes(img)) {
-                    allImages.push(img);
-                }
-            });
+       // 5. ФОРМИРОВАНИЕ СПИСКА ВСЕХ ФОТО
+let allImages = [...uploadedUrls];
+
+// Добавляем существующие фото из базы (только для редактирования)
+if (this.editId && this.editImages && this.editImages.length > 0) {
+    this.editImages.forEach(img => {
+        if (img && img.trim() !== '' && !allImages.includes(img)) {
+            allImages.push(img);
         }
-        
-        // Удаляем дубликаты и фильтруем
-        allImages = [...new Set(allImages.filter(img => 
-            img && img.trim() !== '' && (img.startsWith('http') || img.startsWith('data:'))
-        ))];
-        
-        console.log('Всего уникальных фото:', allImages.length);
-        console.log('Список фото:', allImages);
-        
-        // 6. ПРОВЕРКА НАЛИЧИЯ ФОТО
-        if (allImages.length === 0) {
-            this.loading = false;
-            return alert('Загрузите хотя бы одно фото!');
-        }
-        
-        // 7. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ
-        const productData = {
-            title: this.newP.title.trim(),
-            desc: this.newP.desc || '',
-            price: Number(this.newP.price),
-            oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
-            category: this.newP.category,
-            isNew: !!this.newP.isNew,
-            hidden: !!this.newP.hidden,
-            hiddenSizes: this.newP.hiddenSizes || [],
-            variants: cleanedVariants,
-            updatedAt: Date.now()
-        };
-        
-        // 8. ДОБАВЛЯЕМ ФОТО К КАЖДОМУ ВАРИАНТУ
-        productData.variants.forEach(variant => {
-            variant.images = [...allImages];
-        });
+    });
+}
+
+// Удаляем дубликаты и фильтруем
+allImages = allImages.filter(img => 
+    img && img.trim() !== '' && (img.startsWith('http') || img.startsWith('data:'))
+);
+
+// Удаляем точные дубликаты
+const uniqueImages = [];
+const seenUrls = new Set();
+
+allImages.forEach(img => {
+    if (!seenUrls.has(img)) {
+        seenUrls.add(img);
+        uniqueImages.push(img);
+    }
+});
+
+allImages = uniqueImages;
+
+console.log('Всего уникальных фото:', allImages.length);
+console.log('Список фото:', allImages);
+
+// 6. ПРОВЕРКА НАЛИЧИЯ ФОТО
+if (allImages.length === 0) {
+    this.loading = false;
+    return alert('Загрузите хотя бы одно фото!');
+}
+
+// 7. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ
+const productData = {
+    title: this.newP.title.trim(),
+    desc: this.newP.desc || '',
+    price: Number(this.newP.price),
+    oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
+    category: this.newP.category,
+    isNew: !!this.newP.isNew,
+    hidden: !!this.newP.hidden,
+    hiddenSizes: this.newP.hiddenSizes || [],
+    variants: [],
+    updatedAt: Date.now()
+};
+
+// 8. ДОБАВЛЯЕМ ФОТО К КАЖДОМУ ВАРИАНТУ + СОХРАНЯЕМ ДРУГИЕ ДАННЫЕ
+cleanedVariants.forEach((variant, index) => {
+    // Сохраняем все данные варианта
+    const newVariant = {
+        color: variant.color || 'Стандарт',
+        images: [...allImages], // Убедимся, что это массив строк с URL
+        stocks: variant.stocks || {}
+    };
+    
+    // Сохраняем другие поля, которые могли быть
+    if (variant.otherField) newVariant.otherField = variant.otherField;
+    
+    productData.variants.push(newVariant);
+});
+
+console.log('Данные для сохранения:', productData); 
         
         // 9. СОХРАНЕНИЕ В БАЗЕ
         console.log('Сохранение в Firestore...');
