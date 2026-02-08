@@ -1360,7 +1360,7 @@
                         
                         <!-- СЕТКА РАЗМЕРОВ -->
                         <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <!-- Для всех размеров -->
+                            <!-- Для всех существующих размеров -->
                             <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
                                  style="display: flex; align-items: center; justify-content: space-between;
                                         background: #f9f9f9; padding: 8px; border-radius: 8px; 
@@ -1417,46 +1417,64 @@
                                     </template>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Блок добавления нового размера (ПОД РАЗМЕРАМИ) -->
-                        <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
-                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
-                                <div style="display: flex; align-items: center; gap: 6px; 
-                                            background: #f8f9fa; padding: 10px; border-radius: 8px; 
-                                            border: 1px solid #dee2e6;"
-                                     class="add-new-size">
+                            
+                            <!-- БЛОК ДОБАВЛЕНИЯ НОВОГО РАЗМЕРА (под существующими) -->
+                            <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+                                <div style="margin-top: 8px;">
+                                    <!-- Кнопка "Добавить размер" -->
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <button @click="showNewSizeFields = !showNewSizeFields"
+                                                style="display: flex; align-items: center; justify-content: center;
+                                                       width: 30px; height: 30px; border: none; border-radius: 6px;
+                                                       background: #007aff; color: white; font-size: 16px;
+                                                       font-weight: bold; cursor: pointer; flex-shrink: 0;">
+                                            {{ showNewSizeFields ? '−' : '+' }}
+                                        </button>
+                                        <span style="font-size: 12px; font-weight: 600; color: #666;">
+                                            Добавить новый размер
+                                        </span>
+                                    </div>
                                     
-                                    <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
+                                    <!-- Поля для нового размера (показываются по нажатию на +) -->
+                                    <div v-if="showNewSizeFields" 
+                                         style="display: flex; align-items: center; gap: 8px; 
+                                                background: #f8f9fa; padding: 12px; border-radius: 8px; 
+                                                border: 1px solid #dee2e6;">
+                                        
+                                        <!-- Поле для названия размера -->
                                         <input type="text" 
                                                v-model="v.newSizeName"
                                                placeholder="Размер"
                                                style="flex: 1; min-width: 60px; padding: 8px; 
                                                       border: 1px solid #ced4da; border-radius: 6px; 
                                                       font-size: 13px; font-weight: 600;">
-                                        <span style="color: #6c757d; font-weight: 700; font-size: 14px;">:</span>
+                                        
+                                        <span style="color: #6c757d; font-weight: 700; font-size: 14px;">×</span>
+                                        
+                                        <!-- Поле для количества -->
                                         <input type="number" 
                                                v-model.number="v.newSizeQty"
                                                min="0"
                                                placeholder="Кол-во"
-                                               style="width: 60px; min-width: 60px; padding: 8px; 
+                                               style="width: 70px; min-width: 70px; padding: 8px; 
                                                       border: 1px solid #ced4da; border-radius: 6px; 
                                                       font-size: 13px; text-align: center; font-weight: 600;">
+                                        
+                                        <!-- Кнопка подтверждения -->
+                                        <button @click="addSizeToVariant(p, vIdx)" 
+                                                style="padding: 8px 16px; background: #28a745; color: white; 
+                                                       border: none; border-radius: 6px; font-size: 13px; 
+                                                       font-weight: 700; cursor: pointer; white-space: nowrap;
+                                                       transition: background 0.2s;"
+                                                class="add-size-button"
+                                                @mouseover="e => e.target.style.background = '#218838'"
+                                                @mouseout="e => e.target.style.background = '#28a745'">
+                                            Добавить
+                                        </button>
                                     </div>
-                                    
-                                    <button @click="addSizeToVariant(p, vIdx)" 
-                                            style="padding: 8px 16px; background: #28a745; color: white; 
-                                                   border: none; border-radius: 6px; font-size: 12px; 
-                                                   font-weight: 700; cursor: pointer; white-space: nowrap;
-                                                   transition: background 0.2s;"
-                                            class="add-size-button"
-                                            @mouseover="e => e.target.style.background = '#218838'"
-                                            @mouseout="e => e.target.style.background = '#28a745'">
-                                        +
-                                    </button>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
                     </div>
                 </div>
                 
@@ -1738,6 +1756,7 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+        showNewSizeFields: false, 
          uploadFiles: [], 
         editUploading: false,
           tempSizes: [],
@@ -2507,6 +2526,7 @@ toggleQuickEdit(product, variantIndex) {
         this.saveVariantSizes(product, variantIndex);
         product.editingVariant = null;
         product.fullEditMode = false;
+        this.showNewSizeFields = false; // скрываем поля добавления
     } else {
         // Если редактируем другой вариант или полное редактирование - сохраняем предыдущее
         if (product.editingVariant !== null && product.editingVariant !== undefined) {
@@ -2522,6 +2542,7 @@ toggleQuickEdit(product, variantIndex) {
         // Начинаем быстрое редактирование
         product.editingVariant = variantIndex;
         product.fullEditMode = false;
+        this.showNewSizeFields = false; // скрываем поля при переключении
         
         // Инициализируем поля для нового размера
         const variant = product.variants[variantIndex];
@@ -3548,51 +3569,29 @@ async saveProduct() {
             // Добавляем существующие фото из базы
             if (this.editImages && this.editImages.length > 0) {
                 this.editImages.forEach(img => {
-                    if (img && img.startsWith('http') && !uploadedUrls.includes(img)) {
+                    if (img && img.trim() !== '' && !uploadedUrls.includes(img)) {
                         uploadedUrls.push(img);
                     }
                 });
             }
             
         } else {
-            // СОЗДАНИЕ НОВОГО: используем localFiles ИЛИ editNewFiles
+            // СОЗДАНИЕ НОВОГО: используем editNewFiles (основной массив)
             console.log('Режим создания нового товара');
             
-            // Объединяем все файлы в один массив для загрузки
-            const allFileObjects = [];
-            
-            if (this.localFiles && this.localFiles.length > 0) {
-                console.log('Добавляем localFiles:', this.localFiles.length);
-                this.localFiles.forEach(fileObj => {
-                    if (fileObj.file) {
-                        allFileObjects.push({
-                            ...fileObj,
-                            status: 'pending',
-                            progress: 0
-                        });
-                    }
-                });
-            }
-            
+            // Внимание: для нового товара используем editNewFiles, а не localFiles
             if (this.editNewFiles && this.editNewFiles.length > 0) {
                 console.log('Добавляем editNewFiles:', this.editNewFiles.length);
                 this.editNewFiles.forEach(fileObj => {
                     if (fileObj.file && fileObj.status !== 'uploaded' && fileObj.status !== 'completed') {
                         fileObj.status = 'pending';
                         fileObj.progress = 0;
-                        allFileObjects.push(fileObj);
+                        filesToUpload.push(fileObj);
                     } else if (fileObj.serverUrl) {
                         uploadedUrls.push(fileObj.serverUrl);
                     }
                 });
             }
-            
-            // Преобразуем в единый формат
-            filesToUpload.push(...allFileObjects.map(fileObj => ({
-                ...fileObj,
-                status: 'pending',
-                progress: 0
-            })));
         }
         
         console.log('Файлов для загрузки:', filesToUpload.length);
@@ -3616,7 +3615,7 @@ async saveProduct() {
                     // Обновляем статус на "загрузка"
                     fileObj.status = 'uploading';
                     fileObj.progress = 0;
-                    this.$forceUpdate(); // Принудительное обновление для отображения прогресса
+                    this.$forceUpdate();
                     
                     // Сжимаем изображение
                     console.log('Сжимаем изображение...');
@@ -3672,19 +3671,24 @@ async saveProduct() {
         // Добавляем существующие фото из базы (только для редактирования)
         if (this.editId && this.editImages && this.editImages.length > 0) {
             this.editImages.forEach(img => {
-                if (img && img.startsWith('http') && !allImages.includes(img)) {
+                if (img && img.trim() !== '' && !allImages.includes(img)) {
                     allImages.push(img);
                 }
             });
         }
         
-        // Удаляем дубликаты и фильтруем
+        // Удаляем дубликаты и фильтруем пустые значения
         allImages = [...new Set(allImages.filter(img => 
-            img && img.trim() !== '' && (img.startsWith('http') || img.startsWith('data:'))
+            img && 
+            img.trim() !== '' && 
+            (img.startsWith('http') || img.startsWith('data:'))
         ))];
         
+        console.log('=== ОТЛАДКА: ФОТО ДЛЯ СОХРАНЕНИЯ ===');
         console.log('Всего уникальных фото:', allImages.length);
-        console.log('Список фото:', allImages);
+        allImages.forEach((img, idx) => {
+            console.log(`Фото ${idx}: ${img.substring(0, 80)}...`);
+        });
         
         // 6. ПРОВЕРКА НАЛИЧИЯ ФОТО
         if (allImages.length === 0) {
@@ -3693,6 +3697,12 @@ async saveProduct() {
         }
         
         // 7. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ
+        // Важно: добавляем images КАЖДОМУ варианту
+        const finalVariants = cleanedVariants.map(variant => ({
+            ...variant,
+            images: [...allImages] // ВСЕ фото для каждого варианта
+        }));
+        
         const productData = {
             title: this.newP.title.trim(),
             desc: this.newP.desc || '',
@@ -3703,20 +3713,17 @@ async saveProduct() {
             images: allImages, // Для обратной совместимости
             hidden: !!this.newP.hidden,
             hiddenSizes: this.newP.hiddenSizes || [],
-            variants: cleanedVariants.map(variant => ({
-        ...variant,
-        images: [...allImages] // Каждому варианту свои изображения
-    })),
-            
+            variants: finalVariants, // Используем уже подготовленные варианты
             updatedAt: Date.now()
         };
         
-        // 8. ДОБАВЛЯЕМ ФОТО К КАЖДОМУ ВАРИАНТУ
-        productData.variants.forEach(variant => {
-            variant.images = [...allImages];
+        console.log('=== ОТЛАДКА: ФИНАЛЬНЫЕ ДАННЫЕ ===');
+        console.log('Количество вариантов:', productData.variants.length);
+        productData.variants.forEach((v, idx) => {
+            console.log(`Вариант ${idx} (${v.color}): ${v.images.length} изображений`);
         });
         
-        // 9. СОХРАНЕНИЕ В БАЗЕ
+        // 8. СОХРАНЕНИЕ В БАЗЕ
         console.log('Сохранение в Firestore...');
         
         if (this.editId) {
@@ -3756,10 +3763,10 @@ async saveProduct() {
             alert('Товар успешно создан!');
         }
         
-        // 10. ОЧИСТКА ПАМЯТИ
+        // 9. ОЧИСТКА ПАМЯТИ
         this.cleanupMemory();
         
-        // 11. ЗАВЕРШЕНИЕ
+        // 10. ЗАВЕРШЕНИЕ
         this.cancelEdit();
         this.tab = 'profile';
         
