@@ -1326,7 +1326,7 @@
     <button v-if="editId" class="cat-tab" style="width:100%; margin-top:10px;" @click="cancelEdit">ОТМЕНА</button>
 </div>
 
-    <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
+   <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
   <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
     <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">
         📦 СПИСОК ТОВАРОВ ({{ products.length }})
@@ -1358,9 +1358,9 @@
                             ЦВЕТ: {{ v.color }}
                         </div>
                         
-                        <!-- СЕТКА РАЗМЕРОВ С РЕДАКТИРОВАНИЕМ -->
+                        <!-- СЕТКА РАЗМЕРОВ -->
                         <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <!-- Для всех размеров (и при редактировании, и при просмотре) -->
+                            <!-- Для всех размеров -->
                             <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
                                  style="display: flex; align-items: center; justify-content: space-between;
                                         background: #f9f9f9; padding: 8px; border-radius: 8px; 
@@ -1379,7 +1379,7 @@
                                 <!-- Количество и кнопки справа -->
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     
-                                    <!-- Если редактирование активно для этого варианта -->
+                                    <!-- Если редактирование активно -->
                                     <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
                                         <!-- Поле ввода для редактирования -->
                                         <input type="number" 
@@ -1417,40 +1417,50 @@
                                     </template>
                                 </div>
                             </div>
-                            
-                            <!-- Блок добавления нового размера (только при редактировании) -->
-                            <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+                        </div>
+                        
+                        <!-- Блок добавления нового размера (ПОД РАЗМЕРАМИ) -->
+                        <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
                                 <div style="display: flex; align-items: center; gap: 6px; 
-                                            background: #f0f0f0; padding: 8px; border-radius: 8px; 
-                                            margin-top: 8px; border: 1px dashed #ddd; min-width: 0;">
-                                    <input type="text" 
-                                           v-model="v.newSizeName"
-                                           placeholder="Размер"
-                                           style="flex: 1; min-width: 60px; padding: 6px; 
-                                                  border: 1px solid #ddd; border-radius: 4px; 
-                                                  font-size: 12px; font-weight: 600;">
-                                    <span style="color: #999; font-weight: 600;">:</span>
-                                    <input type="number" 
-                                           v-model.number="v.newSizeQty"
-                                           min="0"
-                                           placeholder="Кол-во"
-                                           style="width: 50px; min-width: 50px; padding: 6px; 
-                                                  border: 1px solid #ddd; border-radius: 4px; 
-                                                  font-size: 12px; text-align: center;">
+                                            background: #f8f9fa; padding: 10px; border-radius: 8px; 
+                                            border: 1px solid #dee2e6;"
+                                     class="add-new-size">
+                                    
+                                    <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
+                                        <input type="text" 
+                                               v-model="v.newSizeName"
+                                               placeholder="Размер"
+                                               style="flex: 1; min-width: 60px; padding: 8px; 
+                                                      border: 1px solid #ced4da; border-radius: 6px; 
+                                                      font-size: 13px; font-weight: 600;">
+                                        <span style="color: #6c757d; font-weight: 700; font-size: 14px;">:</span>
+                                        <input type="number" 
+                                               v-model.number="v.newSizeQty"
+                                               min="0"
+                                               placeholder="Кол-во"
+                                               style="width: 60px; min-width: 60px; padding: 8px; 
+                                                      border: 1px solid #ced4da; border-radius: 6px; 
+                                                      font-size: 13px; text-align: center; font-weight: 600;">
+                                    </div>
+                                    
                                     <button @click="addSizeToVariant(p, vIdx)" 
-                                            style="padding: 6px 10px; background: #34c759; color: white; 
-                                                   border: none; border-radius: 4px; font-size: 11px; 
-                                                   font-weight: 600; cursor: pointer; white-space: nowrap;"
-                                            class="add-size-button">
-                                        + Добавить
+                                            style="padding: 8px 16px; background: #28a745; color: white; 
+                                                   border: none; border-radius: 6px; font-size: 12px; 
+                                                   font-weight: 700; cursor: pointer; white-space: nowrap;
+                                                   transition: background 0.2s;"
+                                            class="add-size-button"
+                                            @mouseover="e => e.target.style.background = '#218838'"
+                                            @mouseout="e => e.target.style.background = '#28a745'">
+                                        +
                                     </button>
                                 </div>
-                            </template>
-                        </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
                 
-                <!-- Правая часть: вертикальные кнопки управления (ВСЕГДА ВИДИМЫЕ, фиксированная ширина) -->
+                <!-- Правая часть: вертикальные кнопки управления -->
                 <div class="control-buttons-compact" style="flex-shrink: 0; width: 55px; min-width: 55px;">
                     
                     <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
@@ -1502,7 +1512,6 @@
         </div>
     </template>
 </div>
-
 
         <hr style="margin: 20px 0; border: none; border-top: 2px solid #000;">   
         <h3 class="brand-name" style="font-size:12px; margin-top:2px;">ЗАКАЗЫ ({{allOrders.length}}) | ВЫРУЧКА: {{revenue}} ₽</h3>
