@@ -2400,6 +2400,13 @@ cancelEdit() {
     this.fullEditMode = false;
     this.showProductList = true;
     
+    // Очищаем массивы фото
+    this.editImages = [];
+    this.editNewFiles.forEach(file => {
+        if (file.preview) URL.revokeObjectURL(file.preview);
+    });
+    this.editNewFiles = [];
+    
     // Сбрасываем временные поля для размеров
     this.tempSizes = [];
     
@@ -3028,14 +3035,66 @@ async saveProduct() {
         return alert('Добавьте хотя бы один размер с количеством больше 0!');
     }
     
-    if (!this.newP.variants?.[0]?.images?.length) {
-        return alert('Загрузите хотя бы одно фото!');
+    // 3. ПРОВЕРКА ФОТО (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+    if (this.editId) {
+        // Режим редактирования: проверяем editImages и editNewFiles
+        const totalImages = this.editImages.length + 
+                           this.editNewFiles.filter(f => f.serverUrl).length;
+        
+        if (totalImages === 0) {
+            return alert('Загрузите хотя бы одно фото!');
+        }
+    } else {
+        // Режим создания нового товара: проверяем старую логику
+        if (!this.newP.variants?.[0]?.images?.length) {
+            return alert('Загрузите хотя бы одно фото!');
+        }
     }
 
     this.loading = true;
     
     try {
-        // Подготовка данных с ОЧИЩЕННЫМИ вариантами
+        // 4. ЗАГРУЗКА НОВЫХ ФОТО (если есть)
+        const uploadedNewUrls = [];
+        if (this.editId && this.editNewFiles.length > 0) {
+            for (let fileObj of this.editNewFiles) {
+                if (fileObj.status !== 'uploaded' && fileObj.file) {
+                    try {
+                        const compressedFile = await this.compressImage(fileObj.file);
+                        const imageUrl = await this.uploadFile(compressedFile);
+                        fileObj.serverUrl = imageUrl;
+                        fileObj.status = 'uploaded';
+                        uploadedNewUrls.push(imageUrl);
+                    } catch (error) {
+                        console.error('Ошибка загрузки фото:', error);
+                    }
+                } else if (fileObj.serverUrl) {
+                    uploadedNewUrls.push(fileObj.serverUrl);
+                }
+            }
+        }
+        
+        // 5. ОБЪЕДИНЕНИЕ ВСЕХ ФОТО
+        let allImages = [];
+        
+        if (this.editId) {
+            // Режим редактирования: старые + новые фото
+            allImages = [
+                ...this.editImages, // Существующие фото
+                ...uploadedNewUrls  // Новые загруженные фото
+            ];
+        } else {
+            // Режим создания: фото из формы
+            allImages = this.newP.variants?.[0]?.images || [];
+        }
+        
+        // 6. ПРОВЕРКА, ЧТО ЕСТЬ ХОТЯ БЫ ОДНО ФОТО
+        if (allImages.length === 0) {
+            this.loading = false;
+            return alert('Нет ни одного фото для сохранения!');
+        }
+        
+        // 7. СОЗДАНИЕ ОБЪЕКТА ДЛЯ СОХРАНЕНИЯ
         const productData = {
             title: this.newP.title.trim(),
             desc: this.newP.desc || '',
@@ -3045,11 +3104,32 @@ async saveProduct() {
             isNew: !!this.newP.isNew,
             hidden: !!this.newP.hidden,
             hiddenSizes: this.newP.hiddenSizes || [],
-            variants: cleanedVariants, // Используем ОЧИЩЕННЫЕ варианты
-            images: [this.newP.variants[0].images[0]], 
+            variants: cleanedVariants,
             updatedAt: Date.now()
         };
-
+        
+        // 8. РАСПРЕДЕЛЕНИЕ ФОТО ПО ВАРИАНТАМ
+        if (productData.variants && productData.variants.length > 0) {
+            if (this.newP.variants.length === productData.variants.length) {
+                // Если количество вариантов совпадает, распределяем фото
+                productData.variants.forEach((variant, index) => {
+                    if (index === 0) {
+                        // Первому варианту даем все фото
+                        variant.images = allImages;
+                    } else {
+                        // Остальным вариантам - только первое фото или пустой массив
+                        variant.images = allImages.length > 0 ? [allImages[0]] : [];
+                    }
+                });
+            } else {
+                // Если что-то пошло не так, всем вариантам даем все фото
+                productData.variants.forEach(variant => {
+                    variant.images = allImages;
+                });
+            }
+        }
+        
+        // 9. СОХРАНЕНИЕ В БАЗЕ
         if (this.editId) {
             // Редактирование существующего товара
             const docRef = window.fb.doc(window.db, "products", this.editId);
@@ -3064,25 +3144,22 @@ async saveProduct() {
             // Создание нового товара
             productData.createdAt = Date.now();
             const docRef = await window.fb.addDoc(window.fb.collection(window.db, "products"), productData);
-            if (this.editId) {
-        // Для режима редактирования
-        const allImages = [
-            ...this.editImages, // Старые фото, которые не были удалены
-            ...this.editNewFiles.filter(f => f.status === 'uploaded' && f.serverUrl).map(f => f.serverUrl)
-        ];
-        
-        // Обновляем фото в первом варианте (или распределяем по вариантам)
-        if (this.newP.variants && this.newP.variants.length > 0) {
-            this.newP.variants[0].images = allImages;
-        }
-    }
             
             // Добавляем в локальный массив для мгновенного отображения
             this.products.unshift({ id: docRef.id, ...productData }); 
             alert('Товар успешно создан!');
         }
 
-        // --- ПЕРЕХОД ПОСЛЕ УСПЕХА ---
+        // 10. ОЧИСТКА ПОСЛЕ УСПЕХА
+        if (this.editId) {
+            // Очищаем временные массивы фото
+            this.editImages = [];
+            this.editNewFiles.forEach(file => {
+                if (file.preview) URL.revokeObjectURL(file.preview);
+            });
+            this.editNewFiles = [];
+        }
+        
         this.cancelEdit();       // Сбрасываем форму и переменные
         this.tab = 'profile';    // ОТКРЫВАЕМ ВКЛАДКУ ПРОФИЛЯ
         
