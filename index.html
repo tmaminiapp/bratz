@@ -803,12 +803,18 @@
                 </svg>
             </button>
 
-            <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-                <template v-if="p.variants && p.variants.length > 0">
-                    <img v-for="img in p.variants[0].images" :key="img" :src="img" loading="lazy">
-                </template>
-                <img v-else v-for="img in p.images" :key="img" :src="img" loading="lazy">
-            </div>
+           <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+    <!-- ЕДИНЫЙ СПОСОБ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ -->
+    <template v-if="getProductImages(p).length > 0">
+        <img v-for="(img, idx) in getProductImages(p)" 
+             :key="idx" 
+             :src="img" 
+             loading="lazy">
+    </template>
+    <div v-else style="width:100%; height:100%; background:#f9f9f9; display:flex; align-items:center; justify-content:center;">
+        <span style="color:#ccc;">Нет фото</span>
+    </div>
+</div>
 
             <div class="dots" v-if="p.variants?.[0]?.images?.length > 1">
                 <span v-for="(img, i) in p.variants[0].images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
@@ -862,12 +868,18 @@
                     </svg>
                 </button>
 
-                <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-                    <template v-if="p.variants && p.variants.length > 0">
-                        <img v-for="img in p.variants[0].images" :key="img" :src="img" loading="lazy">
-                    </template>
-                    <img v-else v-for="img in p.images" :key="img" :src="img" loading="lazy">
-                </div>
+               <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+    <!-- ЕДИНЫЙ СПОСОБ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ -->
+    <template v-if="getProductImages(p).length > 0">
+        <img v-for="(img, idx) in getProductImages(p)" 
+             :key="idx" 
+             :src="img" 
+             loading="lazy">
+    </template>
+    <div v-else style="width:100%; height:100%; background:#f9f9f9; display:flex; align-items:center; justify-content:center;">
+        <span style="color:#ccc;">Нет фото</span>
+    </div>
+</div>
 
                 <div class="dots" v-if="p.variants?.[0]?.images?.length > 1">
                     <span v-for="(img, i) in p.variants[0].images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
@@ -1969,7 +1981,32 @@ toggleDescription(productId) {
         }
         this.vib();
     },
+    // Метод для получения изображений товара (универсальный)
+getProductImages(product) {
+    if (!product) return [];
     
+    // 1. Проверяем новый формат (с вариантами)
+    if (product.variants && 
+        Array.isArray(product.variants) && 
+        product.variants.length > 0 && 
+        product.variants[0].images && 
+        Array.isArray(product.variants[0].images)) {
+        
+        return product.variants[0].images;
+    }
+    
+    // 2. Проверяем старый формат
+    if (product.images && Array.isArray(product.images)) {
+        return product.images;
+    }
+    
+    // 3. Проверяем другие возможные места
+    if (product.image) {
+        return [product.image];
+    }
+    
+    return [];
+},
     getShortDescription(fullDesc) {
         if (!fullDesc) return 'Нажмите для просмотра описания';
         
@@ -3190,30 +3227,43 @@ removeFromCart(cartId) {
 
         openSupport() { window.open('https://t.me/@Asya_Candy_Bratz', '_blank'); },
         
-  async testImgBBKey() {
+ async testImgBBConnection() {
+    try {
         const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
-        console.log('Тестируем ключ ImgBB:', imgbbKey);
+        console.log('Тестируем подключение к ImgBB...');
         
-        try {
-            // Простая проверка доступности API
-            const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'image=a&name=test.txt'
-            });
-            
-            console.log('Статус ответа:', response.status);
-            const text = await response.text();
-            console.log('Ответ ImgBB:', text.substring(0, 200));
-            
-            return response.status;
-        } catch (error) {
-            console.error('Ошибка теста ImgBB:', error);
-            return null;
+        // Простая проверка API
+        const testUrl = `https://api.imgbb.com/1/upload?key=${imgbbKey}`;
+        
+        // Создаем тестовый маленький файл
+        const testBlob = new Blob(['test'], { type: 'text/plain' });
+        const testFile = new File([testBlob], 'test.txt');
+        
+        const formData = new FormData();
+        formData.append('image', testFile);
+        
+        const response = await fetch(testUrl, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        console.log('ImgBB ответ:', result);
+        
+        if (result.success) {
+            alert('ImgBB работает!');
+            return true;
+        } else {
+            alert(`ImgBB ошибка: ${result.error?.message || 'Неизвестная ошибка'}`);
+            return false;
         }
-    },
+        
+    } catch (error) {
+        console.error('Ошибка подключения к ImgBB:', error);
+        alert('ImgBB недоступен. Используйте Firebase Storage или Data URL.');
+        return false;
+    }
+},
  async uploadFile(file) {
          return new Promise((resolve, reject) => {
         const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
@@ -3635,9 +3685,14 @@ async saveProduct() {
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
+            images: allImages, // Для обратной совместимости
             hidden: !!this.newP.hidden,
             hiddenSizes: this.newP.hiddenSizes || [],
-            variants: cleanedVariants,
+            variants: cleanedVariants.map(variant => ({
+        ...variant,
+        images: [...allImages] // Каждому варианту свои изображения
+    })),
+            
             updatedAt: Date.now()
         };
         
