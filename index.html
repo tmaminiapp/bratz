@@ -2120,7 +2120,11 @@ editProduct(p) {
     // 2. Инициализируем tempSizes как ПУСТОЙ массив массивов
     this.tempSizes = [];
     
-    // 3. Копируем варианты цветов
+    // 3. ИНИЦИАЛИЗИРУЕМ МАССИВЫ ДЛЯ ФОТО (ВАЖНО!)
+    this.editImages = [];  // <-- ИНИЦИАЛИЗАЦИЯ
+    this.editNewFiles = []; // <-- ИНИЦИАЛИЗАЦИЯ
+    
+    // 4. Копируем варианты цветов
     if (cleanItem.variants && cleanItem.variants.length > 0) {
         this.newP.variants = cleanItem.variants.map(variant => ({
             color: variant.color || 'Стандарт',
@@ -2128,7 +2132,7 @@ editProduct(p) {
             stocks: variant.stocks || variant.stock || {}
         }));
         
-        // 4. Для КАЖДОГО варианта создаем tempSizes
+        // 5. Для КАЖДОГО варианта создаем tempSizes
         this.newP.variants.forEach((variant, vIdx) => {
             // Создаем массив полей для этого варианта
             const fields = [];
@@ -2159,6 +2163,23 @@ editProduct(p) {
             // Сохраняем в tempSizes для этого варианта
             this.tempSizes[vIdx] = fields;
         });
+        
+        // 6. ЗАГРУЖАЕМ ВСЕ ФОТО В editImages (ВАЖНО!)
+        // Собираем все уникальные фото из всех вариантов
+        const allImages = new Set();
+        this.newP.variants.forEach(variant => {
+            if (variant.images && Array.isArray(variant.images)) {
+                variant.images.forEach(img => {
+                    if (img && typeof img === 'string' && img.trim() !== '') {
+                        allImages.add(img);
+                    }
+                });
+            }
+        });
+        
+        // Преобразуем Set обратно в массив
+        this.editImages = Array.from(allImages);
+        
     } else {
         // Для старых товаров без вариантов создаем один вариант
         this.newP.variants = [
@@ -2168,6 +2189,13 @@ editProduct(p) {
                 stocks: cleanItem.stocks || cleanItem.stock || {} 
             }
         ];
+        
+        // 7. ЗАГРУЖАЕМ ФОТО ИЗ СТАРОГО ФОРМАТА
+        if (cleanItem.images && Array.isArray(cleanItem.images)) {
+            this.editImages = [...cleanItem.images].filter(img => 
+                img && typeof img === 'string' && img.trim() !== ''
+            );
+        }
         
         // Создаем поля для первого варианта
         const fields = [];
@@ -2197,8 +2225,14 @@ editProduct(p) {
         this.$set(this.tempSizes, 0, fields);
     }
     
+    // 8. Открываем форму редактирования
     this.showProductList = false;
     window.scrollTo(0, 0);
+    
+    // 9. Дебаг информация
+    console.log('Редактирование товара:', cleanItem.title);
+    console.log('Загруженные фото (editImages):', this.editImages);
+    console.log('Новые файлы (editNewFiles):', this.editNewFiles);
     
     this.$nextTick(() => {
         if (list) list.scrollTop = scrollPos;
@@ -3006,14 +3040,12 @@ async saveProduct() {
     cleanedVariants.forEach(variant => {
         const cleanedStocks = {};
         Object.keys(variant.stocks || {}).forEach(key => {
-            // Убираем ключи, которые начинаются с "temp_" (временные)
             if (!key.startsWith('temp_')) {
                 cleanedStocks[key] = variant.stocks[key];
             }
         });
         variant.stocks = cleanedStocks;
         
-        // Также удаляем временные поля из самого объекта
         delete variant.tempKey;
         delete variant.savedName;
     });
@@ -3035,7 +3067,7 @@ async saveProduct() {
         return alert('Добавьте хотя бы один размер с количеством больше 0!');
     }
     
-    // 3. ПРОВЕРКА ФОТО (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+    // 3. ПРОВЕРКА ФОТО - ИСПРАВЛЕННАЯ ВЕРСИЯ
     if (this.editId) {
         // Режим редактирования: проверяем editImages и editNewFiles
         const totalImages = this.editImages.length + 
@@ -3045,8 +3077,9 @@ async saveProduct() {
             return alert('Загрузите хотя бы одно фото!');
         }
     } else {
-        // Режим создания нового товара: проверяем старую логику
-        if (!this.newP.variants?.[0]?.images?.length) {
+        // Режим создания нового товара: проверяем фото для первого варианта
+        const firstVariant = this.newP.variants?.[0];
+        if (!firstVariant?.images || firstVariant.images.length === 0) {
             return alert('Загрузите хотя бы одно фото!');
         }
     }
@@ -3110,23 +3143,10 @@ async saveProduct() {
         
         // 8. РАСПРЕДЕЛЕНИЕ ФОТО ПО ВАРИАНТАМ
         if (productData.variants && productData.variants.length > 0) {
-            if (this.newP.variants.length === productData.variants.length) {
-                // Если количество вариантов совпадает, распределяем фото
-                productData.variants.forEach((variant, index) => {
-                    if (index === 0) {
-                        // Первому варианту даем все фото
-                        variant.images = allImages;
-                    } else {
-                        // Остальным вариантам - только первое фото или пустой массив
-                        variant.images = allImages.length > 0 ? [allImages[0]] : [];
-                    }
-                });
-            } else {
-                // Если что-то пошло не так, всем вариантам даем все фото
-                productData.variants.forEach(variant => {
-                    variant.images = allImages;
-                });
-            }
+            productData.variants.forEach((variant, index) => {
+                // Всем вариантам даем одинаковые фото
+                variant.images = [...allImages];
+            });
         }
         
         // 9. СОХРАНЕНИЕ В БАЗЕ
@@ -3135,10 +3155,12 @@ async saveProduct() {
             const docRef = window.fb.doc(window.db, "products", this.editId);
             await window.fb.updateDoc(docRef, productData);
             
+            // Обновляем локальный массив
             const idx = this.products.findIndex(p => p.id === this.editId);
             if (idx !== -1) {
                 this.products.splice(idx, 1, { id: this.editId, ...productData });
             }
+            
             alert('Товар обновлен успешно!');
         } else {
             // Создание нового товара
@@ -3151,15 +3173,6 @@ async saveProduct() {
         }
 
         // 10. ОЧИСТКА ПОСЛЕ УСПЕХА
-        if (this.editId) {
-            // Очищаем временные массивы фото
-            this.editImages = [];
-            this.editNewFiles.forEach(file => {
-                if (file.preview) URL.revokeObjectURL(file.preview);
-            });
-            this.editNewFiles = [];
-        }
-        
         this.cancelEdit();       // Сбрасываем форму и переменные
         this.tab = 'profile';    // ОТКРЫВАЕМ ВКЛАДКУ ПРОФИЛЯ
         
@@ -3171,7 +3184,6 @@ async saveProduct() {
         this.loading = false;
     }
 },
-  
 
         async deleteProduct(id) {
             const msg = "⚠️ Удалить заказ навсегда?";
