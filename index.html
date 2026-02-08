@@ -1359,72 +1359,61 @@
                         </div>
                         
                         <!-- СЕТКА РАЗМЕРОВ С РЕДАКТИРОВАНИЕМ -->
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
                             <!-- Для всех размеров (и при редактировании, и при просмотре) -->
                             <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
-                                 style="display: flex; align-items: center; 
+                                 style="display: flex; align-items: center; justify-content: space-between;
                                         background: #f9f9f9; padding: 8px; border-radius: 8px; 
                                         border: 1px solid #eee; min-width: 0;"
                                  class="size-item">
                                 
-                                <!-- Название размера (фиксированная ширина) -->
-                                <div style="min-width: 40px; flex-shrink: 0;">
-                                    <span style="font-size: 13px; font-weight: 700; 
+                                <!-- Размер слева -->
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 14px; font-weight: 700; 
                                                  color: #000; text-transform: uppercase;"
                                           class="size-name">
-                                        {{ sz }}
+                                        {{ sz }}:
                                     </span>
                                 </div>
                                 
-                                <!-- Область с количеством (адаптивная) -->
-                                <div style="display: flex; align-items: center; gap: 8px; 
-                                            flex: 1; min-width: 0; justify-content: space-between;">
+                                <!-- Количество и кнопки справа -->
+                                <div style="display: flex; align-items: center; gap: 8px;">
                                     
-                                    <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
-                                        <span style="font-size: 10px; color: #999; font-weight: 600; 
-                                                     white-space: nowrap; flex-shrink: 0;"
-                                              class="stock-label">
-                                            ОСТАТОК:
-                                        </span>
-                                        
-                                        <!-- Если редактирование активно для этого варианта -->
-                                        <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
-                                            <!-- Поле ввода для редактирования -->
-                                            <input type="number" 
-                                                   v-model.number="v.stocks[sz]" 
-                                                   min="0"
-                                                   step="1"
-                                                   @input="v.editState = true"
-                                                   style="width: 60px; min-width: 60px; max-width: 70px; 
-                                                          border: 1px solid #007aff; 
-                                                          border-radius: 6px; padding: 6px; 
-                                                          font-size: 12px; font-weight: bold; 
-                                                          text-align: center; background: #fff; 
-                                                          box-shadow: 0 0 0 1px #007aff; flex-shrink: 0;">
-                                        </template>
-                                        
-                                        <!-- Если только просмотр -->
-                                        <template v-else>
-                                            <!-- Просто отображаем количество -->
-                                            <span style="font-size: 13px; font-weight: 700; color: #000; 
-                                                         min-width: 40px;" class="stock-value">
-                                                {{ qty }} шт.
-                                            </span>
-                                        </template>
-                                    </div>
-                                    
-                                    <!-- Кнопка удаления размера (только при редактировании) -->
+                                    <!-- Если редактирование активно для этого варианта -->
                                     <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+                                        <!-- Поле ввода для редактирования -->
+                                        <input type="number" 
+                                               v-model.number="v.stocks[sz]" 
+                                               min="0"
+                                               step="1"
+                                               @input="v.editState = true"
+                                               style="width: 50px; min-width: 50px; 
+                                                      border: 1px solid #007aff; 
+                                                      border-radius: 6px; padding: 5px; 
+                                                      font-size: 13px; font-weight: bold; 
+                                                      text-align: center; background: #fff; 
+                                                      box-shadow: 0 0 0 1px #007aff; flex-shrink: 0;">
+                                        
+                                        <!-- Кнопка удаления размера -->
                                         <button @click="removeSizeFromVariant(p, vIdx, sz)" 
                                                 type="button" 
                                                 style="width: 22px; height: 22px; border-radius: 4px; 
                                                        border: none; background: #ff3b30; color: white; 
                                                        font-weight: bold; font-size: 14px; cursor: pointer; 
                                                        display: flex; align-items: center; justify-content: center;
-                                                       flex-shrink: 0; margin-left: 4px;"
+                                                       flex-shrink: 0;"
                                                 class="delete-size-btn">
                                             ×
                                         </button>
+                                    </template>
+                                    
+                                    <!-- Если только просмотр -->
+                                    <template v-else>
+                                        <!-- Просто отображаем количество -->
+                                        <span style="font-size: 13px; font-weight: 700; color: #000;"
+                                              class="stock-value">
+                                            {{ qty }}
+                                        </span>
                                     </template>
                                 </div>
                             </div>
@@ -1433,13 +1422,14 @@
                             <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
                                 <div style="display: flex; align-items: center; gap: 6px; 
                                             background: #f0f0f0; padding: 8px; border-radius: 8px; 
-                                            margin-top: 5px; border: 1px dashed #ddd; min-width: 0;">
+                                            margin-top: 8px; border: 1px dashed #ddd; min-width: 0;">
                                     <input type="text" 
                                            v-model="v.newSizeName"
                                            placeholder="Размер"
                                            style="flex: 1; min-width: 60px; padding: 6px; 
                                                   border: 1px solid #ddd; border-radius: 4px; 
                                                   font-size: 12px; font-weight: 600;">
+                                    <span style="color: #999; font-weight: 600;">:</span>
                                     <input type="number" 
                                            v-model.number="v.newSizeQty"
                                            min="0"
@@ -1739,14 +1729,6 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
-         productsDebounceTimeout: null,
-        ordersDebounceTimeout: null,
-        categoriesDebounceTimeout: null,
-        
-        // Флаги для отслеживания загрузки
-        productsLoaded: false,
-        ordersLoaded: false,
-        categoriesLoaded: false,
          uploadFiles: [], 
         editUploading: false,
           tempSizes: [],
@@ -3495,13 +3477,213 @@ async uploadFileWithProgress(file, fileObj) {
 async saveProduct() {
     console.log('=== НАЧАЛО СОХРАНЕНИЯ ===');
     console.log('Режим:', this.editId ? 'Редактирование' : 'Создание');
+    console.log('editImages:', this.editImages?.length);
+    console.log('editNewFiles:', this.editNewFiles?.length);
+    console.log('localFiles:', this.localFiles?.length);
     
-    // ... (ваш существующий код до сохранения) ...
+    // 1. ОЧИСТКА ВРЕМЕННЫХ КЛЮЧЕЙ
+    const cleanedVariants = JSON.parse(JSON.stringify(this.newP.variants));
+    
+    cleanedVariants.forEach(variant => {
+        const cleanedStocks = {};
+        Object.keys(variant.stocks || {}).forEach(key => {
+            if (!key.startsWith('temp_')) {
+                cleanedStocks[key] = variant.stocks[key];
+            }
+        });
+        variant.stocks = cleanedStocks;
+        
+        delete variant.tempKey;
+        delete variant.savedName;
+    });
+    
+    // 2. Валидация
+    if (!this.newP.title || !this.newP.price || !this.newP.category) {
+        return alert('Заполните название, цену и категорию!');
+    }
+    
+    let hasValidSizes = false;
+    cleanedVariants.forEach(variant => {
+        Object.values(variant.stocks || {}).forEach(qty => {
+            if (qty > 0) hasValidSizes = true;
+        });
+    });
+    
+    if (!hasValidSizes) {
+        return alert('Добавьте хотя бы один размер с количеством больше 0!');
+    }
+    
+    this.loading = true;
     
     try {
-        // ... (ваш существующий код загрузки файлов) ...
+        // 3. ПОДГОТОВКА ФАЙЛОВ ДЛЯ ЗАГРУЗКИ
+        const filesToUpload = [];
+        const uploadedUrls = [];
         
-        // 7. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ (ИСПРАВЛЕНО)
+        // ОПРЕДЕЛЯЕМ, КАКИЕ ФАЙЛЫ ЗАГРУЖАТЬ
+        if (this.editId) {
+            // РЕДАКТИРОВАНИЕ: используем editNewFiles
+            console.log('Режим редактирования, файлы:', this.editNewFiles.length);
+            
+            // Добавляем новые файлы для загрузки
+            this.editNewFiles.forEach(fileObj => {
+                if (fileObj.file && fileObj.status !== 'uploaded' && fileObj.status !== 'completed') {
+                    fileObj.status = 'pending';
+                    filesToUpload.push(fileObj);
+                } else if (fileObj.serverUrl) {
+                    // Файл уже загружен ранее
+                    uploadedUrls.push(fileObj.serverUrl);
+                }
+            });
+            
+            // Добавляем существующие фото из базы
+            if (this.editImages && this.editImages.length > 0) {
+                this.editImages.forEach(img => {
+                    if (img && img.startsWith('http') && !uploadedUrls.includes(img)) {
+                        uploadedUrls.push(img);
+                    }
+                });
+            }
+            
+        } else {
+            // СОЗДАНИЕ НОВОГО: используем localFiles ИЛИ editNewFiles
+            console.log('Режим создания нового товара');
+            
+            // Объединяем все файлы в один массив для загрузки
+            const allFileObjects = [];
+            
+            if (this.localFiles && this.localFiles.length > 0) {
+                console.log('Добавляем localFiles:', this.localFiles.length);
+                this.localFiles.forEach(fileObj => {
+                    if (fileObj.file) {
+                        allFileObjects.push({
+                            ...fileObj,
+                            status: 'pending',
+                            progress: 0
+                        });
+                    }
+                });
+            }
+            
+            if (this.editNewFiles && this.editNewFiles.length > 0) {
+                console.log('Добавляем editNewFiles:', this.editNewFiles.length);
+                this.editNewFiles.forEach(fileObj => {
+                    if (fileObj.file && fileObj.status !== 'uploaded' && fileObj.status !== 'completed') {
+                        fileObj.status = 'pending';
+                        fileObj.progress = 0;
+                        allFileObjects.push(fileObj);
+                    } else if (fileObj.serverUrl) {
+                        uploadedUrls.push(fileObj.serverUrl);
+                    }
+                });
+            }
+            
+            // Преобразуем в единый формат
+            filesToUpload.push(...allFileObjects.map(fileObj => ({
+                ...fileObj,
+                status: 'pending',
+                progress: 0
+            })));
+        }
+        
+        console.log('Файлов для загрузки:', filesToUpload.length);
+        console.log('Уже загруженных URL:', uploadedUrls.length);
+        
+        // 4. ЗАГРУЗКА ФАЙЛОВ С ИНДИКАТОРАМИ
+        if (filesToUpload.length > 0) {
+            console.log(`Начинаю загрузку ${filesToUpload.length} файлов...`);
+            
+            for (let fileObj of filesToUpload) {
+                try {
+                    console.log('Загружаю:', fileObj.name || fileObj.file?.name);
+                    
+                    // Проверяем, есть ли уже serverUrl и загружен ли файл
+                    if (fileObj.serverUrl && (fileObj.status === 'uploaded' || fileObj.status === 'completed')) {
+                        console.log('Файл уже загружен ранее, URL:', fileObj.serverUrl);
+                        uploadedUrls.push(fileObj.serverUrl);
+                        continue;
+                    }
+                    
+                    // Обновляем статус на "загрузка"
+                    fileObj.status = 'uploading';
+                    fileObj.progress = 0;
+                    this.$forceUpdate(); // Принудительное обновление для отображения прогресса
+                    
+                    // Сжимаем изображение
+                    console.log('Сжимаем изображение...');
+                    const compressedFile = await this.compressImage(fileObj.file);
+                    
+                    // Загружаем на сервер с отслеживанием прогресса
+                    console.log('Отправляем на сервер...');
+                    const imageUrl = await this.uploadFileWithProgress(compressedFile, fileObj);
+                    
+                    console.log('✅ Успешно загружено, URL:', imageUrl);
+                    uploadedUrls.push(imageUrl);
+                    
+                    // Обновляем статус файла
+                    fileObj.status = 'completed';
+                    fileObj.progress = 100;
+                    fileObj.serverUrl = imageUrl;
+                    this.$forceUpdate();
+                    
+                    // Небольшая пауза для отображения прогресса
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                } catch (uploadError) {
+                    console.error('❌ Ошибка загрузки файла:', uploadError);
+                    
+                    // Обновляем статус на "ошибка"
+                    fileObj.status = 'failed';
+                    fileObj.error = uploadError.message;
+                    this.$forceUpdate();
+                    
+                    // Fallback: создаем Data URL
+                    try {
+                        const fallbackUrl = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.readAsDataURL(fileObj.file);
+                        });
+                        
+                        console.log('Используем Data URL как fallback');
+                        uploadedUrls.push(fallbackUrl);
+                        fileObj.serverUrl = fallbackUrl;
+                        fileObj.status = 'fallback';
+                        this.$forceUpdate();
+                    } catch (fallbackError) {
+                        console.error('Ошибка создания Data URL:', fallbackError);
+                    }
+                }
+            }
+        }
+        
+        // 5. ФОРМИРОВАНИЕ СПИСКА ВСЕХ ФОТО
+        let allImages = [...uploadedUrls];
+        
+        // Добавляем существующие фото из базы (только для редактирования)
+        if (this.editId && this.editImages && this.editImages.length > 0) {
+            this.editImages.forEach(img => {
+                if (img && img.startsWith('http') && !allImages.includes(img)) {
+                    allImages.push(img);
+                }
+            });
+        }
+        
+        // Удаляем дубликаты и фильтруем
+        allImages = [...new Set(allImages.filter(img => 
+            img && img.trim() !== '' && (img.startsWith('http') || img.startsWith('data:'))
+        ))];
+        
+        console.log('Всего уникальных фото:', allImages.length);
+        console.log('Список фото:', allImages);
+        
+        // 6. ПРОВЕРКА НАЛИЧИЯ ФОТО
+        if (allImages.length === 0) {
+            this.loading = false;
+            return alert('Загрузите хотя бы одно фото!');
+        }
+        
+        // 7. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ
         const productData = {
             title: this.newP.title.trim(),
             desc: this.newP.desc || '',
@@ -3509,23 +3691,23 @@ async saveProduct() {
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
-            images: allImages, // Для обратной совместимости со старыми товарами
+            images: allImages, // Для обратной совместимости
             hidden: !!this.newP.hidden,
             hiddenSizes: this.newP.hiddenSizes || [],
-            // Варианты с изображениями (ОДИН раз!)
             variants: cleanedVariants.map(variant => ({
-                ...variant,
-                images: [...allImages] // Изображения для каждого варианта
-            })),
+        ...variant,
+        images: [...allImages] // Каждому варианту свои изображения
+    })),
+            
             updatedAt: Date.now()
         };
         
-        // УБЕРИТЕ ЭТОТ БЛОК - он дублирует добавление images
-        // productData.variants.forEach(variant => {
-        //     variant.images = [...allImages]; // ← УДАЛИТЬ!
-        // });
+        // 8. ДОБАВЛЯЕМ ФОТО К КАЖДОМУ ВАРИАНТУ
+        productData.variants.forEach(variant => {
+            variant.images = [...allImages];
+        });
         
-        // 8. СОХРАНЕНИЕ В БАЗЕ
+        // 9. СОХРАНЕНИЕ В БАЗЕ
         console.log('Сохранение в Firestore...');
         
         if (this.editId) {
@@ -3533,69 +3715,48 @@ async saveProduct() {
             const docRef = window.fb.doc(window.db, "products", this.editId);
             await window.fb.updateDoc(docRef, productData);
             
-            // Обновляем локально - ЗАМЕНЯЕМ, а не добавляем
+            // Обновляем локально
             const idx = this.products.findIndex(p => p.id === this.editId);
             if (idx !== -1) {
-                // Сохраняем текущий индекс слайдера
-                const existingAIdx = this.products[idx].aIdx || 0;
                 this.products.splice(idx, 1, { 
                     id: this.editId, 
                     ...productData,
-                    aIdx: existingAIdx 
+                    aIdx: 0 
                 });
             }
             
             console.log('✅ Товар обновлен!');
-            this.showNotification('Товар успешно обновлен!', 'success');
+            alert('Товар успешно обновлен!');
             
         } else {
-            // СОЗДАНИЕ НОВОГО ТОВАРА (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+            // Создание нового
             productData.createdAt = Date.now();
-            
-            // 1. Отправляем в Firebase
             const docRef = await window.fb.addDoc(
                 window.fb.collection(window.db, "products"), 
                 productData
             );
             
-            const newProductId = docRef.id;
-            console.log('✅ Товар создан в Firebase! ID:', newProductId);
+            // Добавляем локально
+            this.products.unshift({ 
+                id: docRef.id, 
+                ...productData,
+                aIdx: 0 
+            });
             
-            // 2. ВМЕСТО локального добавления, ждем обновления из Firebase
-            // НЕ делаем this.products.unshift() здесь!
-            
-            // 3. Показываем уведомление
-            this.showNotification('Товар успешно создан! Список обновится через секунду.', 'success');
-            
-            // 4. Можно добавить временный флаг, чтобы не было пустоты
-            // Но лучше просто подождать обновления от Firebase
-            setTimeout(() => {
-                // Проверяем, появился ли товар в списке из Firebase
-                const productInList = this.products.find(p => p.id === newProductId);
-                if (!productInList) {
-                    // Если через 2 секунды товара нет, добавляем временно
-                    const tempProduct = { 
-                        id: newProductId, 
-                        ...productData,
-                        aIdx: 0,
-                        isTemporary: true
-                    };
-                    this.products.unshift(tempProduct);
-                    console.log('Добавлен временный товар (жду Firebase)...');
-                }
-            }, 2000);
+            console.log('✅ Товар создан! ID:', docRef.id);
+            alert('Товар успешно создан!');
         }
         
-        // 9. ОЧИСТКА ПАМЯТИ
+        // 10. ОЧИСТКА ПАМЯТИ
         this.cleanupMemory();
         
-        // 10. ЗАВЕРШЕНИЕ
+        // 11. ЗАВЕРШЕНИЕ
         this.cancelEdit();
         this.tab = 'profile';
         
     } catch (e) {
         console.error("Критическая ошибка сохранения:", e);
-        this.showNotification('Ошибка сохранения: ' + e.message, 'error');
+        alert('Ошибка сохранения: ' + e.message);
     } finally {
         this.loading = false;
     }
@@ -4314,8 +4475,7 @@ updateChart() {
     },
  mounted() {
     const tg = window.Telegram.WebApp || {};
-    console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
-    
+     console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
     // 1. Безопасная инициализация Telegram
     if (window.Telegram?.WebApp) {
         try {
@@ -4361,75 +4521,25 @@ updateChart() {
             // Сохраняем функции отписки для очистки
             this.unsubscribers = [];
             
-            // 5.1. Товары с ДЕБАУНСОМ для предотвращения дублей
+            // 5.1. Товары
             const unsubProducts = window.fb.onSnapshot(
                 window.fb.query(
                     window.fb.collection(window.db, "products"), 
                     window.fb.orderBy("createdAt", "desc")
                 ), 
                 snap => {
-                    // Очищаем предыдущий таймаут
-                    if (this.productsDebounceTimeout) {
-                        clearTimeout(this.productsDebounceTimeout);
-                    }
+                    this.products = snap.docs.map(doc => ({ 
+                        id: doc.id, 
+                        ...doc.data(), 
+                        aIdx: 0 
+                    }));
+                    console.log('Products loaded:', this.products.length);
                     
-                    // Устанавливаем новый таймаут (дебаунс 500ms)
-                    this.productsDebounceTimeout = setTimeout(() => {
-                        const firebaseProducts = snap.docs.map(doc => ({ 
-                            id: doc.id, 
-                            ...doc.data(), 
-                            aIdx: 0 
-                        }));
-                        
-                        console.log('Firebase прислал товаров:', firebaseProducts.length);
-                        
-                        // Смарт-мердж: обновляем только измененные товары
-                        const firebaseIds = new Set(firebaseProducts.map(p => p.id));
-                        
-                        // 1. Обновляем существующие товары
-                        firebaseProducts.forEach(fbProduct => {
-                            const existingIdx = this.products.findIndex(p => p.id === fbProduct.id);
-                            if (existingIdx !== -1) {
-                                // Сохраняем индекс слайдера и временные флаги
-                                const existingAIdx = this.products[existingIdx].aIdx || 0;
-                                const wasTemporary = this.products[existingIdx].isTemporary;
-                                
-                                // Заменяем товар, но сохраняем локальные состояния
-                                this.products.splice(existingIdx, 1, { 
-                                    ...fbProduct, 
-                                    aIdx: existingAIdx,
-                                    // Убираем временный флаг, если товар пришел из Firebase
-                                    isTemporary: wasTemporary && !firebaseIds.has(fbProduct.id)
-                                });
-                            } else {
-                                // Добавляем новый товар
-                                this.products.push({ ...fbProduct, aIdx: 0 });
-                            }
-                        });
-                        
-                        // 2. Удаляем товары, которых нет в Firebase (кроме временных)
-                        this.products = this.products.filter(p => {
-                            // Оставляем временные товары (они еще не в Firebase)
-                            if (p.isTemporary) return true;
-                            // Оставляем только те, что есть в Firebase
-                            return firebaseIds.has(p.id);
-                        });
-                        
-                        // 3. Сортируем по дате создания (новые вверху)
-                        this.products.sort((a, b) => {
-                            const aTime = a.createdAt || a.updatedAt || 0;
-                            const bTime = b.createdAt || b.updatedAt || 0;
-                            return bTime - aTime;
-                        });
-                        
-                        console.log('Итоговое количество товаров:', this.products.length);
-                        
-                        this.$nextTick(() => {
-                            if (this.tab === 'profile') {
-                                this.calculateListHeight();
-                            }
-                        });
-                    }, 500); // 500ms дебаунс
+                    this.$nextTick(() => {
+                        if (this.tab === 'profile') {
+                            this.calculateListHeight();
+                        }
+                    });
                 },
                 err => console.error("Products error:", err)
             );
@@ -4449,44 +4559,40 @@ updateChart() {
             );
             this.unsubscribers.push(unsubCategories);
             
-            // 5.3. Заказы с дебаунсом
+            // 5.3. ЗАКАЗЫ (ВАЖНО - ДОБАВЛЯЕМ ЭТОТ СЛУШАТЕЛЬ!)
             const unsubOrders = window.fb.onSnapshot(
                 window.fb.query(
                     window.fb.collection(window.db, "orders"),
                     window.fb.orderBy("createdAt", "desc")
                 ),
                 snap => {
-                    // Дебаунс для заказов
-                    if (this.ordersDebounceTimeout) {
-                        clearTimeout(this.ordersDebounceTimeout);
-                    }
+                    this.allOrders = snap.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            ...data,
+                            // Добавляем дополнительные поля для удобства
+                            displayDate: data.createdAt?.toDate 
+                                ? data.createdAt.toDate().toLocaleDateString('ru-RU')
+                                : new Date().toLocaleDateString('ru-RU')
+                        };
+                    });
+                    console.log('Orders loaded:', this.allOrders.length);
+                    console.log('Sample order:', this.allOrders[0]);
                     
-                    this.ordersDebounceTimeout = setTimeout(() => {
-                        this.allOrders = snap.docs.map(doc => {
-                            const data = doc.data();
-                            return {
-                                id: doc.id,
-                                ...data,
-                                displayDate: data.createdAt?.toDate 
-                                    ? data.createdAt.toDate().toLocaleDateString('ru-RU')
-                                    : new Date().toLocaleDateString('ru-RU')
-                            };
+                    // Если мы на вкладке профиля и админ - обновляем график
+                    if (this.tab === 'profile' && this.isAdmin) {
+                        this.$nextTick(() => {
+                            setTimeout(() => {
+                                console.log('Auto-updating chart after orders load...');
+                                this.updateChart();
+                            }, 800);
                         });
-                        console.log('Orders loaded:', this.allOrders.length);
-                        
-                        // Если мы на вкладке профиля и админ - обновляем график
-                        if (this.tab === 'profile' && this.isAdmin) {
-                            this.$nextTick(() => {
-                                setTimeout(() => {
-                                    console.log('Auto-updating chart after orders load...');
-                                    this.updateChart();
-                                }, 800);
-                            });
-                        }
-                    }, 300);
+                    }
                 },
                 err => {
                     console.error("Orders error:", err);
+                    // Если коллекции orders не существует, создаем пустой массив
                     this.allOrders = [];
                 }
             );
@@ -4504,6 +4610,7 @@ updateChart() {
     // 6. Обработчики событий
     this.resizeHandler = () => {
         this.calculateListHeight();
+        // При ресайзе обновляем график если он есть
         if (this.tab === 'profile' && this.isAdmin && this.chart) {
             setTimeout(() => {
                 if (this.chart) {
@@ -4514,6 +4621,7 @@ updateChart() {
     };
     window.addEventListener('resize', this.resizeHandler);
 },
+
 
 beforeDestroy() {
     // 1. Отписываемся от Firebase слушателей
