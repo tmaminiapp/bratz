@@ -1121,10 +1121,15 @@
 </div>
 
        <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
-    <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-        <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">📦 СПИСОК ТОВАРОВ ({{ products.length }})</span>
-        <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
-    </div>
+  <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+    <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">
+        📦 СПИСОК ТОВАРОВ ({{ products.length }})
+        <span v-if="editId" style="color: #007aff; margin-left: 10px;">
+            ⚡ Редактирование карточки...
+        </span>
+    </span>
+    <span style="font-size: 18px;">{{ showProductList ? '−' : '+' }}</span>
+</div>
     
  <div v-if="showProductList" class="stable-list" style="padding: 5px; background: #fff;">
     <template v-for="p in products" :key="p.id">
@@ -1141,47 +1146,126 @@
                         <div style="font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 5px;">{{ p.title }}</div>
                         <div style="font-size: 11px; color: #000; font-weight: 700; margin-bottom: 12px;">ЦВЕТ: {{ v.color }}</div>
                         
-                        <!-- СЕТКА РАЗМЕРОВ -->
+                        <!-- СЕТКА РАЗМЕРОВ С РЕДАКТИРОВАНИЕМ -->
                         <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
-                                 style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee;">
-                                
-                                <!-- Размер и остаток -->
-                                <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
-                                    <span style="font-size: 13px; font-weight: 700; min-width: 30px; color: #000;">
+                            <!-- Если редактирование остатков активно -->
+                            <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+                                <!-- РЕДАКТИРОВАНИЕ ТОЛЬКО ОСТАТКОВ -->
+                                <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
+                                     style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                    
+                                    <!-- Размер (не редактируется) -->
+                                    <span style="font-size: 14px; font-weight: 700; min-width: 40px; color: #000; text-transform: uppercase;">
                                         {{ sz }}
                                     </span>
                                     
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-size: 10px; color: #999; font-weight: 600;">ОСТАТОК:</span>
-                                        <input type="number" 
-                                               v-model.number="v.stocks[sz]" 
-                                               @change="updateStock(p)"
-                                               style="width: 55px; border: 1px solid #ddd; border-radius: 6px; padding: 6px 8px; font-size: 12px; font-weight: bold; text-align: center;">
+                                    <div style="display: flex; align-items: center; gap: 15px;">
+                                        <!-- Поле для изменения количества -->
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 11px; color: #999; font-weight: 600;">ОСТАТОК:</span>
+                                            <input type="number" 
+                                                   v-model.number="v.stocks[sz]" 
+                                                   min="0"
+                                                   step="1"
+                                                   @input="v.editState = true"
+                                                   style="width: 65px; border: 1px solid #ddd; border-radius: 6px; padding: 8px; font-size: 12px; font-weight: bold; text-align: center; background: #fff;">
+                                        </div>
+                                        
+                                        <!-- Кнопка удалить размер (только в быстром редактировании) -->
+                                        <button @click="removeSizeFromVariant(p, vIdx, sz)" 
+                                                type="button" 
+                                                style="width: 28px; height: 28px; border-radius: 6px; border: none; background: #ff3b30; color: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                                            ×
+                                        </button>
                                     </div>
                                 </div>
                                 
-                                <!-- Кнопки управления - ПУСТО, они теперь сбоку -->
-                            </div>
+                                <!-- Поле для добавления нового размера -->
+                                <div style="display: flex; align-items: center; gap: 10px; background: #f0f0f0; padding: 10px; border-radius: 8px; margin-top: 5px;">
+                                    <input type="text" 
+                                           v-model="v.newSizeName"
+                                           placeholder="Новый размер"
+                                           style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                    <input type="number" 
+                                           v-model.number="v.newSizeQty"
+                                           min="0"
+                                           placeholder="Кол-во"
+                                           style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;">
+                                    <button @click="addSizeToVariant(p, vIdx)" 
+                                            style="padding: 8px 12px; background: #34c759; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                                        + Добавить
+                                    </button>
+                                </div>
+                            </template>
+                            
+                            <!-- Если редактирование не активно (только просмотр) -->
+                            <template v-else>
+                                <!-- ПРОСМОТР ОСТАТКОВ -->
+                                <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
+                                     style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee;">
+                                    
+                                    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                                        <span style="font-size: 13px; font-weight: 700; min-width: 30px; color: #000;">
+                                            {{ sz }}
+                                        </span>
+                                        
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 10px; color: #999; font-weight: 600;">ОСТАТОК:</span>
+                                            <span style="font-size: 13px; font-weight: 700; color: #000; min-width: 40px;">
+                                                {{ qty }} шт.
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Правая часть: вертикальные кнопки управления -->
-                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; padding-left: 15px; border-left: 1px solid #eee; min-width: 40px;">
-                    <!-- Кнопка скрыть/показать -->
-                    <button @click="toggleProductVisibility(p)" 
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; padding-left: 15px; border-left: 1px solid #eee; min-width: 45px;">
+                    
+                    <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
+                    <button @click="toggleQuickEdit(p, vIdx)" 
                             :style="{ 
-                                width: '32px',
-                                height: '32px',
+                                width: '35px',
+                                height: '35px',
                                 border: 'none',
-                                background: p.hidden ? '#34c759' : '#acacac',
-                                borderRadius: '6px',
+                                background: (p.editingVariant === vIdx && !p.fullEditMode) ? '#007aff' : '#acacac',
+                                borderRadius: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
-                                fontSize: '14px',
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                transition: 'all 0.2s'
+                            }"
+                            :title="(p.editingVariant === vIdx && !p.fullEditMode) ? 'Сохранить остатки' : 'Быстрое редактирование остатков'">
+                        {{ (p.editingVariant === vIdx && !p.fullEditMode) ? '💾' : '✏️' }}
+                    </button>
+                    
+                    <!-- Кнопка 2: Полное редактирование карточки 📝 -->
+                    <button @click="editFullProduct(p)" 
+                            style="width: 35px; height: 35px; border: none; background: #000; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
+                            title="Полное редактирование карточки">
+                        📝
+                    </button>
+                    
+                    <!-- Кнопка 3: Скрыть/показать товар -->
+                    <button @click="toggleProductVisibility(p)" 
+                            :style="{ 
+                                width: '35px',
+                                height: '35px',
+                                border: 'none',
+                                background: p.hidden ? '#34c759' : '#acacac',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                fontSize: '16px',
                                 fontWeight: 'bold',
                                 color: '#fff'
                             }"
@@ -1189,16 +1273,9 @@
                         {{ p.hidden ? '👁' : '👁‍🗨' }}
                     </button>
                     
-                    <!-- Кнопка редактировать -->
-                    <button @click="editProduct(p)" 
-                            style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
-                            title="Редактировать товар">
-                        ✏️
-                    </button>
-                    
-                    <!-- Кнопка удалить -->
+                    <!-- Кнопка 4: Удалить товар -->
                     <button @click="deleteProductWithConfirm(p.id)" 
-                            style="width: 32px; height: 32px; border: none; background: #acacac; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
+                            style="width: 35px; height: 35px; border: none; background: #ff3b30; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: #fff;"
                             title="Удалить товар">
                         🗑
                     </button>
@@ -1642,31 +1719,30 @@ total() {
     return itemsTotal > 0 ? (itemsTotal + 200) : 0;
 },
 async updateStock(product, size) {
+    // Если редактирование активно, просто обновляем локальные данные
+    if (product.editingVariant !== null) {
+        const variant = product.variants[product.editingVariant];
+        variant.editState = true;
+        this.vib();
+        return;
+    }
+    
+    // Или сохраняем сразу
     try {
         const productRef = window.fb.doc(window.db, "products", product.id);
+        await window.fb.updateDoc(productRef, {
+            variants: product.variants,
+            updatedAt: Date.now()
+        });
         
-        // Если у товара есть варианты
-        if (product.variants && product.variants[0]) {
-            // Создаем глубокую копию variants для обновления
-            const updatedVariants = JSON.parse(JSON.stringify(product.variants));
-            
-            // Обновляем stock для первого варианта (или можно адаптировать для всех)
-            if (updatedVariants[0].stocks[size] !== undefined) {
-                updatedVariants[0].stocks[size] = Number(product.variants[0].stocks[size]);
-                
-                await window.fb.updateDoc(productRef, {
-                    variants: updatedVariants
-                });
-            }
-        }
-        
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
+        this.vib();
+        this.showTempMessage('✅ Остаток обновлен');
     } catch (e) {
         console.error("Ошибка обновления остатка:", e);
+        alert("Ошибка сохранения: " + e.message);
     }
 },
+
         setCategory(name) {
             try {
                 this.vib();
@@ -1708,6 +1784,139 @@ toggleDescription(productId) {
            (item.variants && item.variants[0]?.images?.[0]) || 
            (item.images && item.images[0]) || 
            'https://via.placeholder.com/70x90?text=No+Image';
+},
+toggleEditSizes(product, variantIndex) {
+    // Если уже редактируем этот вариант - сохраняем изменения
+    if (product.editingVariant === variantIndex) {
+        this.saveVariantSizes(product, variantIndex);
+        product.editingVariant = null;
+    } else {
+        // Если редактируем другой вариант - сохраняем предыдущий
+        if (product.editingVariant !== null && product.editingVariant !== undefined) {
+            this.saveVariantSizes(product, product.editingVariant);
+        }
+        
+        // Начинаем редактирование нового варианта
+        product.editingVariant = variantIndex;
+        
+        // Инициализируем поля для нового размера
+        const variant = product.variants[variantIndex];
+        variant.newSizeName = '';
+        variant.newSizeQty = 0;
+        variant.editState = false;
+    }
+    this.vib();
+},
+
+// Сохранить размеры варианта в Firebase
+async saveVariantSizes(product, variantIndex) {
+    try {
+        const productRef = window.fb.doc(window.db, "products", product.id);
+        const variant = product.variants[variantIndex];
+        
+        // Очищаем временные поля
+        delete variant.newSizeName;
+        delete variant.newSizeQty;
+        delete variant.editState;
+        
+        // Создаем объект для обновления только измененных данных
+        const updateData = {
+            variants: product.variants,
+            updatedAt: Date.now()
+        };
+        
+        await window.fb.updateDoc(productRef, updateData);
+        
+        // Сбрасываем режим редактирования
+        product.editingVariant = null;
+        product.fullEditMode = false;
+        
+        // Тактильный отклик
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+        
+        // Уведомление об успешном сохранении
+        this.showTempMessage('✅ Остатки сохранены');
+        
+    } catch (error) {
+        console.error("Ошибка сохранения остатков:", error);
+        alert("Ошибка при сохранении остатков: " + error.message);
+    }
+},
+
+// Удалить размер из варианта
+removeSizeFromVariant(product, variantIndex, sizeName) {
+    if (confirm(`Удалить размер "${sizeName}"?`)) {
+        const variant = product.variants[variantIndex];
+        if (variant.stocks && variant.stocks[sizeName] !== undefined) {
+            delete variant.stocks[sizeName];
+            variant.editState = true; // Помечаем как измененный
+        }
+        this.vib();
+    }
+},
+
+// Добавить новый размер в вариант
+addSizeToVariant(product, variantIndex) {
+    const variant = product.variants[variantIndex];
+    const sizeName = (variant.newSizeName || '').trim().toUpperCase();
+    const qty = Number(variant.newSizeQty) || 0;
+    
+    if (!sizeName) {
+        alert("Введите название размера");
+        return;
+    }
+    
+    if (qty < 0) {
+        alert("Количество не может быть отрицательным");
+        return;
+    }
+    
+    // Проверяем, не существует ли уже такой размер
+    if (variant.stocks && variant.stocks[sizeName] !== undefined) {
+        alert(`Размер "${sizeName}" уже существует`);
+        return;
+    }
+    
+    // Добавляем новый размер
+    if (!variant.stocks) variant.stocks = {};
+    variant.stocks[sizeName] = qty;
+    variant.editState = true;
+    
+    // Очищаем поля ввода
+    variant.newSizeName = '';
+    variant.newSizeQty = 0;
+    
+    this.vib();
+},
+
+// Показать временное сообщение
+showTempMessage(text) {
+    const msgEl = document.createElement('div');
+    msgEl.textContent = text;
+    msgEl.style.cssText = `
+        position: fixed;
+        top: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.9);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        z-index: 9999;
+        animation: fadeInOut 2s ease;
+    `;
+    
+    document.body.appendChild(msgEl);
+    
+    setTimeout(() => {
+        if (msgEl.parentNode) {
+            document.body.removeChild(msgEl);
+        }
+    }, 2000);
 },
        setTab(id) {
     if (this.vib) this.vib(); 
@@ -1810,11 +2019,18 @@ removeSizeField(vIdx, fieldIndex) {
     this.vib();
 },
 editProduct(p) {
-    const list = document.querySelector('.stable-list');
+   const list = document.querySelector('.stable-list');
     const scrollPos = list ? list.scrollTop : 0;
     
     const cleanItem = JSON.parse(JSON.stringify(p));
     this.editId = p.id;
+    this.fullEditMode = true; // Устанавливаем флаг полного редактирования
+    
+    // Очищаем режимы быстрого редактирования у всех товаров
+    this.products.forEach(prod => {
+        prod.editingVariant = null;
+        prod.fullEditMode = false;
+    });
     
     // 1. Заполняем newP данными товара (основные поля)
     this.newP = {
@@ -1915,8 +2131,115 @@ editProduct(p) {
         if (list) list.scrollTop = scrollPos;
     });
 },
+toggleQuickEdit(product, variantIndex) {
+    // Если уже в режиме быстрого редактирования этого варианта - сохраняем
+    if (product.editingVariant === variantIndex && !product.fullEditMode) {
+        this.saveVariantSizes(product, variantIndex);
+        product.editingVariant = null;
+        product.fullEditMode = false;
+    } else {
+        // Если редактируем другой вариант или полное редактирование - сохраняем предыдущее
+        if (product.editingVariant !== null && product.editingVariant !== undefined) {
+            if (product.fullEditMode) {
+                // Если было полное редактирование - сохраняем все изменения
+                this.saveFullProduct(product);
+            } else {
+                // Если было быстрое редактирование - сохраняем остатки
+                this.saveVariantSizes(product, product.editingVariant);
+            }
+        }
+        
+        // Начинаем быстрое редактирование
+        product.editingVariant = variantIndex;
+        product.fullEditMode = false;
+        
+        // Инициализируем поля для нового размера
+        const variant = product.variants[variantIndex];
+        variant.newSizeName = '';
+        variant.newSizeQty = 0;
+        variant.editState = false;
+    }
+    this.vib();
+},
+
+// Полное редактирование карточки (открыть форму редактирования)
+editFullProduct(product) {
+    // Если уже в режиме редактирования какого-то товара - сохраняем его
+    if (this.editId && this.editId !== product.id) {
+        // Можно добавить подтверждение сохранения
+        if (confirm('Сохранить текущие изменения перед редактированием другого товара?')) {
+            this.saveProduct();
+        }
+    }
+    
+    // Закрываем все режимы быстрого редактирования
+    this.products.forEach(p => {
+        p.editingVariant = null;
+        p.fullEditMode = false;
+    });
+    
+    // Открываем форму полного редактирования
+    this.editProduct(product);
+    this.showProductList = false;
+    window.scrollTo(0, 0);
+    this.vib();
+},
+
+// Сохранить полную карточку товара (в форме редактирования уже есть метод saveProduct)
+// Но добавим метод для сохранения при выходе из полного редактирования
+async saveFullProduct(product) {
+    try {
+        const productRef = window.fb.doc(window.db, "products", product.id);
+        
+        // Очищаем временные поля
+        const cleanedVariants = product.variants.map(variant => {
+            const cleaned = { ...variant };
+            delete cleaned.newSizeName;
+            delete cleaned.newSizeQty;
+            delete cleaned.editState;
+            return cleaned;
+        });
+        
+        const updateData = {
+            title: product.title || '',
+            desc: product.desc || '',
+            price: Number(product.price) || 0,
+            oldPrice: product.oldPrice ? Number(product.oldPrice) : null,
+            category: product.category || '',
+            isNew: !!product.isNew,
+            hidden: !!product.hidden,
+            hiddenSizes: product.hiddenSizes || [],
+            variants: cleanedVariants,
+            updatedAt: Date.now()
+        };
+        
+        await window.fb.updateDoc(productRef, updateData);
+        
+        // Обновляем локальные данные
+        const idx = this.products.findIndex(p => p.id === product.id);
+        if (idx !== -1) {
+            this.products.splice(idx, 1, { 
+                ...this.products[idx], 
+                ...updateData,
+                variants: cleanedVariants
+            });
+        }
+        
+        // Сбрасываем режимы редактирования
+        product.editingVariant = null;
+        product.fullEditMode = false;
+        
+        this.showTempMessage('✅ Карточка товара сохранена');
+        this.vib();
+        
+    } catch (error) {
+        console.error("Ошибка сохранения карточки:", error);
+        alert("Ошибка при сохранении карточки: " + error.message);
+    }
+},
 cancelEdit() {
     this.editId = null;
+    this.fullEditMode = false;
     this.showProductList = true;
     
     // Сбрасываем временные поля для размеров
@@ -1936,6 +2259,12 @@ cancelEdit() {
     };
     
     if (this.localFiles) this.localFiles = []; 
+    
+    // Сбрасываем режимы редактирования у всех товаров
+    this.products.forEach(p => {
+        p.editingVariant = null;
+        p.fullEditMode = false;
+    });
 },
 
 // Синхронизация поля с stocks
