@@ -1197,19 +1197,6 @@
     ДОБАВИТЬ РАЗМЕР
 </button>
             </div>
-            
-            <!-- ОТОБРАЖЕНИЕ СОХРАНЕННЫХ РАЗМЕРОВ -->
-            <div v-if="Object.keys(v.stocks || {}).length > 0" style="margin-top: 10px;">
-                <div style="font-size: 10px; font-weight: 700; color: #666; margin-bottom: 5px;">
-                    Сохраненные размеры для этого цвета:
-                </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                    <span v-for="(qty, size) in v.stocks" :key="size" 
-                          style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">
-                        {{ size }}: {{ qty }} шт.
-                    </span>
-                </div>
-            </div>
         </div>
 
         <!-- ФОТО ДЛЯ ЭТОГО ЦВЕТА (ОТДЕЛЬНО ДЛЯ КАЖДОГО ЦВЕТА) -->
