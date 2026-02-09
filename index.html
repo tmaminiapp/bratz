@@ -1149,6 +1149,54 @@
             <label>НАЗВАНИЕ ЦВЕТА</label>
             <input v-model="v.color" class="input-admin" placeholder="Например: Черный, Белый, Красный">
         </div>
+        <!-- РАЗМЕРЫ И ОСТАТКИ ДЛЯ ЭТОГО ЦВЕТА -->
+        <div class="field" style="margin-top: 15px;">
+            <label>РАЗМЕРЫ И ОСТАТКИ (для этого цвета)</label>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin: 12px 0; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                
+                <!-- ДИНАМИЧЕСКИЕ ПОЛЯ ДЛЯ РАЗМЕРОВ -->
+                <div v-for="(sizeField, index) in (tempSizes[vIdx] || [])" 
+                     :key="'size_' + vIdx + '_' + index" 
+                     style="display: flex; align-items: center; gap: 12px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">
+                    
+                    <!-- Название размера -->
+                    <input type="text" 
+                           v-model="sizeField.name"
+                           @input="syncSizeToStocks(vIdx, index)"
+                           :data-variant="vIdx"
+                           :data-field="index"
+                           style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center;"
+                           placeholder="Размер">
+                    
+                    <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
+                    
+                    <!-- Количество -->
+                    <input type="number" 
+                           v-model.number="sizeField.qty"
+                           min="0"
+                           @input="syncSizeToStocks(vIdx, index)"
+                           style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;"
+                           placeholder="0">
+                    
+                    <!-- Кнопка удаления (только не первый размер) -->
+                    <button v-if="index > 0" 
+                            @click="removeSizeField(vIdx, index)" 
+                            type="button" 
+                            style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
+                        ×
+                    </button>
+                </div>
+                
+                <!-- Кнопка добавления нового размера -->
+               <button type="button" 
+        @click="addSizeField(vIdx)"
+        style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; padding: 5px; background: #000000; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 8px; margin-top: 5px; letter-spacing: 0.2px;">
+    <span style="font-size: 10px;">+</span>
+    ДОБАВИТЬ РАЗМЕР
+</button>
+            </div>
+        </div>
 
         <!-- РАЗМЕРЫ И ОСТАТКИ ДЛЯ ЭТОГО ЦВЕТА -->
         <!-- ФОТО ДЛЯ ЭТОГО ЦВЕТА (ОТДЕЛЬНО ДЛЯ КАЖДОГО ЦВЕТА) -->
