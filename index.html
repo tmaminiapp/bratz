@@ -1190,12 +1190,12 @@
                 </div>
                 
                 <!-- Кнопка добавления нового размера -->
-                <button type="button" 
-                        @click="addSizeField(vIdx)"
-                        style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 5px;">
-                    <span style="font-size: 16px;">+</span>
-                    ДОБАВИТЬ РАЗМЕР ДЛЯ ЭТОГО ЦВЕТА
-                </button>
+               <button type="button" 
+        @click="addSizeField(vIdx)"
+        style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; padding: 5px; background: #000000; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 8px; margin-top: 5px; letter-spacing: 0.2px;">
+    <span style="font-size: 10px;">+</span>
+    ДОБАВИТЬ РАЗМЕР
+</button>
             </div>
             
             <!-- ОТОБРАЖЕНИЕ СОХРАНЕННЫХ РАЗМЕРОВ -->
@@ -1375,19 +1375,6 @@
         <span style="font-size: 16px; margin-right: 8px;">+</span>
         ДОБАВИТЬ ЕЩЕ ОДИН ЦВЕТ
     </button>
-
-    <!-- ИНФОРМАЦИОННОЕ СООБЩЕНИЕ -->
-    <div style="background: #e8f4fd; padding: 12px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #007aff;">
-        <div style="font-size: 10px; font-weight: 700; color: #007aff; margin-bottom: 3px;">
-            💡 Как добавить товар:
-        </div>
-        <div style="font-size: 9px; color: #333; line-height: 1.4;">
-            1. Заполните информацию о товаре выше<br>
-            2. Для <strong>каждого цвета</strong> укажите название, размеры и фото<br>
-            3. Каждый цвет может иметь разные размеры и свои фото<br>
-            4. Нажмите "ОПУБЛИКОВАТЬ ТОВАР" когда все готово
-        </div>
-    </div>
 
     <!-- КНОПКИ СОХРАНЕНИЯ -->
     <div style="margin-top: 25px;">
@@ -2538,18 +2525,7 @@ editProduct(p) {
             // Создаем массив полей для этого варианта
             const fields = [];
             
-            // Если есть сохраненные размеры, добавляем их как заполненные поля
-            const stocks = variant.stocks || {};
-            Object.keys(stocks).forEach(sizeName => {
-                fields.push({
-                    name: sizeName,
-                    qty: stocks[sizeName] || 0,
-                    hidden: false,
-                    focused: false,
-                    tempKey: null,
-                    savedName: sizeName
-                });
-            });
+            
             
             // Добавляем ОДНО пустое поле в конце для новых размеров
             fields.push({
