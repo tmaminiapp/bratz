@@ -1989,17 +1989,20 @@ selVariant() {
     methods: {
         vib() { tg.HapticFeedback.impactOccurred('light'); },
 total() {
-    if (!this.cart || !this.cart.length) return 0;
-    
-    // Быстрая сумма без сложных преобразований
-    let sum = 0;
-    for (let i = 0; i < this.cart.length; i++) {
-        const item = this.cart[i];
-        sum += (Number(item.price) || 0) * (Number(item.qty) || 1);
+    let itemsTotal = 0;
+    if (this.cart && this.cart.length > 0) {
+        itemsTotal = this.cart.reduce((sum, item) => {
+            let rawPrice = item.price || 0;
+            let priceNumber = typeof rawPrice === 'string' 
+                ? parseInt(rawPrice.replace(/[^\d]/g, '')) || 0 
+                : Number(rawPrice);
+            let quantity = parseInt(item.count || item.qty || 1);
+            return sum + (priceNumber * quantity);
+        }, 0);
     }
-    
-    // Доставка 200 рублей, если есть товары
-    return sum > 0 ? sum + 200 : 0;
+
+    // Если корзина не пуста, всегда добавляем 200
+    return itemsTotal > 0 ? (itemsTotal + 200) : 0;
 },
 removeEditImage(imgIdx) {
     if (confirm("Удалить это фото из товара?")) {
@@ -4103,7 +4106,6 @@ async saveProduct() {
                 }))
             });
             alert('✅ Товар успешно создан!');
-            await this.refreshProducts();
         }
         
         // 12. ОЧИСТКА ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ
@@ -4115,27 +4117,6 @@ async saveProduct() {
         alert('Ошибка сохранения: ' + e.message);
     } finally {
         this.loading = false;
-    }
-},
-async refreshProducts() {
-    try {
-        const querySnapshot = await window.fb.getDocs(
-            window.fb.query(
-                window.fb.collection(window.db, "products"),
-                window.fb.orderBy("createdAt", "desc")
-            )
-        );
-        
-        this.products = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            aIdx: 0,
-            tempSize: null
-        }));
-        
-        console.log('Товары обновлены:', this.products.length);
-    } catch (error) {
-        console.error('Ошибка обновления товаров:', error);
     }
 },
 cleanupAfterSave() {
