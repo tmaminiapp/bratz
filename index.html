@@ -804,15 +804,18 @@
             </button>
 
           <!-- В products-grid (каталог) -->
-<div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+<div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)"
+     @mouseenter="optimizeImageLoad(p)" @touchstart="optimizeImageLoad(p)">
     <img v-for="(img, idx) in getProductImages(p)" 
-         :key="idx" 
+         :key="'img_' + p.id + '_' + idx" 
          :src="img" 
-         :alt="'Изображение ' + (idx + 1)"
+         :alt="p.title"
          loading="lazy"
+         decoding="async"
+         :style="{ display: 'block' }"
+         @load="handleImageLoad"
          @error="handleImageError">
 </div>
-
 <!-- Обновите также отображение точек (dots) -->
 <div class="dots" v-if="getProductImages(p).length > 1">
     <span v-for="(img, i) in getProductImages(p)" 
@@ -867,13 +870,16 @@
                     </svg>
                 </button>
 
-             <!-- В products-grid (каталог) -->
-<div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+            <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)"
+     @mouseenter="optimizeImageLoad(p)" @touchstart="optimizeImageLoad(p)">
     <img v-for="(img, idx) in getProductImages(p)" 
-         :key="idx" 
+         :key="'img_' + p.id + '_' + idx" 
          :src="img" 
-         :alt="'Изображение ' + (idx + 1)"
+         :alt="p.title"
          loading="lazy"
+         decoding="async"
+         :style="{ display: 'block' }"
+         @load="handleImageLoad"
          @error="handleImageError">
 </div>
 
@@ -1747,6 +1753,7 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+             imageCache: new Map(),
          uploadProgress: 0,
         uploadQueue: [],
         isUploading: false,
@@ -2016,61 +2023,67 @@ toggleDescription(productId) {
         }
         this.vib();
     },
-  getProductImages(product) {
+    // Метод для получения изображений товара (универсальный)
+// Метод для получения изображений товара (универсальный)
+// Метод для получения изображений товара (универсальный)
+// Метод для получения изображений товара (универсальный)
+getProductImages(product) {
     if (!product) return ['https://via.placeholder.com/300x400?text=No+Image'];
     
-    console.log('getProductImages called for:', product.title || 'Unknown');
+    // 1. ПРОВЕРЯЕМ НОВЫЙ ФОРМАТ С ВАРИАНТАМИ ЦВЕТОВ
+    if (product.variants && 
+        Array.isArray(product.variants) && 
+        product.variants.length > 0) {
+        
+        // Берем ПЕРВЫЙ вариант (первый цвет)
+        const firstVariant = product.variants[0];
+        
+        // Проверяем, есть ли изображения у первого варианта
+        if (firstVariant.images && 
+            Array.isArray(firstVariant.images) && 
+            firstVariant.images.length > 0) {
+            
+            // Фильтруем пустые/неправильные ссылки
+            const validImages = firstVariant.images.filter(img => 
+                img && typeof img === 'string' && img.trim() !== ''
+            );
+            
+            if (validImages.length > 0) {
+                return validImages;
+            }
+        }
+    }
     
-    // 1. Прямое поле image (первое изображение)
+    // 2. ПРОВЕРЯЕМ СТАРЫЙ ФОРМАТ
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        const validImages = product.images.filter(img => 
+            img && typeof img === 'string' && img.trim() !== ''
+        );
+        if (validImages.length > 0) return validImages;
+    }
+    
+    // 3. ПРОВЕРЯЕМ ЕДИНОЕ ИЗОБРАЖЕНИЕ
     if (product.image && typeof product.image === 'string' && product.image.trim() !== '') {
-        console.log('Found in product.image:', product.image.substring(0, 50) + '...');
         return [product.image];
     }
     
-    // 2. Массив images в корне товара
-    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-        const validImages = product.images.filter(img => img && img.trim() !== '');
-        if (validImages.length > 0) {
-            console.log('Found in product.images:', validImages.length, 'images');
-            return validImages;
-        }
-    }
-    
-    // 3. Новый формат с вариантами цветов
-    if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
-        const firstVariant = product.variants[0];
-        
-        if (firstVariant.images && Array.isArray(firstVariant.images) && firstVariant.images.length > 0) {
-            const validVariantImages = firstVariant.images.filter(img => img && img.trim() !== '');
-            if (validVariantImages.length > 0) {
-                console.log('Found in variants[0].images:', validVariantImages.length, 'images');
-                return validVariantImages;
-            }
-        }
-        
-        // Проверяем загружаемые файлы (для preview)
-        if (firstVariant.localFiles && firstVariant.localFiles.length > 0) {
-            const localPreviews = firstVariant.localFiles
-                .filter(file => file.preview && file.preview.trim() !== '')
-                .map(file => file.preview);
-            if (localPreviews.length > 0) {
-                console.log('Found in localFiles previews:', localPreviews.length, 'previews');
-                return localPreviews;
-            }
-        }
-    }
-    
-    // 4. Старое поле img
     if (product.img && typeof product.img === 'string' && product.img.trim() !== '') {
-        console.log('Found in product.img:', product.img.substring(0, 50) + '...');
         return [product.img];
     }
     
-    // 5. Fallback
-    console.log('No images found, using placeholder');
+    // 4. ВОЗВРАЩАЕМ ПЛЕЙСХОЛДЕР
     return ['https://via.placeholder.com/300x400?text=No+Image'];
 },
+handleImageLoad(event) {
+    // Можно добавить плавное появление
+    event.target.style.opacity = '1';
+},
 
+handleImageError(e) {
+    console.warn('Ошибка загрузки изображения:', e.target.src);
+    e.target.src = 'https://via.placeholder.com/300x400?text=No+Image';
+    e.target.style.opacity = '1';
+},
 handleFilesForVariant(e, vIdx) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -2078,12 +2091,13 @@ handleFilesForVariant(e, vIdx) {
     const variant = this.newP.variants[vIdx];
     
     // Инициализируем массивы если их нет
+    if (!variant.localFiles) variant.localFiles = [];
     if (!variant.uploadingFiles) variant.uploadingFiles = [];
     
     // Проверяем общий лимит
     const totalImages = this.countTotalImages();
-    if (totalImages + files.length > 10) {
-        alert(`Максимум 10 изображений. Сейчас: ${totalImages}`);
+    if (totalImages + files.length > this.MAX_TOTAL_IMAGES) {
+        alert(`Максимум ${this.MAX_TOTAL_IMAGES} изображений. Сейчас: ${totalImages}`);
         return;
     }
     
@@ -2093,9 +2107,9 @@ handleFilesForVariant(e, vIdx) {
             continue;
         }
         
-        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-        if (file.size > MAX_FILE_SIZE) {
-            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 5MB.`);
+        // ⭐ ЕДИНЫЙ ЛИМИТ ⭐
+        if (file.size > this.MAX_FILE_SIZE) {
+            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум ${this.MAX_FILE_SIZE / (1024 * 1024)}MB.`);
             continue;
         }
         
@@ -2105,84 +2119,23 @@ handleFilesForVariant(e, vIdx) {
             file: file,
             preview: previewUrl,
             name: file.name,
+            status: 'pending',
             size: file.size,
-            type: file.type,
-            status: 'uploading', // Начинаем загрузку сразу
-            progress: 0,
-            serverUrl: null
+            type: file.type
         };
         
-        // Добавляем в массив загрузки
-        variant.uploadingFiles.push(fileObj);
-        this.vib();
+        // Добавляем в соответствующий массив
+        if (this.editId) {
+            variant.uploadingFiles.push(fileObj);
+        } else {
+            variant.localFiles.push(fileObj);
+        }
         
-        // 🚀 НЕМЕДЛЕННАЯ ЗАГРУЗКА В IMGBB
-        this.startImgBBUpload(fileObj, vIdx);
+        this.vib();
     }
     
     e.target.value = '';
 },
-async startImgBBUpload(fileObj, vIdx) {
-    try {
-        // Симулируем прогресс для UX
-        const progressInterval = setInterval(() => {
-            if (fileObj.progress < 90) {
-                fileObj.progress += 10;
-                this.$forceUpdate();
-            }
-        }, 200);
-        
-        // Загружаем в ImgBB
-        const imageUrl = await this.uploadFileToImgBB(fileObj.file);
-        
-        clearInterval(progressInterval);
-        
-        // Обновляем статус
-        fileObj.status = 'completed';
-        fileObj.serverUrl = imageUrl;
-        fileObj.progress = 100;
-        
-        console.log(`✅ Файл "${fileObj.name}" загружен: ${imageUrl.substring(0, 60)}...`);
-        
-        // Обновляем UI
-        this.$forceUpdate();
-        
-        // Проверяем, все ли файлы загружены
-        this.checkAllUploadsComplete();
-        
-    } catch (error) {
-        console.error(`❌ Ошибка загрузки "${fileObj.name}":`, error);
-        fileObj.status = 'failed';
-        fileObj.error = error.message;
-        fileObj.progress = 0;
-        this.$forceUpdate();
-    }
-},
-checkAllUploadsComplete() {
-    let allComplete = true;
-    let anyFailed = false;
-    
-    this.newP.variants.forEach(variant => {
-        if (variant.uploadingFiles) {
-            variant.uploadingFiles.forEach(file => {
-                if (file.status === 'uploading') {
-                    allComplete = false;
-                }
-                if (file.status === 'failed') {
-                    anyFailed = true;
-                }
-            });
-        }
-    });
-    
-    if (allComplete) {
-        console.log('🎉 Все изображения загружены!');
-        if (anyFailed) {
-            alert('Некоторые изображения не удалось загрузить. Проверьте соединение.');
-        }
-    }
-},
-
     getShortDescription(fullDesc) {
         if (!fullDesc) return 'Нажмите для просмотра описания';
         
@@ -2223,7 +2176,7 @@ toggleEditSizes(product, variantIndex) {
     this.vib();
 },
 // Удаление файла по ID
-removeEditNewFileById(fileId) {
+rremoveEditNewFileById(fileId) {
     const index = this.editNewFiles.findIndex(f => f.id === fileId);
     if (index > -1) {
         const file = this.editNewFiles[index];
@@ -2327,6 +2280,20 @@ async saveVariantSizes(product, variantIndex) {
         console.error("Ошибка сохранения остатков:", error);
         alert("Ошибка при сохранении остатков: " + error.message);
     }
+},
+optimizeImageLoad(product) {
+    if (!product) return;
+    
+    // Предзагрузка изображений для первого варианта
+    const images = this.getProductImages(product);
+    
+    images.forEach((imgUrl, index) => {
+        if (!this.imageCache.has(imgUrl)) {
+            const img = new Image();
+            img.src = imgUrl;
+            this.imageCache.set(imgUrl, img);
+        }
+    });
 },
 
 // Удалить размер из варианта
@@ -3581,63 +3548,88 @@ removeFromCart(cartId) {
         });
     });
 },
-async uploadFileToImgBB(file, progressCallback = null) {
-    console.log(`📤 Загрузка в ImgBB: ${file.name}, размер: ${(file.size / 1024).toFixed(1)}KB`);
+async uploadFileToImgBB(file) {
+    console.log(`Загрузка файла: ${file.name}, размер: ${file.size} байт`);
+    
+    // Если файл маленький, используем Data URL сразу
+    if (file.size < 500 * 1024) { // 500KB
+        console.log('Файл маленький, используем Data URL');
+        return await this.fileToDataURL(file);
+    }
     
     const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
     
     return new Promise((resolve, reject) => {
-        // Создаем FormData
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        // Создаем XMLHttpRequest для отслеживания прогресса
-        const xhr = new XMLHttpRequest();
-        
-        // Отслеживаем прогресс
-        xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
-                const percentComplete = Math.round((e.loaded / e.total) * 100);
-                console.log(`Прогресс: ${percentComplete}%`);
-                if (progressCallback) progressCallback(percentComplete);
+        // Сначала пробуем сжать
+        this.compressImage(file).then(compressedFile => {
+            console.log(`После сжатия: ${compressedFile.size} байт`);
+            
+            // Если после сжатия файл все еще большой, используем Data URL
+            if (compressedFile.size > 1000 * 1024) { // >1MB
+                console.log('Файл слишком большой после сжатия, используем Data URL');
+                this.fileToDataURL(compressedFile).then(resolve).catch(reject);
+                return;
             }
-        });
-        
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                try {
-                    const result = JSON.parse(xhr.responseText);
-                    if (result.success && result.data && result.data.url) {
-                        console.log(`✅ Загружено: ${result.data.url.substring(0, 60)}...`);
-                        resolve(result.data.url);
-                    } else {
-                        reject(new Error(result.error?.message || 'Ошибка ImgBB'));
+            
+            const formData = new FormData();
+            formData.append('image', compressedFile);
+            
+            const xhr = new XMLHttpRequest();
+            let hasTimedOut = false;
+            
+            xhr.onload = () => {
+                if (hasTimedOut) return;
+                
+                console.log('ImgBB ответ:', xhr.status, xhr.responseText.substring(0, 100));
+                
+                if (xhr.status === 200) {
+                    try {
+                        const result = JSON.parse(xhr.responseText);
+                        if (result.success) {
+                            console.log('✅ Успешно загружено:', result.data.url);
+                            resolve(result.data.url);
+                        } else {
+                            console.error('❌ ImgBB error:', result.error);
+                            // Fallback на Data URL
+                            this.fileToDataURL(compressedFile).then(resolve).catch(reject);
+                        }
+                    } catch (e) {
+                        console.error('❌ Parse error:', e);
+                        this.fileToDataURL(compressedFile).then(resolve).catch(reject);
                     }
-                } catch (e) {
-                    reject(new Error('Ошибка парсинга ответа ImgBB'));
+                } else {
+                    console.error(`❌ HTTP error ${xhr.status}`);
+                    this.fileToDataURL(compressedFile).then(resolve).catch(reject);
                 }
-            } else {
-                reject(new Error(`HTTP ${xhr.status}`));
-            }
-        };
-        
-        xhr.onerror = () => reject(new Error('Ошибка сети'));
-        xhr.ontimeout = () => reject(new Error('Таймаут'));
-        
-        // Таймаут 30 секунд
-        xhr.timeout = 30000;
-        
-        xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
-        xhr.send(formData);
+            };
+            
+            xhr.onerror = (e) => {
+                if (hasTimedOut) return;
+                console.error('❌ Network error:', e);
+                this.fileToDataURL(compressedFile).then(resolve).catch(reject);
+            };
+            
+            xhr.ontimeout = () => {
+                console.error('❌ Timeout при загрузке в ImgBB');
+                hasTimedOut = true;
+                this.fileToDataURL(compressedFile).then(resolve).catch(reject);
+            };
+            
+            xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
+            xhr.timeout = 10000; // 10 секунд таймаут
+            xhr.send(formData);
+            
+        }).catch(error => {
+            console.error('❌ Ошибка сжатия:', error);
+            // Fallback на оригинальный файл как Data URL
+            this.fileToDataURL(file).then(resolve).catch(reject);
+        });
     });
 },
+
 async compressImage(file) {
-    // ВРЕМЕННО: отключаем сжатие для отладки
-    console.log(`📏 Размер файла: ${(file.size / 1024).toFixed(1)}KB`);
-    
-    // Если файл уже маленький (< 1MB), не сжимаем
-    if (file.size < 1024 * 1024) {
-        console.log('✅ Файл достаточно маленький, сжатие не требуется');
+    // Если файл уже маленький (< 500KB), не сжимаем
+    if (file.size < 500 * 1024) {
         return file;
     }
     
@@ -3647,11 +3639,13 @@ async compressImage(file) {
         const ctx = canvas.getContext('2d');
         
         img.onload = () => {
+            // Устанавливаем максимальные размеры
             const MAX_WIDTH = 1200;
             const MAX_HEIGHT = 1500;
             let width = img.width;
             let height = img.height;
             
+            // Масштабируем если нужно
             if (width > MAX_WIDTH) {
                 height = (height * MAX_WIDTH) / width;
                 width = MAX_WIDTH;
@@ -3665,10 +3659,11 @@ async compressImage(file) {
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
             
+            // Сохраняем как WebP с качеством 70%
             canvas.toBlob((blob) => {
                 console.log(`Сжатие: ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB`);
                 
-                const compressedFile = new File([blob], file.name, {
+                const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + '.webp', {
                     type: 'image/webp',
                     lastModified: Date.now()
                 });
@@ -3677,53 +3672,10 @@ async compressImage(file) {
             }, 'image/webp', 0.7);
         };
         
-        img.onerror = () => {
-            console.warn('Не удалось загрузить изображение для сжатия, используем оригинал');
-            resolve(file);
-        };
-        
         img.src = URL.createObjectURL(file);
     });
 },
-
-async saveProduct() {
-    // Проверка: все ли изображения загружены
-let allUploadsComplete = true;
-let uploadingCount = 0;
-
-this.newP.variants.forEach(variant => {
-    if (variant.uploadingFiles) {
-        variant.uploadingFiles.forEach(file => {
-            if (file.status === 'uploading') {
-                allUploadsComplete = false;
-                uploadingCount++;
-            }
-        });
-    }
-});
-
-if (!allUploadsComplete) {
-    alert(`⚠️ Дождитесь загрузки всех изображений! Загружается: ${uploadingCount} файл(ов)`);
-    this.loading = false;
-    return;
-}
-
-// Проверка: есть ли хотя бы одно изображение
-let hasImages = false;
-this.newP.variants.forEach(variant => {
-    if (variant.uploadingFiles && variant.uploadingFiles.some(f => f.status === 'completed')) {
-        hasImages = true;
-    }
-    if (variant.images && variant.images.length > 0) {
-        hasImages = true;
-    }
-});
-
-if (!hasImages) {
-    alert('⚠️ Добавьте хотя бы одно изображение для товара!');
-    this.loading = false;
-    return;
-}
+ async saveProduct() {
     console.log('=== НАЧАЛО СОХРАНЕНИЯ ===');
     
     // 1. Валидация
@@ -3767,114 +3719,114 @@ if (!hasImages) {
             delete variant.editState;
         });
         
-        // 4. СБОР ИЗОБРАЖЕНИЙ ИЗ ВСЕХ ВАРИАНТОВ
-        const allImageUrls = [];
-
-        for (let vIdx = 0; vIdx < this.newP.variants.length; vIdx++) {
-            const variant = this.newP.variants[vIdx];
-            
-            // 4.1. Сначала берем уже загруженные URL из ImgBB
-            if (variant.uploadingFiles && variant.uploadingFiles.length > 0) {
-                for (const fileObj of variant.uploadingFiles) {
-                    if (fileObj.status === 'completed' && fileObj.serverUrl) {
-                        console.log(`✅ Используем загруженный URL: ${fileObj.serverUrl.substring(0, 60)}...`);
-                        if (!allImageUrls.includes(fileObj.serverUrl)) {
-                            allImageUrls.push(fileObj.serverUrl);
+        // 4. ЗАГРУЗКА ИЗОБРАЖЕНИЙ В IMGBB
+        const allImages = [];
+        
+        // Собираем ВСЕ файлы из ВСЕХ вариантов
+        for (const variant of this.newP.variants) {
+            // Загружаем локальные файлы (если есть)
+            if (variant.localFiles && variant.localFiles.length > 0) {
+                for (const fileObj of variant.localFiles) {
+                    try {
+                        console.log(`Загрузка файла: ${fileObj.file.name}, ${(fileObj.file.size / 1024).toFixed(1)}KB`);
+                        const imageUrl = await this.uploadFileToImgBB(fileObj.file);
+                        if (imageUrl) {
+                            console.log('✅ Получен URL:', imageUrl.substring(0, 50) + '...');
+                            allImages.push(imageUrl);
+                        }
+                    } catch (e) {
+                        console.error('❌ Ошибка загрузки файла в ImgBB:', e);
+                        // Fallback: используем Data URL, но ТОЛЬКО ЕСЛИ НЕТ ДРУГИХ ИЗОБРАЖЕНИЙ
+                        if (allImages.length === 0 && fileObj.file.size < 100 * 1024) { // < 100KB
+                            console.warn('⚠️ Используем Data URL fallback');
+                            const dataUrl = await this.fileToDataURL(fileObj.file);
+                            allImages.push(dataUrl);
                         }
                     }
                 }
             }
             
-            // 4.2. Потом существующие изображения
-            if (variant.images && Array.isArray(variant.images)) {
+            // Добавляем уже загруженные изображения (ТОЛЬКО HTTP URL!)
+            if (variant.images && variant.images.length > 0) {
                 variant.images.forEach(img => {
-                    if (img && typeof img === 'string' && img.trim() !== '') {
-                        // Проверяем, это URL ImgBB или другой URL
-                        if (img.includes('imgbb.com') || img.startsWith('http')) {
-                            if (!allImageUrls.includes(img)) {
-                                allImageUrls.push(img);
+                    if (img && img.trim() !== '') {
+                        // Проверяем, это URL или Data URL
+                        if (img.startsWith('http://') || img.startsWith('https://')) {
+                            if (!allImages.includes(img)) {
+                                allImages.push(img);
                             }
+                        } else if (img.startsWith('data:') && allImages.length === 0) {
+                            // Data URL добавляем ТОЛЬКО если нет других изображений
+                            console.warn('⚠️ Обнаружен Data URL, добавляем как fallback');
+                            allImages.push(img);
                         }
                     }
                 });
             }
         }
-
-        console.log(`📸 Всего собрано URL изображений: ${allImageUrls.length}`);
-
-        // 5. Если нет изображений, используем заглушку
+        
+        console.log('Все изображения после сбора:', allImages.length);
+        
+        // 5. ФИЛЬТРАЦИЯ И СОРТИРОВКА ИЗОБРАЖЕНИЙ
         let finalImages = [];
-        if (allImageUrls.length === 0) {
-            finalImages = ['https://via.placeholder.com/300x400?text=No+Image'];
-            console.warn('⚠️ Используем placeholder изображение');
+        
+        // Разделяем HTTP URL и Data URL
+        const httpImages = allImages.filter(img => 
+            img.startsWith('https://') || img.startsWith('http://')
+        );
+        const dataImages = allImages.filter(img => 
+            img.startsWith('data:')
+        );
+        
+        console.log(`HTTP изображений: ${httpImages.length}, Data URL: ${dataImages.length}`);
+        
+        // Приоритет: сначала HTTP URL, потом Data URL (только если нет HTTP)
+        if (httpImages.length > 0) {
+            // Убираем дубликаты и берем максимум 5 изображений
+            finalImages = [...new Set(httpImages)].slice(0, 5);
+        } else if (dataImages.length > 0) {
+            // Только Data URL - берем только ПЕРВОЕ (самое важное!)
+            finalImages = [dataImages[0]];
+            console.warn('⚠️ Используем только одно изображение (Data URL) для экономии места');
         } else {
-            // Берем максимум 5 изображений
-            finalImages = allImageUrls.slice(0, 5);
+            // Нет изображений вообще
+            finalImages = ['https://via.placeholder.com/300x400?text=No+Image'];
         }
         
-        console.log('🎯 Финальные изображения:', finalImages);
+        console.log('Финальные изображения:', finalImages.length, 'шт.');
+        console.log('Пример URL:', finalImages[0]?.substring(0, 60) + '...');
         
-        // 6. ФОРМИРОВАНИЕ ВАРИАНТОВ С ПРАВИЛЬНЫМИ ИЗОБРАЖЕНИЯМИ
-        const finalVariants = this.newP.variants.map((variant, vIdx) => {
-            // Собираем изображения для этого конкретного варианта
-            const variantImages = [];
+        // 6. ПРОВЕРКА РАЗМЕРА КАЖДОГО ИЗОБРАЖЕНИЯ
+        const containsDataUrl = finalImages.some(img => img.startsWith('data:'));
+        if (containsDataUrl) {
+            const dataUrlSize = finalImages[0].length;
+            console.log(`⚠️ Data URL размер: ${(dataUrlSize / 1024).toFixed(1)}KB`);
             
-            // 1. Загруженные файлы для этого варианта
-            if (variant.uploadingFiles) {
-                variant.uploadingFiles.forEach(fileObj => {
-                    if (fileObj.status === 'completed' && fileObj.serverUrl) {
-                        variantImages.push(fileObj.serverUrl);
-                    }
-                });
+            if (dataUrlSize > 50 * 1024) { // > 50KB
+                alert('⚠️ Изображение слишком большое. Рекомендуется загрузить изображение меньше 50KB или использовать ссылку на ImgBB.');
+                this.loading = false;
+                return;
             }
-            
-            // 2. Существующие изображения
-            if (variant.images && Array.isArray(variant.images)) {
-                variant.images.forEach(img => {
-                    if (img && typeof img === 'string' && img.trim() !== '' && img.startsWith('http')) {
-                        variantImages.push(img);
-                    }
-                });
-            }
-            
-            // 3. Если у варианта нет своих изображений, используем общие
-            if (variantImages.length === 0 && finalImages.length > 0) {
-                variantImages.push(...finalImages);
-            }
-            
-            // Убираем дубликаты
-            const uniqueImages = [...new Set(variantImages)].slice(0, 5);
-            
-            return {
-                color: variant.color || 'Стандарт',
-                stocks: variant.stocks || {},
-                images: uniqueImages
-            };
-        });
-
-        // 7. СОХРАНЕНИЕ ДАННЫХ В FIRESTORE
+        }
+        
+        // 7. ФОРМИРОВАНИЕ ФИНАЛЬНЫХ ДАННЫХ
+        const finalVariants = cleanedVariants.map(variant => ({
+            color: variant.color,
+            stocks: variant.stocks,
+            images: [...finalImages] // Все варианты получают одни и те же изображения
+        }));
+        
         const productData = {
             title: this.newP.title.trim(),
-            desc: (this.newP.desc || '').substring(0, 500),
+            desc: (this.newP.desc || '').substring(0, 500), // Уменьшено с 1000 до 500 символов
             price: Number(this.newP.price),
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
             hidden: !!this.newP.hidden,
             variants: finalVariants,
-            // ОЧЕНЬ ВАЖНО: сохраняем первое изображение для быстрого доступа
-            image: finalVariants[0]?.images?.[0] || finalImages[0] || 'https://via.placeholder.com/300x400?text=No+Image',
-            // Для совместимости со старым кодом
-            images: finalImages,
             updatedAt: Date.now()
         };
-
-        console.log('💾 Данные для сохранения:', {
-            title: productData.title,
-            imageField: productData.image ? productData.image.substring(0, 50) + '...' : 'Нет',
-            variantsCount: productData.variants.length,
-            firstVariantImages: productData.variants[0]?.images?.length || 0
-        });
         
         // 8. ПРОВЕРКА РАЗМЕРА ПЕРЕД СОХРАНЕНИЕМ
         const dataSize = new Blob([JSON.stringify(productData)]).size;
@@ -3883,6 +3835,7 @@ if (!hasImages) {
         if (dataSize > 900000) { // 900KB для запаса
             alert(`⚠️ Внимание: данные слишком большие (${(dataSize / 1024 / 1024).toFixed(2)} MB).\nРекомендации:\n1. Уменьшите количество изображений\n2. Используйте меньше вариантов цветов\n3. Укоротите описание товара\n4. Проверьте, что изображения загружаются как URL, а не Data URL`);
             
+            // Отладочная информация
             console.log('Отладочная информация о размере:');
             console.log('- Длина описания:', productData.desc.length, 'символов');
             console.log('- Количество вариантов:', productData.variants.length);
@@ -3930,19 +3883,6 @@ if (!hasImages) {
             });
             
             console.log('✅ Товар создан! ID:', docRef.id);
-            
-            // Немедленная проверка из базы
-            setTimeout(async () => {
-                const savedDoc = await window.fb.getDoc(window.fb.doc(window.db, "products", docRef.id));
-                const savedData = savedDoc.data();
-                console.log('🔍 Проверка сохраненных данных:', {
-                    imageField: savedData.image,
-                    hasImages: !!savedData.images,
-                    imagesCount: savedData.images?.length || 0,
-                    variants: savedData.variants?.[0]?.images?.length || 0
-                });
-            }, 1000);
-            
             alert('✅ Товар успешно создан!');
         }
         
@@ -3957,25 +3897,30 @@ if (!hasImages) {
         this.loading = false;
     }
 },
-
 cleanupAfterSave() {
-    // Очищаем все preview URL
-    const cleanupFiles = (arr) => {
-        if (!arr || !Array.isArray(arr)) return;
-        arr.forEach(item => {
-            if (item.preview && item.preview.startsWith('blob:')) {
-                URL.revokeObjectURL(item.preview);
-            }
+    // Очищаем превью URL для всех файлов
+    const cleanupFiles = (variants) => {
+        variants?.forEach(variant => {
+            // Локальные файлы
+            variant.localFiles?.forEach(file => {
+                if (file.preview && file.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(file.preview);
+                }
+            });
+            
+            // Загружаемые файлы
+            variant.uploadingFiles?.forEach(file => {
+                if (file.preview && file.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(file.preview);
+                }
+            });
         });
     };
     
-    // Очистка вариантов
-    this.newP.variants?.forEach(variant => {
-        cleanupFiles(variant.localFiles);
-        cleanupFiles(variant.uploadingFiles);
-    });
+    // Очищаем файлы из формы
+    cleanupFiles(this.newP.variants);
     
-    // Сброс newP с правильной структурой
+    // Сбрасываем форму
     this.newP = {
         title: '',
         desc: '',
@@ -3984,7 +3929,6 @@ cleanupAfterSave() {
         category: '',
         isNew: false,
         hidden: false,
-        images: [], // ← Добавлено для совместимости
         variants: [
             {
                 color: '',
@@ -3997,12 +3941,11 @@ cleanupAfterSave() {
     };
     
     // Сбрасываем временные размеры
-    this.tempSizes = [];
+    this.tempSizes = [[]];
+    this.addSizeField(0);
     
     // Сбрасываем режим редактирования
     this.editId = null;
-    this.fullEditMode = false;
-    this.showProductList = true;
     
     // Сбрасываем флаги редактирования у всех товаров
     this.products.forEach(p => {
@@ -4662,8 +4605,7 @@ updateChart() {
         this.cleanupAllPreviews();
     });
     const tg = window.Telegram.WebApp || {};
-    console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
-    
+     console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
     // 1. Безопасная инициализация Telegram
     if (window.Telegram?.WebApp) {
         try {
@@ -4709,41 +4651,18 @@ updateChart() {
             // Сохраняем функции отписки для очистки
             this.unsubscribers = [];
             
-            // 5.1. Товары - С ДОБАВЛЕННОЙ ОТЛАДКОЙ
+            // 5.1. Товары
             const unsubProducts = window.fb.onSnapshot(
                 window.fb.query(
                     window.fb.collection(window.db, "products"), 
                     window.fb.orderBy("createdAt", "desc")
                 ), 
                 snap => {
-                    this.products = snap.docs.map(doc => { 
-                        const data = doc.data();
-                        
-                        // ОТЛАДОЧНАЯ ИНФОРМАЦИЯ
-                        console.log(`Товар: ${data.title || 'Без названия'}`);
-                        console.log('Данные товара:', {
-                            id: doc.id,
-                            hasImages: !!data.images,
-                            imagesCount: data.images ? data.images.length : 0,
-                            hasImageField: !!data.image,
-                            imageUrl: data.image ? data.image.substring(0, 50) + '...' : 'Нет',
-                            hasVariants: !!data.variants,
-                            variantsCount: data.variants ? data.variants.length : 0,
-                            variantImages: data.variants ? data.variants[0]?.images?.length || 0 : 0
-                        });
-                        
-                        // Тестируем метод getProductImages
-                        const testProduct = { id: doc.id, ...data, aIdx: 0 };
-                        const images = this.getProductImages(testProduct);
-                        console.log(`getProductImages вернул: ${images.length} изображений`);
-                        console.log('Первое изображение:', images[0]?.substring(0, 50) + '...');
-                        
-                        return { 
-                            id: doc.id, 
-                            ...data, 
-                            aIdx: 0 
-                        };
-                    });
+                    this.products = snap.docs.map(doc => ({ 
+                        id: doc.id, 
+                        ...doc.data(), 
+                        aIdx: 0 
+                    }));
                     console.log('Products loaded:', this.products.length);
                     
                     this.$nextTick(() => {
@@ -4770,7 +4689,7 @@ updateChart() {
             );
             this.unsubscribers.push(unsubCategories);
             
-            // 5.3. ЗАКАЗЫ
+            // 5.3. ЗАКАЗЫ (ВАЖНО - ДОБАВЛЯЕМ ЭТОТ СЛУШАТЕЛЬ!)
             const unsubOrders = window.fb.onSnapshot(
                 window.fb.query(
                     window.fb.collection(window.db, "orders"),
@@ -4782,13 +4701,16 @@ updateChart() {
                         return {
                             id: doc.id,
                             ...data,
+                            // Добавляем дополнительные поля для удобства
                             displayDate: data.createdAt?.toDate 
                                 ? data.createdAt.toDate().toLocaleDateString('ru-RU')
                                 : new Date().toLocaleDateString('ru-RU')
                         };
                     });
                     console.log('Orders loaded:', this.allOrders.length);
+                    console.log('Sample order:', this.allOrders[0]);
                     
+                    // Если мы на вкладке профиля и админ - обновляем график
                     if (this.tab === 'profile' && this.isAdmin) {
                         this.$nextTick(() => {
                             setTimeout(() => {
@@ -4800,6 +4722,7 @@ updateChart() {
                 },
                 err => {
                     console.error("Orders error:", err);
+                    // Если коллекции orders не существует, создаем пустой массив
                     this.allOrders = [];
                 }
             );
@@ -4817,6 +4740,7 @@ updateChart() {
     // 6. Обработчики событий
     this.resizeHandler = () => {
         this.calculateListHeight();
+        // При ресайзе обновляем график если он есть
         if (this.tab === 'profile' && this.isAdmin && this.chart) {
             setTimeout(() => {
                 if (this.chart) {
@@ -4827,6 +4751,7 @@ updateChart() {
     };
     window.addEventListener('resize', this.resizeHandler);
 },
+
 
 beforeDestroy() {
     // 1. Отписываемся от Firebase слушателей
