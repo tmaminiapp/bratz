@@ -102,6 +102,7 @@ img[src*="data:image/svg"] {
         text-transform: uppercase;
     }
 
+
     /* ========== LAYOUT & CONTAINERS ========== */
     .container { 
         padding: 15px; 
@@ -2218,10 +2219,26 @@ handleImageError(e) {
     this.setSvgPlaceholder(e.target, 'Нет фото');
 },
 handleImageLoad(e) {
-    console.log('✅ Изображение загружено:', e.target.src?.substring(0, 80));
-    e.target.style.opacity = '1';
-    e.target.classList.remove('error-handled');
-    e.target.classList.add('loaded-success');
+    console.log('✅ Telegram загрузил изображение');
+    
+    const img = e.target;
+    
+    // Принудительная перерисовка для iOS Telegram
+    if (window.Telegram?.WebApp?.platform === 'ios') {
+        // Трюк с opacity для перерисовки
+        img.style.opacity = '0.99';
+        setTimeout(() => {
+            img.style.opacity = '1';
+        }, 10);
+    }
+    
+    // Показываем изображение
+    img.style.visibility = 'visible';
+    img.style.opacity = '1';
+    
+    // Убираем loading эффект если есть
+    img.classList.remove('loading');
+    img.classList.add('loaded');
 },
 
 // Добавьте отдельный метод для установки SVG
@@ -2279,7 +2296,8 @@ toggleDescription(productId) {
     
 getProductImages(product) {
     if (!product) {
-        return [this.getSafePlaceholder()];
+        // Используем абсолютный URL вместо data URL для Telegram
+        return ['https://via.placeholder.com/300x400/f5f5f5/999999?text=Loading'];
     }
     
     if (product.variants && 
@@ -2292,34 +2310,36 @@ getProductImages(product) {
             Array.isArray(firstVariant.images) && 
             firstVariant.images.length > 0) {
             
-            // Фильтруем только валидные HTTPS URL
-            const validImages = firstVariant.images.filter(img => {
-                if (!img || typeof img !== 'string') return false;
+            // Для Telegram используем оригинальные URL без параметров
+            // iOS WebView может не любить параметры в URL
+            const cleanImages = firstVariant.images.map(img => {
+                if (!img || typeof img !== 'string') return null;
                 
-                const trimmed = img.trim();
+                let url = img.trim();
                 
-                // ИСКЛЮЧАЕМ data URL из этого метода
-                if (trimmed.startsWith('data:')) {
-                    console.warn('Исключаем data URL из getProductImages');
-                    return false;
+                // 1. Гарантируем HTTPS
+                url = url.replace('http://', 'https://');
+                
+                // 2. Убираем все параметры для Telegram iOS
+                url = url.split('?')[0];
+                
+                // 3. Проверяем расширение - для Telegram лучше .jpg
+                if (url.includes('.webp')) {
+                    url = url.replace('.webp', '.jpg');
                 }
                 
-                // Только HTTPS URL для Telegram
-                return trimmed.startsWith('https://');
-            });
+                return url;
+            }).filter(url => url && url.startsWith('https://'));
             
-            if (validImages.length > 0) {
-                // Для каждого URL добавляем cache busting
-                return validImages.map(url => {
-                    // Добавляем параметр для обхода кэша
-                    return url.split('?')[0] + '?v=' + Date.now();
-                });
+            if (cleanImages.length > 0) {
+                console.log('Чистые URL для Telegram:', cleanImages);
+                return cleanImages;
             }
         }
     }
     
-    // Используем безопасный HTTPS плейсхолдер
-    return ['https://placehold.co/300x400/f5f5f5/999999?text=Loading'];
+    // Fallback для Telegram
+    return ['https://via.placeholder.com/300x400/f5f5f5/999999?text=No+Image'];
 },
 
 // Добавьте метод для безопасного плейсхолдера
@@ -4644,6 +4664,29 @@ async deleteOrder(docId) {
         alert("Ошибка при формировании чека.");
     }
 },
+ applyIosFixes() {
+        // 1. Принудительно перерисовываем изображения
+        setTimeout(() => {
+            document.querySelectorAll('.slider-wrapper').forEach(wrapper => {
+                wrapper.style.display = 'none';
+                setTimeout(() => {
+                    wrapper.style.display = 'block';
+                }, 50);
+            });
+        }, 1000);
+        
+        // 2. Добавляем touch события для слайдера
+        document.addEventListener('touchstart', this.handleTouchStart, { passive: true });
+        document.addEventListener('touchmove', this.handleTouchMove, { passive: true });
+    },
+    
+    handleTouchStart(e) {
+        // Для iOS Telegram
+    },
+    
+    handleTouchMove(e) {
+        // Для iOS Telegram
+    },
 cleanupAllPreviews() {
         // Очистка всех preview URL
         const cleanupArray = (arr) => {
@@ -4946,6 +4989,10 @@ updateChart() {
             }
         });
     }, 2000);
+     if (window.Telegram?.WebApp?.platform === 'ios') {
+        console.log('iOS Telegram detected - applying fixes');
+        this.applyIosFixes();
+    }
 
     window.addEventListener('beforeunload', () => {
         this.cleanupAllPreviews();
