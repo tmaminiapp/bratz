@@ -2016,45 +2016,61 @@ toggleDescription(productId) {
         }
         this.vib();
     },
-    // Метод для получения изображений товара (универсальный)
-// Метод для получения изображений товара (универсальный)
-// Метод для получения изображений товара (универсальный)
-getProductImages(product) {
-    if (!product) return [];
+  getProductImages(product) {
+    if (!product) return ['https://via.placeholder.com/300x400?text=No+Image'];
     
-    // 1. Приоритет: проверяем, есть ли прямой доступ к изображениям в основном объекте
-    if (product.image && typeof product.image === 'string') {
+    console.log('getProductImages called for:', product.title || 'Unknown');
+    
+    // 1. Прямое поле image (первое изображение)
+    if (product.image && typeof product.image === 'string' && product.image.trim() !== '') {
+        console.log('Found in product.image:', product.image.substring(0, 50) + '...');
         return [product.image];
     }
     
-    // 2. Проверяем старый формат с массивом images
+    // 2. Массив images в корне товара
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-        return product.images;
+        const validImages = product.images.filter(img => img && img.trim() !== '');
+        if (validImages.length > 0) {
+            console.log('Found in product.images:', validImages.length, 'images');
+            return validImages;
+        }
     }
     
-    // 3. Проверяем новый формат с вариантами (variants)
-    if (product.variants && 
-        Array.isArray(product.variants) && 
-        product.variants.length > 0) {
+    // 3. Новый формат с вариантами цветов
+    if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+        const firstVariant = product.variants[0];
         
-        // Ищем первый вариант с изображениями
-        for (let variant of product.variants) {
-            if (variant.images && 
-                Array.isArray(variant.images) && 
-                variant.images.length > 0) {
-                return variant.images;
+        if (firstVariant.images && Array.isArray(firstVariant.images) && firstVariant.images.length > 0) {
+            const validVariantImages = firstVariant.images.filter(img => img && img.trim() !== '');
+            if (validVariantImages.length > 0) {
+                console.log('Found in variants[0].images:', validVariantImages.length, 'images');
+                return validVariantImages;
+            }
+        }
+        
+        // Проверяем загружаемые файлы (для preview)
+        if (firstVariant.localFiles && firstVariant.localFiles.length > 0) {
+            const localPreviews = firstVariant.localFiles
+                .filter(file => file.preview && file.preview.trim() !== '')
+                .map(file => file.preview);
+            if (localPreviews.length > 0) {
+                console.log('Found in localFiles previews:', localPreviews.length, 'previews');
+                return localPreviews;
             }
         }
     }
     
-    // 4. Проверяем поле img
-    if (product.img) {
+    // 4. Старое поле img
+    if (product.img && typeof product.img === 'string' && product.img.trim() !== '') {
+        console.log('Found in product.img:', product.img.substring(0, 50) + '...');
         return [product.img];
     }
     
-    // 5. Возвращаем placeholder, если ничего не найдено
+    // 5. Fallback
+    console.log('No images found, using placeholder');
     return ['https://via.placeholder.com/300x400?text=No+Image'];
 },
+
 handleFilesForVariant(e, vIdx) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -3617,7 +3633,7 @@ async compressImage(file) {
         img.src = URL.createObjectURL(file);
     });
 },
- async saveProduct() {
+async saveProduct() {
     console.log('=== НАЧАЛО СОХРАНЕНИЯ ===');
     
     // 1. Валидация
@@ -3714,10 +3730,10 @@ async compressImage(file) {
         
         // Разделяем HTTP URL и Data URL
         const httpImages = allImages.filter(img => 
-            img.startsWith('https://') || img.startsWith('http://')
+            img && (img.startsWith('https://') || img.startsWith('http://'))
         );
         const dataImages = allImages.filter(img => 
-            img.startsWith('data:')
+            img && img.startsWith('data:')
         );
         
         console.log(`HTTP изображений: ${httpImages.length}, Data URL: ${dataImages.length}`);
@@ -3739,7 +3755,7 @@ async compressImage(file) {
         console.log('Пример URL:', finalImages[0]?.substring(0, 60) + '...');
         
         // 6. ПРОВЕРКА РАЗМЕРА КАЖДОГО ИЗОБРАЖЕНИЯ
-        const containsDataUrl = finalImages.some(img => img.startsWith('data:'));
+        const containsDataUrl = finalImages.some(img => img && img.startsWith('data:'));
         if (containsDataUrl) {
             const dataUrlSize = finalImages[0].length;
             console.log(`⚠️ Data URL размер: ${(dataUrlSize / 1024).toFixed(1)}KB`);
@@ -3751,7 +3767,7 @@ async compressImage(file) {
             }
         }
         
-        // 7. ФОРМИРОВАНИЕ ФИНАЛЬНЫХ ДАННЫХ
+        // 7. ФОРМИРОВАНИЕ ФИНАЛЬНЫХ ДАННЫХ - ВАЖНОЕ ИСПРАВЛЕНИЕ!
         const finalVariants = cleanedVariants.map(variant => ({
             color: variant.color,
             stocks: variant.stocks,
@@ -3760,13 +3776,17 @@ async compressImage(file) {
         
         const productData = {
             title: this.newP.title.trim(),
-            desc: (this.newP.desc || '').substring(0, 500), // Уменьшено с 1000 до 500 символов
+            desc: (this.newP.desc || '').substring(0, 500),
             price: Number(this.newP.price),
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
             hidden: !!this.newP.hidden,
             variants: finalVariants,
+            // ВАЖНО: сохраняем изображения также в корневой массив для совместимости
+            images: [...finalImages],
+            // Также сохраняем первое изображение отдельно для быстрого доступа
+            image: finalImages[0] || 'https://via.placeholder.com/300x400?text=No+Image',
             updatedAt: Date.now()
         };
         
@@ -3777,7 +3797,6 @@ async compressImage(file) {
         if (dataSize > 900000) { // 900KB для запаса
             alert(`⚠️ Внимание: данные слишком большие (${(dataSize / 1024 / 1024).toFixed(2)} MB).\nРекомендации:\n1. Уменьшите количество изображений\n2. Используйте меньше вариантов цветов\n3. Укоротите описание товара\n4. Проверьте, что изображения загружаются как URL, а не Data URL`);
             
-            // Отладочная информация
             console.log('Отладочная информация о размере:');
             console.log('- Длина описания:', productData.desc.length, 'символов');
             console.log('- Количество вариантов:', productData.variants.length);
@@ -3790,6 +3809,13 @@ async compressImage(file) {
         
         // 9. СОХРАНЕНИЕ В FIRESTORE
         console.log('Сохранение в Firestore...');
+        console.log('Структура данных для сохранения:', {
+            title: productData.title,
+            imagesCount: productData.images.length,
+            imageField: productData.image ? productData.image.substring(0, 50) + '...' : 'Нет',
+            variantsCount: productData.variants.length,
+            variantImages: productData.variants[0]?.images?.length || 0
+        });
         
         if (this.editId) {
             // Редактирование
@@ -3839,30 +3865,25 @@ async compressImage(file) {
         this.loading = false;
     }
 },
+
 cleanupAfterSave() {
-    // Очищаем превью URL для всех файлов
-    const cleanupFiles = (variants) => {
-        variants?.forEach(variant => {
-            // Локальные файлы
-            variant.localFiles?.forEach(file => {
-                if (file.preview && file.preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(file.preview);
-                }
-            });
-            
-            // Загружаемые файлы
-            variant.uploadingFiles?.forEach(file => {
-                if (file.preview && file.preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(file.preview);
-                }
-            });
+    // Очищаем все preview URL
+    const cleanupFiles = (arr) => {
+        if (!arr || !Array.isArray(arr)) return;
+        arr.forEach(item => {
+            if (item.preview && item.preview.startsWith('blob:')) {
+                URL.revokeObjectURL(item.preview);
+            }
         });
     };
     
-    // Очищаем файлы из формы
-    cleanupFiles(this.newP.variants);
+    // Очистка вариантов
+    this.newP.variants?.forEach(variant => {
+        cleanupFiles(variant.localFiles);
+        cleanupFiles(variant.uploadingFiles);
+    });
     
-    // Сбрасываем форму
+    // Сброс newP с правильной структурой
     this.newP = {
         title: '',
         desc: '',
@@ -3871,6 +3892,7 @@ cleanupAfterSave() {
         category: '',
         isNew: false,
         hidden: false,
+        images: [], // ← Добавлено для совместимости
         variants: [
             {
                 color: '',
@@ -3883,11 +3905,12 @@ cleanupAfterSave() {
     };
     
     // Сбрасываем временные размеры
-    this.tempSizes = [[]];
-    this.addSizeField(0);
+    this.tempSizes = [];
     
     // Сбрасываем режим редактирования
     this.editId = null;
+    this.fullEditMode = false;
+    this.showProductList = true;
     
     // Сбрасываем флаги редактирования у всех товаров
     this.products.forEach(p => {
@@ -4547,7 +4570,8 @@ updateChart() {
         this.cleanupAllPreviews();
     });
     const tg = window.Telegram.WebApp || {};
-     console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
+    console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
+    
     // 1. Безопасная инициализация Telegram
     if (window.Telegram?.WebApp) {
         try {
@@ -4593,18 +4617,41 @@ updateChart() {
             // Сохраняем функции отписки для очистки
             this.unsubscribers = [];
             
-            // 5.1. Товары
+            // 5.1. Товары - С ДОБАВЛЕННОЙ ОТЛАДКОЙ
             const unsubProducts = window.fb.onSnapshot(
                 window.fb.query(
                     window.fb.collection(window.db, "products"), 
                     window.fb.orderBy("createdAt", "desc")
                 ), 
                 snap => {
-                    this.products = snap.docs.map(doc => ({ 
-                        id: doc.id, 
-                        ...doc.data(), 
-                        aIdx: 0 
-                    }));
+                    this.products = snap.docs.map(doc => { 
+                        const data = doc.data();
+                        
+                        // ОТЛАДОЧНАЯ ИНФОРМАЦИЯ
+                        console.log(`Товар: ${data.title || 'Без названия'}`);
+                        console.log('Данные товара:', {
+                            id: doc.id,
+                            hasImages: !!data.images,
+                            imagesCount: data.images ? data.images.length : 0,
+                            hasImageField: !!data.image,
+                            imageUrl: data.image ? data.image.substring(0, 50) + '...' : 'Нет',
+                            hasVariants: !!data.variants,
+                            variantsCount: data.variants ? data.variants.length : 0,
+                            variantImages: data.variants ? data.variants[0]?.images?.length || 0 : 0
+                        });
+                        
+                        // Тестируем метод getProductImages
+                        const testProduct = { id: doc.id, ...data, aIdx: 0 };
+                        const images = this.getProductImages(testProduct);
+                        console.log(`getProductImages вернул: ${images.length} изображений`);
+                        console.log('Первое изображение:', images[0]?.substring(0, 50) + '...');
+                        
+                        return { 
+                            id: doc.id, 
+                            ...data, 
+                            aIdx: 0 
+                        };
+                    });
                     console.log('Products loaded:', this.products.length);
                     
                     this.$nextTick(() => {
@@ -4631,7 +4678,7 @@ updateChart() {
             );
             this.unsubscribers.push(unsubCategories);
             
-            // 5.3. ЗАКАЗЫ (ВАЖНО - ДОБАВЛЯЕМ ЭТОТ СЛУШАТЕЛЬ!)
+            // 5.3. ЗАКАЗЫ
             const unsubOrders = window.fb.onSnapshot(
                 window.fb.query(
                     window.fb.collection(window.db, "orders"),
@@ -4643,16 +4690,13 @@ updateChart() {
                         return {
                             id: doc.id,
                             ...data,
-                            // Добавляем дополнительные поля для удобства
                             displayDate: data.createdAt?.toDate 
                                 ? data.createdAt.toDate().toLocaleDateString('ru-RU')
                                 : new Date().toLocaleDateString('ru-RU')
                         };
                     });
                     console.log('Orders loaded:', this.allOrders.length);
-                    console.log('Sample order:', this.allOrders[0]);
                     
-                    // Если мы на вкладке профиля и админ - обновляем график
                     if (this.tab === 'profile' && this.isAdmin) {
                         this.$nextTick(() => {
                             setTimeout(() => {
@@ -4664,7 +4708,6 @@ updateChart() {
                 },
                 err => {
                     console.error("Orders error:", err);
-                    // Если коллекции orders не существует, создаем пустой массив
                     this.allOrders = [];
                 }
             );
@@ -4682,7 +4725,6 @@ updateChart() {
     // 6. Обработчики событий
     this.resizeHandler = () => {
         this.calculateListHeight();
-        // При ресайзе обновляем график если он есть
         if (this.tab === 'profile' && this.isAdmin && this.chart) {
             setTimeout(() => {
                 if (this.chart) {
@@ -4693,7 +4735,6 @@ updateChart() {
     };
     window.addEventListener('resize', this.resizeHandler);
 },
-
 
 beforeDestroy() {
     // 1. Отписываемся от Firebase слушателей
