@@ -1215,6 +1215,12 @@
             <label>НАЗВАНИЕ ЦВЕТА</label>
             <input v-model="v.color" class="input-admin" placeholder="Например: Черный, Белый, Красный">
         </div>
+        <div class="field" style="margin-top: 10px;">
+    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+        <input type="checkbox" v-model="v.hidden" style="width: 18px; height: 18px; accent-color: #000;"> 
+        Скрыть этот цвет
+    </label>
+</div>
         <!-- РАЗМЕРЫ И ОСТАТКИ ДЛЯ ЭТОГО ЦВЕТА -->
         <div class="field" style="margin-top: 15px;">
             <label>РАЗМЕРЫ И ОСТАТКИ (для этого цвета)</label>
@@ -1429,6 +1435,7 @@
         <span style="font-size: 16px; margin-right: 8px;">+</span>
         ДОБАВИТЬ ЕЩЕ ОДИН ЦВЕТ
     </button>
+    
 
     <!-- КНОПКИ СОХРАНЕНИЯ -->
     <div style="margin-top: 25px;">
@@ -1568,16 +1575,16 @@
                     </button>
                     
                     <!-- Кнопка 3: Скрыть/показать товар -->
-                    <button @click="toggleProductVisibility(p)" 
-                            :style="{ 
-                                background: p.hidden ? '#34c759' : '#f5f5f5',
-                                color: p.hidden ? '#fff' : '#000'
-                            }"
-                            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'"
-                            class="control-btn-compact"
-                            style="width: 45px; height: 45px;">
-                        {{ p.hidden ? '👁' : '👁‍🗨' }}
-                    </button>
+                    <button @click="toggleVariantVisibility(p, vIdx)" 
+        :style="{ 
+            background: v.hidden ? '#34c759' : '#f5f5f5',
+            color: v.hidden ? '#fff' : '#000'
+        }"
+        :title="v.hidden ? 'Показать цвет' : 'Скрыть цвет'"
+        class="control-btn-compact"
+        style="width: 45px; height: 45px;">
+    {{ v.hidden ? '👁' : '👁‍🗨' }}
+</button>
                     
                     <!-- Кнопка 4: Удалить товар -->
                     <button @click="deleteProductWithConfirm(p.id)" 
@@ -1664,15 +1671,15 @@
         </div>
         
         
-        <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
-            <div v-for="(v, idx) in selP.variants" :key="idx" 
-                 @click="currentVariantIndex = idx; selP.tempSize = null; vib();"
-                 :class="['color-badge', { active: currentVariantIndex === idx }]"
-                 style="padding: 8px 16px; border: 1px solid #eee; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s;"
-                 :style="{ background: currentVariantIndex === idx ? '#000' : '#fff', color: currentVariantIndex === idx ? '#fff' : '#000' }">
-                {{ v.color }}
-            </div>
-        </div>
+       <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
+    <div v-for="(v, idx) in visibleVariants" :key="idx" 
+         @click="currentVariantIndex = idx; selP.tempSize = null; vib();"
+         :class="['color-badge', { active: currentVariantIndex === idx }]"
+         style="padding: 8px 16px; border: 1px solid #eee; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s;"
+         :style="{ background: currentVariantIndex === idx ? '#000' : '#fff', color: currentVariantIndex === idx ? '#fff' : '#000' }">
+        {{ v.color }}
+    </div>
+</div>
 
         
 
@@ -1996,28 +2003,32 @@ Vue.createApp({
             (p.color && p.color.toLowerCase().includes(q))
         );
     },
-       filteredProducts() {
-    // 1. Быстрая проверка на наличие данных
+      filteredProducts() {
     if (!this.products || !Array.isArray(this.products)) return [];
     
     try {
-        // 2. Подготавливаем данные для поиска один раз (оптимизация)
         const query = (this.searchQuery || '').toLowerCase().trim();
         const targetCat = (this.currentCat || '').toLowerCase().trim();
 
         return this.products.filter(p => {
-            // 3. Защита: проверяем, что объект товара существует
             if (!p) return false;
 
-            // 4. СКРЫТИЕ: Если товар помечен как hidden, не показываем его клиенту
-            // (p?.hidden корректно вернет false, если свойства еще нет в базе)
+            // Если товар полностью скрыт - не показываем
             if (p?.hidden === true) return false;
 
-            // 5. ПОИСК
+            // Проверяем наличие НЕ скрытых цветов
+            const hasVisibleVariants = p.variants?.some(variant => 
+                !variant.hidden && 
+                variant.images && 
+                variant.images.length > 0
+            );
+
+            if (!hasVisibleVariants) return false;
+
+            // Остальная логика фильтрации...
             const titleMatch = query === '' || 
                 (p.title && String(p.title).toLowerCase().includes(query));
 
-            // 6. КАТЕГОРИЯ
             let catMatch = true;
             if (targetCat !== '' && targetCat !== 'все') {
                 const prodCat = p.category ? String(p.category).toLowerCase().trim() : '';
@@ -2027,9 +2038,13 @@ Vue.createApp({
             return titleMatch && catMatch;
         });
     } catch (e) {
-        console.error("Критическая ошибка фильтрации:", e);
+        console.error("Ошибка фильтрации:", e);
         return [];
     }
+},
+visibleVariants() {
+    if (!this.selP || !this.selP.variants) return [];
+    return this.selP.variants.filter(v => !v.hidden);
 },
 selVariant() {
         if (!this.openedProduct || !this.openedProduct.variants) return {};
@@ -2375,42 +2390,21 @@ getProductImages(product) {
         return [this.defaultPlaceholder];
     }
     
-    // 1. ПРОВЕРКА: Есть ли варианты цветов?
-    if (product.variants && 
-        Array.isArray(product.variants) && 
-        product.variants.length > 0) {
-        
-        // Берем ПЕРВЫЙ вариант (первый цвет) для отображения в каталоге
-        const firstVariant = product.variants[0];
-        
-        if (firstVariant.images && 
-            Array.isArray(firstVariant.images) && 
-            firstVariant.images.length > 0) {
-            
-            // Фильтруем только валидные URL
-            return firstVariant.images.filter(img => 
-                img && typeof img === 'string' && 
-                (img.startsWith('http://') || 
-                 img.startsWith('https://') || 
-                 img.startsWith('data:image/'))
-            );
-        }
+    // Берем ПЕРВЫЙ ВИДИМЫЙ вариант
+    const visibleVariant = product.variants?.find(v => 
+        !v.hidden && v.images && v.images.length > 0
+    );
+    
+    if (visibleVariant) {
+        return visibleVariant.images.filter(img => 
+            img && typeof img === 'string' && 
+            (img.startsWith('http://') || 
+             img.startsWith('https://') || 
+             img.startsWith('data:image/'))
+        );
     }
     
-    // 2. ЗАПАСНЫЕ ВАРИАНТЫ (старый формат)
-    if (product.images && Array.isArray(product.images)) {
-        return product.images.filter(img => img && typeof img === 'string');
-    }
-    
-    if (product.image && typeof product.image === 'string') {
-        return [product.image];
-    }
-    
-    if (product.img && typeof product.img === 'string') {
-        return [product.img];
-    }
-    
-    // 3. ПЛЕЙСХОЛДЕР
+    // Запасные варианты...
     return [this.defaultPlaceholder];
 },
 handleImageError(event) {
@@ -2697,6 +2691,31 @@ getProductSizes(p) {
     if (!p) return [];
     const stocks = this.getStocksObject(p);
     return Object.keys(stocks);
+},
+// В methods: добавьте новый метод
+async toggleVariantVisibility(product, variantIndex) {
+    try {
+        const variant = product.variants[variantIndex];
+        
+        // Переключаем скрытие для конкретного варианта
+        const newHiddenState = !variant.hidden;
+        
+        // Обновляем локально
+        variant.hidden = newHiddenState;
+        
+        // Сохраняем в Firebase
+        const productRef = window.fb.doc(window.db, "products", product.id);
+        await window.fb.updateDoc(productRef, {
+            variants: product.variants,
+            updatedAt: Date.now()
+        });
+        
+        this.vib('light');
+        alert(newHiddenState ? 'Цвет скрыт' : 'Цвет показан');
+    } catch (e) {
+        console.error("Ошибка:", e);
+        alert("Не удалось изменить видимость цвета");
+    }
 },
 addSizeField(vIdx) {
     // Инициализируем массив для этого варианта, если его нет
