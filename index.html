@@ -2195,7 +2195,7 @@ getProductImages(product) {
         return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
     }
     
-    // 1. НОВАЯ АРХИТЕКТУРА: проверяем variants
+    // НОВАЯ АРХИТЕКТУРА: проверяем variants
     if (product.variants && 
         Array.isArray(product.variants) && 
         product.variants.length > 0) {
@@ -2208,13 +2208,21 @@ getProductImages(product) {
             Array.isArray(firstVariant.images) && 
             firstVariant.images.length > 0) {
             
-            // Фильтруем валидные URL
+            // Фильтруем и исправляем URL
             const validImages = firstVariant.images.filter(img => {
                 if (!img || typeof img !== 'string') return false;
+                
                 const trimmed = img.trim();
+                
+                // ВАЖНО: Проверяем протокол для Telegram
+                if (trimmed.startsWith('http://')) {
+                    console.warn('⚠️ Найден HTTP URL в товаре:', trimmed);
+                    // Можно автоматически исправить
+                    return false; // Пропускаем HTTP
+                }
+                
                 return trimmed !== '' && 
-                       (trimmed.startsWith('http://') || 
-                        trimmed.startsWith('https://') || 
+                       (trimmed.startsWith('https://') || 
                         trimmed.startsWith('data:image/'));
             });
             
@@ -2224,23 +2232,7 @@ getProductImages(product) {
         }
     }
     
-    // 2. СТАРАЯ АРХИТЕКТУРА (для обратной совместимости)
-    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-        return product.images.filter(img => 
-            img && typeof img === 'string' && img.trim() !== ''
-        );
-    }
-    
-    // 3. Еще проверки для старых форматов
-    if (product.image && typeof product.image === 'string' && product.image.trim() !== '') {
-        return [product.image.trim()];
-    }
-    
-    if (product.img && typeof product.img === 'string' && product.img.trim() !== '') {
-        return [product.img.trim()];
-    }
-    
-    // 4. Плейсхолдер
+    // Плейсхолдер с HTTPS
     return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
 },
 handleImageError(e) {
@@ -2390,12 +2382,6 @@ removeLocalFileById(fileId) {
 async optimizeImage(file) {
         // Сжатие и конвертация в WebP
     },
-    
-    // 2. Быстрая загрузка на ImgBB
-    async uploadToImgBBFast(file, variantIndex, fileIndex) {
-        // Параллельная загрузка с отслеживанием прогресса
-    },
-    
     // 3. Кэширование превью
     cacheImagePreview(url, imageElement) {
         // Сохранение в кэш для быстрого повторного использования
@@ -3702,51 +3688,8 @@ removeFromCart(cartId) {
         openSupport() { window.open('https://t.me/@Asya_Candy_Bratz', '_blank'); },
         
  
- async uploadToImgBB(file, fileObj) {
-    return new Promise((resolve, reject) => {
-        const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
-        
-        // 1. Создаем FormData
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        // 2. Используем fetch с AbortController для таймаута
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-            controller.abort();
-            reject(new Error('Timeout (15 seconds)'));
-        }, 15000);
-        
-        // 3. Отправляем запрос
-        fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal
-        })
-        .then(async response => {
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result.success && result.data && result.data.url) {
-                resolve(result.data.url);
-            } else {
-                throw new Error(result.error?.message || 'Unknown ImgBB error');
-            }
-        })
-        .catch(error => {
-            clearTimeout(timeoutId);
-            reject(error);
-        });
-    });
-},
 async uploadFileToImgBB(file) {
-    console.log(`=== ЗАГРУЗКА В IMGBB: ${file.name} ===`);
+     console.log(`=== ЗАГРУЗКА В IMGBB: ${file.name} ===`);
     console.log(`Размер: ${(file.size / 1024).toFixed(1)}KB, Тип: ${file.type}`);
     
     const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
@@ -3773,94 +3716,57 @@ async uploadFileToImgBB(file) {
         console.log('=========================');
         
         if (result.success) {
-            // ImgBB возвращает URL в разных полях
-            console.log('Доступные поля в data:', Object.keys(result.data || {}));
-            
             // Ищем URL в разных полях ответа
             let imageUrl = 
                 result.data?.url || 
                 result.data?.display_url || 
                 result.data?.image?.url || 
-                (result.data?.thumb?.url) ||
-                (result.data?.medium?.url) ||
+                result.data?.thumb?.url ||
+                result.data?.medium?.url ||
                 result.data?.url_viewer;
             
             if (imageUrl) {
                 console.log('✅ Найден URL:', imageUrl);
                 
-                // ============ ВАЖНОЕ ИСПРАВЛЕНИЕ ============
+                // ============ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ============
                 // 1. Убедимся, что URL строка
                 imageUrl = String(imageUrl).trim();
                 
-                // 2. Если URL начинается с // (протокол-относительный)
-                if (imageUrl.startsWith('//')) {
-                    imageUrl = 'https:' + imageUrl;
-                    console.log('Добавлен https к протокол-относительной ссылке:', imageUrl);
-                }
-                
-                // 3. Если URL начинается с http:// → меняем на https://
-                else if (imageUrl.startsWith('http://')) {
+                // 2. ВАЖНО: Заменяем http:// на https:// для Telegram
+                if (imageUrl.startsWith('http://')) {
                     imageUrl = imageUrl.replace('http://', 'https://');
-                    console.log('Заменен http на https:', imageUrl);
+                    console.log('✅ Исправлен протокол:', imageUrl);
                 }
                 
-                // 4. Если URL без протокола → добавляем https://
-                else if (!imageUrl.startsWith('https://') && 
-                         !imageUrl.startsWith('data:') &&
-                         !imageUrl.includes('placehold.co')) {
-                    // Проверяем, является ли это доменом ImgBB
-                    if (imageUrl.includes('.ibb.co') || 
-                        imageUrl.includes('i.ibb.co') || 
-                        imageUrl.includes('ibb.co')) {
-                        imageUrl = 'https://' + imageUrl;
+                // 3. Если URL без протокола, добавляем https://
+                if (!imageUrl.startsWith('https://') && 
+                    !imageUrl.startsWith('data:') &&
+                    !imageUrl.includes('placehold.co')) {
+                    imageUrl = 'https://' + imageUrl;
+                    console.log('✅ Добавлен протокол:', imageUrl);
+                }
+                
+                // 4. Проверяем, что это валидный URL
+                try {
+                    new URL(imageUrl);
+                    console.log('✅ Валидный URL:', imageUrl);
+                    return imageUrl;
+                } catch (e) {
+                    console.error('❌ Невалидный URL:', imageUrl);
+                    
+                    // Fallback: используем Data URL для маленьких файлов
+                    if (compressedFile.size < 100 * 1024) {
+                        console.log('🔄 Использую Data URL как fallback');
+                        return await this.fileToDataURL(compressedFile);
                     }
-                    console.log('Добавлен https протокол:', imageUrl);
+                    
+                    // Или используем HTTPS placeholder
+                    console.log('🔄 Использую HTTPS placeholder');
+                    return 'https://placehold.co/300x400/ffffff/000000?text=No+Image';
                 }
-                
-                // 5. Для ImgBB есть специальный формат .png?...
-                if (imageUrl.includes('.png?') || imageUrl.includes('.jpg?')) {
-                    // Убедимся, что URL валиден
-                    try {
-                        new URL(imageUrl);
-                    } catch (e) {
-                        // Если невалидный URL, исправляем
-                        if (imageUrl.startsWith('https://') || imageUrl.startsWith('http://')) {
-                            // URL уже имеет протокол
-                        } else if (imageUrl.startsWith('i.ibb.co/')) {
-                            imageUrl = 'https://' + imageUrl;
-                        }
-                    }
-                }
-                
-                // 6. Финальная проверка: должен быть HTTPS
-                if (!imageUrl.startsWith('https://') && !imageUrl.startsWith('data:')) {
-                    console.warn('⚠️ URL все еще не HTTPS, форсируем...');
-                    imageUrl = 'https://' + imageUrl.replace(/^https?:\/\//, '');
-                }
-                
-                console.log('✅ Финальный URL (гарантированно HTTPS):', imageUrl);
-                return imageUrl;
                 
             } else {
-                console.error('❌ ImgBB не вернул URL. Структура ответа:');
-                console.log('- data:', result.data);
-                console.log('- data.url:', result.data?.url);
-                console.log('- data.display_url:', result.data?.display_url);
-                console.log('- data.image:', result.data?.image);
-                console.log('- data.thumb:', result.data?.thumb);
-                console.log('- data.medium:', result.data?.medium);
-                console.log('- data.url_viewer:', result.data?.url_viewer);
-                
-                // Fallback на другой формат
-                if (result.data && result.data.image && result.data.image.url) {
-                    let fallbackUrl = result.data.image.url;
-                    if (fallbackUrl.startsWith('http://')) {
-                        fallbackUrl = fallbackUrl.replace('http://', 'https://');
-                    }
-                    console.log('Использован fallback URL:', fallbackUrl);
-                    return fallbackUrl;
-                }
-                
+                console.error('❌ ImgBB не вернул URL');
                 throw new Error('ImgBB не вернул URL изображения');
             }
         } else {
@@ -3870,13 +3776,13 @@ async uploadFileToImgBB(file) {
     } catch (error) {
         console.error('❌ Ошибка загрузки в ImgBB:', error);
         
-        // Fallback на Data URL
+        // Fallback: Data URL для маленьких файлов
         if (compressedFile.size < 100 * 1024) {
             console.log('🔄 Использую Data URL как fallback');
             return await this.fileToDataURL(compressedFile);
         }
         
-        // Если файл большой, используем HTTPS placeholder
+        // Или HTTPS placeholder
         console.log('🔄 Использую HTTPS placeholder');
         return 'https://placehold.co/300x400/ffffff/000000?text=No+Image';
     }
@@ -3922,6 +3828,11 @@ compressImageFast(file) {
                 });
                 resolve(compressedFile);
             }, 'image/jpeg', 0.75);
+        };
+        
+        img.onerror = () => {
+            console.warn('Ошибка загрузки изображения для сжатия, использую оригинал');
+            resolve(file);
         };
         
         img.src = URL.createObjectURL(file);
