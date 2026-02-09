@@ -2089,12 +2089,12 @@ selVariant() {
                 }, 0);
             },
     },
-    watch: {
+   watch: {
     products: {
         handler(newProducts) {
-            // При изменении списка товаров сбрасываем выбор цветов для скрытых вариантов
-            newProducts.forEach(product => {
-                this.resetActiveColorIfHidden(product);
+            // При любом изменении товаров корректируем активные цвета
+            this.$nextTick(() => {
+                this.correctAllActiveColors();
             });
         },
         deep: true
@@ -2404,14 +2404,14 @@ handleImageError(e) {
         e.target.style.fontWeight = 'bold';
     }
 },
-      setCategory(name) {
+     setCategory(name) {
     try {
         this.vib();
-        // "Все товары" сбрасывают в пустую строку строго
         this.currentCat = name || '';
         
-        // Сбрасываем активные цвета при смене категории
+        // Сбрасываем и корректируем активные цвета
         this.catalogActiveColors = {};
+        this.correctAllActiveColors();
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
@@ -2436,8 +2436,20 @@ getVisibleVariants(product) {
 
 // Метод для получения активного индекса цвета среди видимых
 getActiveColorIndex(product) {
-    if (!product || !product.id) return 0;
-    return this.catalogActiveColors[product.id] || 0;
+    if (!product || !product.id || !product.variants) return 0;
+    
+    let currentIndex = this.catalogActiveColors[product.id] || 0;
+    
+    // Получаем видимые варианты
+    const visibleVariants = product.variants.filter(v => !v.hidden);
+    
+    // Если текущий индекс превышает количество видимых вариантов, сбрасываем
+    if (currentIndex >= visibleVariants.length) {
+        currentIndex = 0;
+        this.$set(this.catalogActiveColors, product.id, currentIndex);
+    }
+    
+    return currentIndex;
 },
 
 // Метод для выбора видимого цвета
@@ -2458,31 +2470,25 @@ selectVisibleColor(product, variant) {
         this.vib();
     }
 },
-  getProductImages(product) {
+ getProductImages(product) {
     if (!product || !product.id || !product.variants) {
         return [this.defaultPlaceholder];
     }
     
-    // Получаем список ВИДИМЫХ вариантов
-    const visibleVariants = product.variants.filter(v => 
-        !v.hidden && v.images && v.images.length > 0
-    );
+    // Получаем видимые варианты
+    const visibleVariants = product.variants.filter(v => !v.hidden);
     
-    // Если нет видимых вариантов - плейсхолдер
     if (!visibleVariants || visibleVariants.length === 0) {
         return [this.defaultPlaceholder];
     }
     
-    // Получаем индекс активного цвета для этого товара
-    let activeIndex = this.catalogActiveColors[product.id] || 0;
+    // Используем исправленный метод getActiveColorIndex
+    const activeIndex = this.getActiveColorIndex(product);
     
-    // Проверяем, что активный индекс не превышает количество видимых вариантов
     if (activeIndex >= visibleVariants.length) {
-        activeIndex = 0;
-        this.$set(this.catalogActiveColors, product.id, activeIndex);
+        return [this.defaultPlaceholder];
     }
     
-    // Берем изображения из активного ВИДИМОГО варианта
     const activeVariant = visibleVariants[activeIndex];
     
     if (activeVariant && activeVariant.images && activeVariant.images.length > 0) {
@@ -2550,6 +2556,21 @@ toggleEditSizes(product, variantIndex) {
         variant.editState = false;
     }
     this.vib();
+},
+correctAllActiveColors() {
+    if (!this.products) return;
+    
+    this.products.forEach(product => {
+        if (product && product.variants) {
+            const currentIndex = this.catalogActiveColors[product.id] || 0;
+            const visibleVariants = product.variants.filter(v => !v.hidden);
+            
+            // Если индекс указывает на скрытый вариант или вне диапазона
+            if (currentIndex >= visibleVariants.length) {
+                this.$set(this.catalogActiveColors, product.id, 0);
+            }
+        }
+    });
 },
 // Удаление файла по I
 
@@ -2833,6 +2854,7 @@ async toggleVariantVisibility(product, variantIndex) {
         
         // Переключаем скрытие для конкретного варианта
         const newHiddenState = !variant.hidden;
+        this.correctAllActiveColors();
         
         // Обновляем локально
         variant.hidden = newHiddenState;
