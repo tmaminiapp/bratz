@@ -2121,24 +2121,36 @@ handleFilesForVariant(event, variantIndex) {
     }
 },
 handleImageError(e) {
+    console.log('Telegram WebApp не загрузил изображение');
+    
     const originalSrc = e.target.src;
-    console.warn('Telegram не загрузил изображение:', originalSrc?.substring(0, 100));
     
-    // Используем безопасный плейсхолдер
-    e.target.src = this.placeholders.gray;
+    // Пробуем исправить URL
+    const fixedUrl = this.fixUrlForTelegram(originalSrc);
     
-    // Предотвращаем дальнейшие ошибки
-    e.target.onerror = null;
-    
-    // Стили для плейсхолдера
-    e.target.style.opacity = '0.9';
-    e.target.style.backgroundColor = 'transparent';
-    e.target.style.filter = 'none';
-    
-    // Добавляем небольшую анимацию
-    e.target.style.transition = 'opacity 0.3s ease';
-    
-    console.log('Изображение заменено на безопасный SVG плейсхолдер');
+    if (fixedUrl && fixedUrl !== originalSrc) {
+        console.log('Пробуем исправленный URL:', fixedUrl);
+        
+        // Даем изображению новую жизнь
+        setTimeout(() => {
+            e.target.src = fixedUrl;
+            
+            // Второй шанс с задержкой
+            setTimeout(() => {
+                if (e.target.complete && e.target.naturalWidth > 0) {
+                    console.log('Изображение загрузилось после исправления!');
+                } else {
+                    console.log('Исправленный URL не сработал, используем плейсхолдер');
+                    e.target.src = this.createTelegramPlaceholder();
+                    e.target.onerror = null;
+                }
+            }, 500);
+        }, 100);
+    } else {
+        // Используем плейсхолдер
+        e.target.src = this.createTelegramPlaceholder();
+        e.target.onerror = null;
+    }
 },
         setCategory(name) {
             try {
@@ -2167,10 +2179,9 @@ toggleDescription(productId) {
     
 getProductImages(product) {
     if (!product) {
-        return [this.placeholders.gray];
+        return [this.createTelegramPlaceholder()];
     }
     
-    // НОВАЯ АРХИТЕКТУРА: проверяем variants
     if (product.variants && 
         Array.isArray(product.variants) && 
         product.variants.length > 0) {
@@ -2181,55 +2192,69 @@ getProductImages(product) {
             Array.isArray(firstVariant.images) && 
             firstVariant.images.length > 0) {
             
-            // Фильтруем изображения для Telegram
-            const validImages = firstVariant.images.filter(img => {
-                if (!img || typeof img !== 'string') return false;
+            // Обрабатываем каждый URL для Telegram
+            const telegramImages = firstVariant.images.map(img => {
+                if (!img || typeof img !== 'string') return null;
                 
-                const trimmed = img.trim();
+                let url = img.trim();
                 
-                // Telegram требует HTTPS или Data URL
-                if (trimmed.startsWith('http://')) {
-                    console.warn('Telegram блокирует HTTP, используем плейсхолдер');
-                    return false;
-                }
-                
-                if (trimmed.startsWith('https://')) {
-                    // Проверяем безопасные домены
-                    const urlObj = new URL(trimmed);
-                    const hostname = urlObj.hostname;
-                    
-                    // Разрешенные домены для Telegram
-                    const safeDomains = [
-                        'i.ibb.co',     // ImgBB CDN
-                        'ibb.co',       // ImgBB
-                        'imgbb.com',    // ImgBB
-                        'telegra.ph',   // Telegraph (Telegram)
-                        't.me'          // Telegram
-                    ];
-                    
-                    const isSafe = safeDomains.some(domain => hostname.includes(domain));
-                    
-                    if (!isSafe) {
-                        console.warn('Домен не в списке безопасных для Telegram:', hostname);
-                    }
-                    
-                    return isSafe;
-                }
-                
-                // Разрешаем data URL
-                return trimmed.startsWith('data:image/');
-            });
+                // Исправляем URL для Telegram
+                return this.fixUrlForTelegram(url);
+            }).filter(img => img !== null);
             
-            if (validImages.length > 0) {
-                return validImages;
+            if (telegramImages.length > 0) {
+                return telegramImages;
             }
         }
     }
     
-    // Используем безопасный плейсхолдер для Telegram
-    return [this.placeholders.gray];
+    return [this.createTelegramPlaceholder()];
 },
 
+// Добавьте метод для исправления URL
+fixUrlForTelegram(url) {
+    if (!url || typeof url !== 'string') return null;
+    
+    let fixedUrl = url.trim();
+    
+    // 1. Гарантируем HTTPS
+    fixedUrl = fixedUrl.replace('http://', 'https://');
+    
+    // 2. Исправляем ImgBB URL для Telegram
+    if (fixedUrl.includes('i.ibb.co')) {
+        // Это уже CDN URL, хороший формат
+        console.log('Используем ImgBB CDN URL для Telegram:', fixedUrl);
+    } 
+    else if (fixedUrl.includes('imgbb.com')) {
+        // Конвертируем в CDN URL
+        const match = fixedUrl.match(/imgbb\.com\/(.+)/);
+        if (match && match[1]) {
+            fixedUrl = `https://i.ibb.co/${match[1]}`;
+            console.log('Конвертирован в CDN URL:', fixedUrl);
+        }
+    }
+    
+    // 3. Заменяем .webp на .jpg для Telegram
+    if (fixedUrl.includes('.webp')) {
+        fixedUrl = fixedUrl.replace('.webp', '.jpg');
+        console.log('Исправлено расширение для Telegram:', fixedUrl);
+    }
+    
+    return fixedUrl;
+},
+
+// Простой плейсхолдер для Telegram
+createTelegramPlaceholder() {
+    return 'data:image/svg+xml;base64,' + btoa(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+            <rect width="300" height="400" fill="#f5f5f5"/>
+            <rect width="260" height="300" x="20" y="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+            <text x="150" y="220" font-family="Arial" font-size="14" fill="#999" text-anchor="middle">
+                Загрузка...
+            </text>
+        </svg>
+    `);
+},
 
     getShortDescription(fullDesc) {
         if (!fullDesc) return 'Нажмите для просмотра описания';
@@ -3618,103 +3643,89 @@ removeFromCart(cartId) {
         
  
 async uploadFileToImgBB(file) {
-     console.log(`=== ЗАГРУЗКА В IMGBB: ${file.name} ===`);
-    console.log(`Размер: ${(file.size / 1024).toFixed(1)}KB, Тип: ${file.type}`);
+    console.log(`=== ЗАГРУЗКА В IMGBB: ${file.name} ===`);
     
-    const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
+    // Конвертируем .webp в .jpg для Telegram
+    let processedFile = file;
     
-    // Сначала сжимаем изображение
-    const compressedFile = await this.compressImageFast(file);
-    console.log(`После сжатия: ${compressedFile.size} байт (${(compressedFile.size / 1024).toFixed(1)}KB)`);
+    if (file.name.toLowerCase().endsWith('.webp') || file.type === 'image/webp') {
+        console.log('Конвертируем WebP в JPEG для совместимости с Telegram...');
+        processedFile = await this.convertWebpToJpeg(file);
+    }
     
     const formData = new FormData();
-    formData.append('image', compressedFile);
+    formData.append('image', processedFile);
     
     try {
-        console.log('Отправка запроса к ImgBB...');
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${this.IMGBB_API_KEY}`, {
             method: 'POST',
             body: formData
         });
         
-        console.log('Статус ответа:', response.status, response.statusText);
         const result = await response.json();
         
-        console.log('=== ПОЛНЫЙ ОТВЕТ IMGBB ===');
-        console.log(JSON.stringify(result, null, 2));
-        console.log('=========================');
-        
         if (result.success) {
-            // Ищем URL в разных полях ответа
-            let imageUrl = 
-                result.data?.url || 
-                result.data?.display_url || 
-                result.data?.image?.url || 
-                result.data?.thumb?.url ||
-                result.data?.medium?.url ||
-                result.data?.url_viewer;
+            let imageUrl = result.data?.url || 
+                          result.data?.display_url || 
+                          result.data?.image?.url || 
+                          result.data?.thumb?.url ||
+                          result.data?.url_viewer;
             
             if (imageUrl) {
                 console.log('✅ Найден URL:', imageUrl);
                 
-                // ============ КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ============
-                // 1. Убедимся, что URL строка
-                imageUrl = String(imageUrl).trim();
+                // ВАЖНО: Используем direct URL от ImgBB
+                const directUrl = result.data?.image?.url || imageUrl;
                 
-                // 2. ВАЖНО: Заменяем http:// на https:// для Telegram
-                if (imageUrl.startsWith('http://')) {
-                    imageUrl = imageUrl.replace('http://', 'https://');
-                    console.log('✅ Исправлен протокол:', imageUrl);
+                // Для Telegram лучше использовать .jpg/.png
+                let telegramUrl = directUrl;
+                
+                if (telegramUrl.includes('.webp')) {
+                    telegramUrl = telegramUrl.replace('.webp', '.jpg');
+                    console.log('Исправлено расширение для Telegram:', telegramUrl);
                 }
                 
-                // 3. Если URL без протокола, добавляем https://
-                if (!imageUrl.startsWith('https://') && 
-                    !imageUrl.startsWith('data:') &&
-                    !imageUrl.includes('placehold.co')) {
-                    imageUrl = 'https://' + imageUrl;
-                    console.log('✅ Добавлен протокол:', imageUrl);
-                }
+                // Гарантируем HTTPS
+                telegramUrl = telegramUrl.replace('http://', 'https://');
                 
-                // 4. Проверяем, что это валидный URL
-                try {
-                    new URL(imageUrl);
-                    console.log('✅ Валидный URL:', imageUrl);
-                    return imageUrl;
-                } catch (e) {
-                    console.error('❌ Невалидный URL:', imageUrl);
-                    
-                    // Fallback: используем Data URL для маленьких файлов
-                    if (compressedFile.size < 100 * 1024) {
-                        console.log('🔄 Использую Data URL как fallback');
-                        return await this.fileToDataURL(compressedFile);
-                    }
-                    
-                    // Или используем HTTPS placeholder
-                    console.log('🔄 Использую HTTPS placeholder');
-                    return 'https://placehold.co/300x400/f5f5f5/999999?text=No+Image';
-                }
-                
-            } else {
-                console.error('❌ ImgBB не вернул URL');
-                throw new Error('ImgBB не вернул URL изображения');
+                return telegramUrl;
             }
-        } else {
-            console.error('❌ ImgBB вернул ошибку:', result.error);
-            throw new Error(result.error?.message || `ImgBB error: ${result.status}`);
         }
     } catch (error) {
-        console.error('❌ Ошибка загрузки в ImgBB:', error);
-        
-        // Fallback: Data URL для маленьких файлов
-        if (compressedFile.size < 100 * 1024) {
-            console.log('🔄 Использую Data URL как fallback');
-            return await this.fileToDataURL(compressedFile);
-        }
-        
-        // Или HTTPS placeholder
-        console.log('🔄 Использую HTTPS placeholder');
-        return 'https://placehold.co/300x400/ffffff/000000?text=No+Image';
+        console.error('❌ Ошибка загрузки:', error);
+        // Fallback на data URL
+        return await this.fileToDataURL(processedFile);
     }
+},
+
+// Добавьте метод конвертации WebP в JPEG
+async convertWebpToJpeg(webpFile) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                const jpegFile = new File([blob], webpFile.name.replace('.webp', '.jpg'), {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                });
+                resolve(jpegFile);
+            }, 'image/jpeg', 0.85);
+        };
+        
+        img.onerror = () => {
+            console.warn('Не удалось конвертировать WebP, используем оригинал');
+            resolve(webpFile);
+        };
+        
+        img.src = URL.createObjectURL(webpFile);
+    });
 },
 // Быстрое сжатие изображения
 compressImageFast(file) {
@@ -4559,6 +4570,55 @@ cleanupAllPreviews() {
         
         console.log('Созданы безопасные плейсхолдеры для Telegram');
     },
+    testTelegramImageLoad() {
+    // Ждем загрузки продуктов
+    setTimeout(() => {
+        if (this.products && this.products.length > 0) {
+            const testImage = this.getProductImages(this.products[0])[0];
+            console.log('=== ТЕСТ ИЗОБРАЖЕНИЯ ДЛЯ TELEGRAM ===');
+            console.log('URL:', testImage);
+            console.log('Is HTTPS:', testImage.startsWith('https://'));
+            console.log('Is data URL:', testImage.startsWith('data:'));
+            
+            // Пробуем загрузить
+            const testImg = new Image();
+            testImg.onload = () => {
+                console.log('✅ Изображение загружается в фоне');
+                // Сохраняем для кэша
+                this.imagePreviewCache.set(testImage, true);
+            };
+            testImg.onerror = () => {
+                console.log('❌ Telegram блокирует это изображение');
+                this.imagePreviewCache.set(testImage, false);
+            };
+            testImg.src = testImage;
+        }
+    }, 3000);
+},
+async uploadToTelegraph(file) {
+    // Telegraph API от Telegram
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('https://telegra.ph/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result[0]?.src) {
+            const telegraphUrl = 'https://telegra.ph' + result[0].src;
+            console.log('Загружено на Telegraph (Telegram):', telegraphUrl);
+            return telegraphUrl;
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки на Telegraph:', error);
+    }
+    
+    return null;
+},
 updateChart() {
     console.log('=== updateChart() called ===');
     console.log('Current tab:', this.tab);
@@ -4742,6 +4802,7 @@ updateChart() {
 }
     },
  mounted() {
+
     window.addEventListener('beforeunload', () => {
         this.cleanupAllPreviews();
     });
@@ -4759,6 +4820,7 @@ updateChart() {
     }
     
     // 2. Данные пользователя с fallback
+     this.testTelegramImageLoad();
     this.user = window.Telegram?.WebApp?.initDataUnsafe?.user || { 
         id: 387881523, 
         first_name: 'Admin_Test' 
