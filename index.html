@@ -3643,18 +3643,8 @@ removeFromCart(cartId) {
         
  
 async uploadFileToImgBB(file) {
-    console.log(`=== ЗАГРУЗКА В IMGBB: ${file.name} ===`);
-    
-    // Конвертируем .webp в .jpg для Telegram
-    let processedFile = file;
-    
-    if (file.name.toLowerCase().endsWith('.webp') || file.type === 'image/webp') {
-        console.log('Конвертируем WebP в JPEG для совместимости с Telegram...');
-        processedFile = await this.convertWebpToJpeg(file);
-    }
-    
     const formData = new FormData();
-    formData.append('image', processedFile);
+    formData.append('image', file);
     
     try {
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${this.IMGBB_API_KEY}`, {
@@ -3663,38 +3653,25 @@ async uploadFileToImgBB(file) {
         });
         
         const result = await response.json();
+        console.log('ImgBB Response:', result); // ← ДОБАВЬТЕ ЭТОТ ЛОГ!
         
         if (result.success) {
-            let imageUrl = result.data?.url || 
-                          result.data?.display_url || 
-                          result.data?.image?.url || 
-                          result.data?.thumb?.url ||
-                          result.data?.url_viewer;
+            // ВАЖНО: Берем direct URL, а не display_url
+            const directUrl = result.data?.image?.url || result.data?.url;
             
-            if (imageUrl) {
-                console.log('✅ Найден URL:', imageUrl);
+            if (directUrl) {
+                // Исправляем для Telegram
+                let telegramUrl = directUrl
+                    .replace('http://', 'https://')
+                    .replace('.webp', '.jpg');
                 
-                // ВАЖНО: Используем direct URL от ImgBB
-                const directUrl = result.data?.image?.url || imageUrl;
-                
-                // Для Telegram лучше использовать .jpg/.png
-                let telegramUrl = directUrl;
-                
-                if (telegramUrl.includes('.webp')) {
-                    telegramUrl = telegramUrl.replace('.webp', '.jpg');
-                    console.log('Исправлено расширение для Telegram:', telegramUrl);
-                }
-                
-                // Гарантируем HTTPS
-                telegramUrl = telegramUrl.replace('http://', 'https://');
-                
+                console.log('✅ Загружен URL:', telegramUrl);
                 return telegramUrl;
             }
         }
     } catch (error) {
-        console.error('❌ Ошибка загрузки:', error);
-        // Fallback на data URL
-        return await this.fileToDataURL(processedFile);
+        console.error('❌ Ошибка загрузки в ImgBB:', error);
+        return null;
     }
 },
 
@@ -3845,100 +3822,83 @@ async saveProduct() {
     this.loading = true;
     
     try {
-        // 5. ПОДГОТОВКА ВАРИАНТОВ С ФОТОГРАФИЯМИ
         const preparedVariants = [];
         
+        // ОБРАБОТКА КАЖДОГО ВАРИАНТА (ЦВЕТА)
         for (let i = 0; i < this.newP.variants.length; i++) {
             const variant = this.newP.variants[i];
-            const currentVariant = this.newP.variants[i];
-            const variantImages = [];
+            const uploadedImages = []; // Массив для загруженных URL
             
             console.log(`\nОбработка цвета "${variant.color}":`);
             
-            // 5.1. Обрабатываем локальные файлы (новые фото)
-            if (currentVariant.localFiles?.length > 0) {
-                console.log(`- Загрузка ${currentVariant.localFiles.length} новых фото`);
+            // 1. ЗАГРУЗКА ЛОКАЛЬНЫХ ФАЙЛОВ
+            if (variant.localFiles?.length > 0) {
+                console.log(`- Загрузка ${variant.localFiles.length} новых фото`);
                 
-                for (const fileObj of currentVariant.localFiles) {
+                for (const fileObj of variant.localFiles) {
                     try {
                         console.log(`Загружаем: ${fileObj.file.name}`);
                         const imageUrl = await this.uploadFileToImgBB(fileObj.file);
                         
                         if (imageUrl) {
-                            variantImages.push(imageUrl);
-                            console.log(`✅ Успешно: ${imageUrl.substring(0, 50)}...`);
+                            uploadedImages.push(imageUrl);
+                            console.log(`✅ Успешно: ${imageUrl}`);
                         }
                     } catch (uploadError) {
-                        console.error(`❌ Ошибка загрузки ${fileObj.file.name}:`, uploadError);
-                        
-                        // Fallback: Data URL для маленьких файлов
-                        if (fileObj.file.size < 100 * 1024) {
-                            try {
-                                const dataUrl = await this.fileToDataURL(fileObj.file);
-                                variantImages.push(dataUrl);
-                                console.log(`⚠️ Использован Data URL`);
-                            } catch (dataError) {
-                                console.error('Ошибка Data URL:', dataError);
-                            }
-                        }
+                        console.error(`❌ Ошибка загрузки:`, uploadError);
                     }
                 }
             }
             
-            // 5.2. Добавляем существующие фото (при редактировании)
-            if (currentVariant.images?.length > 0) {
-                console.log(`- Добавлено ${currentVariant.images.length} существующих фото`);
-                currentVariant.images.forEach(img => {
-                    if (img?.trim() && !variantImages.includes(img)) {
-                        variantImages.push(img);
+            // 2. ЗАГРУЗКА ФАЙЛОВ ИЗ uploadingFiles (при редактировании)
+            if (variant.uploadingFiles?.length > 0) {
+                console.log(`- Загрузка ${variant.uploadingFiles.length} файлов из editing`);
+                
+                for (const fileObj of variant.uploadingFiles) {
+                    try {
+                        if (fileObj.status === 'completed' && fileObj.serverUrl) {
+                            // Если уже загружено ранее
+                            uploadedImages.push(fileObj.serverUrl);
+                        } else if (fileObj.file) {
+                            // Если нужно загрузить
+                            const imageUrl = await this.uploadFileToImgBB(fileObj.file);
+                            if (imageUrl) {
+                                uploadedImages.push(imageUrl);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Ошибка загрузки файла:', error);
+                    }
+                }
+            }
+            
+            // 3. ДОБАВЛЯЕМ СУЩЕСТВУЮЩИЕ ФОТО (при редактировании)
+            if (variant.images?.length > 0) {
+                variant.images.forEach(img => {
+                    if (img?.trim() && !uploadedImages.includes(img)) {
+                        uploadedImages.push(img);
                     }
                 });
             }
             
-            // 5.3. Если фото нет - используем placeholder
-            if (variantImages.length === 0) {
-                variantImages.push('https://placehold.co/300x400/ffffff/000000?text=No+Image');
-                console.log('⚠️ Использован placeholder');
+            // 4. ЕСЛИ ФОТО НЕТ - ИСПОЛЬЗУЕМ ПЛЕЙСХОЛДЕР
+            if (uploadedImages.length === 0) {
+                uploadedImages.push(this.defaultPlaceholder);
             }
             
-            // 5.4. Ограничиваем количество фото
-            const finalImages = variantImages.slice(0, 5);
+            // 5. ОГРАНИЧИВАЕМ КОЛИЧЕСТВО (макс 10)
+            const finalImages = uploadedImages.slice(0, 10);
             
-            // 5.5. Создаем финальный вариант
+            // 6. ДЕБАГ: Показываем, какие URL сохраняются
+            console.log(`Сохраненные URL для цвета ${variant.color}:`, finalImages);
+            
+            // 7. СОЗДАЕМ ВАРИАНТ С ИЗОБРАЖЕНИЯМИ
             preparedVariants.push({
                 color: variant.color?.trim() || `Цвет ${i + 1}`,
                 stocks: variant.stocks || {},
-                images: finalImages
+                images: finalImages // ← ВАЖНО: сохраняем images здесь!
             });
-            
-            console.log(`Итог: ${finalImages.length} фото, ${Object.keys(variant.stocks || {}).length} размеров`);
         }
-        
-        // 6. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ FIRESTORE
-        const productData = {
-            title: this.newP.title.trim(),
-            desc: (this.newP.desc || '').trim(),
-            price: Number(this.newP.price),
-            oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
-            category: this.newP.category.trim(),
-            isNew: Boolean(this.newP.isNew),
-            hidden: Boolean(this.newP.hidden),
-            variants: preparedVariants,
-            updatedAt: Date.now()
-        };
-        
-        // 7. ПРОВЕРКА РАЗМЕРА ДАННЫХ
-        const jsonData = JSON.stringify(productData);
-        const dataSize = new Blob([jsonData]).size;
-        
-        console.log(`Размер данных: ${(dataSize / 1024 / 1024).toFixed(2)} MB`);
-        
-        if (dataSize > 900000) {
-            alert(`⚠️ Данные слишком большие (${(dataSize / 1024 / 1024).toFixed(2)} MB).\nУменьшите количество фото или вариантов.`);
-            this.loading = false;
-            return;
-        }
-        
         // 8. СОХРАНЕНИЕ В FIRESTORE
         console.log('Сохранение в Firestore...');
         
