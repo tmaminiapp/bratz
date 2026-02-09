@@ -2059,41 +2059,57 @@ getProductImages(product) {
     return [];
 },
 handleFilesForVariant(e, vIdx) {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    const variant = this.newP.variants[vIdx];
+    
+    // Инициализируем массивы если их нет
+    if (!variant.localFiles) variant.localFiles = [];
+    if (!variant.uploadingFiles) variant.uploadingFiles = [];
+    
+    // Проверяем общий лимит
+    const totalImages = this.countTotalImages();
+    if (totalImages + files.length > this.MAX_TOTAL_IMAGES) {
+        alert(`Максимум ${this.MAX_TOTAL_IMAGES} изображений. Сейчас: ${totalImages}`);
+        return;
+    }
+    
+    for (const file of files) {
+        if (!file.type.startsWith('image/')) {
+            alert(`Файл "${file.name}" не является изображением`);
+            continue;
+        }
         
-        const variant = this.newP.variants[vIdx];
+        // ⭐ ЕДИНЫЙ ЛИМИТ ⭐
+        if (file.size > this.MAX_FILE_SIZE) {
+            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум ${this.MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+            continue;
+        }
         
-        // Инициализируем массивы если их нет
-        if (!variant.localFiles) variant.localFiles = [];
-        if (!variant.uploadingFiles) variant.uploadingFiles = [];
+        const previewUrl = URL.createObjectURL(file);
+        const fileObj = {
+            id: Date.now() + Math.random(),
+            file: file,
+            preview: previewUrl,
+            name: file.name,
+            status: 'pending',
+            size: file.size,
+            type: file.type
+        };
         
-        files.forEach(file => {
-            if (!file.type.startsWith('image/')) {
-                alert(`Файл "${file.name}" не является изображением`);
-                return;
-            }
-            
-            const previewUrl = URL.createObjectURL(file);
-            const fileObj = {
-                id: Date.now() + Math.random(),
-                file: file,
-                preview: previewUrl,
-                name: file.name,
-                status: 'pending'
-            };
-            
-            // Добавляем в соответствующий массив
-            if (this.editId) {
-                variant.uploadingFiles.push(fileObj);
-            } else {
-                variant.localFiles.push(fileObj);
-            }
-        });
+        // Добавляем в соответствующий массив
+        if (this.editId) {
+            variant.uploadingFiles.push(fileObj);
+        } else {
+            variant.localFiles.push(fileObj);
+        }
         
-        e.target.value = '';
         this.vib();
-    },
+    }
+    
+    e.target.value = '';
+},
     getShortDescription(fullDesc) {
         if (!fullDesc) return 'Нажмите для просмотра описания';
         
@@ -2145,48 +2161,7 @@ rremoveEditNewFileById(fileId) {
         this.vib();
     }
 },
-handleVariantFiles(e, vIdx) {
-    const files = Array.from(e.target.files);
-    const variant = this.newP.variants[vIdx];
-    
-    if (!variant.localFiles) {
-        variant.localFiles = [];
-    }
-    
-    // Проверяем общий лимит изображений
-    const totalImages = this.countTotalImages();
-    if (totalImages + files.length > 10) { // Максимум 10 изображений всего
-        alert(`Максимальное количество изображений - 10. Сейчас уже: ${totalImages}`);
-        return;
-    }
-    
-    for (const file of files) {
-        if (!file.type.startsWith('image/')) {
-            alert(`Файл "${file.name}" не является изображением. Пропускаем.`);
-            continue;
-        }
-        
-        if (file.size > 10 * 1024 * 1024) {
-            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 10MB.`);
-            continue;
-        }
-        
-        const previewUrl = URL.createObjectURL(file);
-        
-        variant.localFiles.push({
-            id: Date.now() + Math.random(),
-            file: file,
-            preview: previewUrl,
-            name: file.name,
-            size: file.size,
-            type: file.type
-        });
-        
-        this.vib();
-    }
-    
-    e.target.value = '';
-},
+
 countTotalImages() {
     let count = 0;
     
@@ -2705,57 +2680,45 @@ async handleEditFiles(e) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     
-    // Если editNewFiles еще не инициализирован, создаем пустой массив
-    if (!this.editNewFiles) {
-        this.editNewFiles = [];
+    if (!this.editNewFiles) this.editNewFiles = [];
+    
+    // Проверка лимита
+    const totalImages = this.countTotalImages();
+    if (totalImages + files.length > this.MAX_TOTAL_IMAGES) {
+        alert(`Максимум ${this.MAX_TOTAL_IMAGES} изображений. Сейчас: ${totalImages}`);
+        return;
     }
     
-    console.log('handleEditFiles: получено файлов:', files.length);
-    
     for (let file of files) {
-        // Проверяем тип файла
         if (!file.type.startsWith('image/')) {
             alert(`Файл "${file.name}" не является изображением. Пропускаем.`);
             continue;
         }
         
-        // Проверяем размер файла (максимум 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 10MB.`);
+        // ⭐ ЕДИНЫЙ ЛИМИТ ⭐
+        if (file.size > this.MAX_FILE_SIZE) {
+            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум ${this.MAX_FILE_SIZE / (1024 * 1024)}MB.`);
             continue;
         }
         
-        // Только создаем превью, загрузку откладываем до saveProduct()
         const previewUrl = URL.createObjectURL(file);
         
-        console.log('Создано превью для файла:', file.name, 'URL:', previewUrl.substring(0, 50) + '...');
-        
-        // Добавляем в массив новых файлов
         this.editNewFiles.push({
-            id: Date.now() + Math.random(), // Уникальный ID
+            id: Date.now() + Math.random(),
             file: file,
             preview: previewUrl,
             name: file.name,
             size: file.size,
             type: file.type,
-            status: 'pending', // Будет 'uploaded' после загрузки в saveProduct()
+            status: 'pending',
             serverUrl: null,
             uploadProgress: 0
         });
+        
+        this.vib();
     }
     
-    // Очищаем input для возможности повторной загрузки тех же файлов
     e.target.value = '';
-    
-    console.log('Всего новых файлов после добавления:', this.editNewFiles.length);
-    
-    // Опционально: можно сразу создать сжатые версии для быстрой загрузки
-    // Но основную загрузку на сервер делаем только в saveProduct()
-    
-    // Показываем уведомление
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
 },
 // Удалить фото из базы данных
 // Удалить фото из базы данных
@@ -4116,52 +4079,7 @@ async updateStatus(order, newStatus) {
         order.isUpdating = false;
     }
 },
-handleFiles(e, isEdit = false) {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    
-    for (const file of files) {
-        if (!file.type.startsWith('image/')) {
-            alert(`Файл "${file.name}" не является изображением`);
-            continue;
-        }
-        
-        if (file.size > 10 * 1024 * 1024) {
-            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB)`);
-            continue;
-        }
-        
-        const previewUrl = URL.createObjectURL(file);
-        const fileObj = {
-            id: Date.now() + Math.random(),
-            file: file,
-            preview: previewUrl,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            status: 'pending',
-            progress: 0,
-            serverUrl: null
-        };
-        
-        if (isEdit) {
-            // Для редактирования товара
-            if (!this.editNewFiles) this.editNewFiles = [];
-            this.editNewFiles.push(fileObj);
-        } else {
-            // Для создания нового товара
-            if (!this.localFiles) this.localFiles = [];
-            this.localFiles.push(fileObj);
-        }
-        
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    }
-    
-    e.target.value = '';
-    this.$forceUpdate();
-},
+
 calculateListHeight() {
     // 1. Проверка условий: работает только когда список открыт и пользователь - админ
     if (this.showProductList && this.isAdmin) {
@@ -4342,6 +4260,28 @@ async deleteOrder(docId) {
         alert("Ошибка при формировании чека.");
     }
 },
+cleanupAllPreviews() {
+        // Очистка всех preview URL
+        const cleanupArray = (arr) => {
+            if (!arr || !Array.isArray(arr)) return;
+            arr.forEach(item => {
+                if (item.preview && item.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(item.preview);
+                }
+            });
+        };
+        
+        // Очистка вариантов
+        this.newP.variants?.forEach(variant => {
+            cleanupArray(variant.localFiles);
+            cleanupArray(variant.uploadingFiles);
+        });
+        
+        // Очистка глобальных массивов
+        cleanupArray(this.editNewFiles);
+        cleanupArray(this.localFiles);
+        cleanupArray(this.uploadFiles);
+    },
 updateChart() {
     console.log('=== updateChart() called ===');
     console.log('Current tab:', this.tab);
@@ -4525,6 +4465,9 @@ updateChart() {
 }
     },
  mounted() {
+    window.addEventListener('beforeunload', () => {
+        this.cleanupAllPreviews();
+    });
     const tg = window.Telegram.WebApp || {};
      console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
     // 1. Безопасная инициализация Telegram
