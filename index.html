@@ -803,23 +803,27 @@
                 </svg>
             </button>
 
-           <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+          <!-- В products-grid (каталог) -->
+<div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
     <!-- ЕДИНЫЙ СПОСОБ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ -->
     <template v-if="getProductImages(p).length > 0">
         <img v-for="(img, idx) in getProductImages(p)" 
              :key="idx" 
              :src="img" 
-             loading="lazy">
+             loading="lazy"
+             onerror="this.src='https://via.placeholder.com/300x400?text=No+Image'">
     </template>
     <div v-else style="width:100%; height:100%; background:#f9f9f9; display:flex; align-items:center; justify-content:center;">
         <span style="color:#ccc;">Нет фото</span>
     </div>
 </div>
 
-            <div class="dots" v-if="p.variants?.[0]?.images?.length > 1">
-                <span v-for="(img, i) in p.variants[0].images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
-            </div>
-
+<!-- Обновите также отображение точек (dots) -->
+<div class="dots" v-if="getProductImages(p).length > 1">
+    <span v-for="(img, i) in getProductImages(p)" 
+          :key="i" 
+          :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
+</div>
             <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
             <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
         </div>
@@ -868,22 +872,27 @@
                     </svg>
                 </button>
 
-               <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
+             <!-- В products-grid (каталог) -->
+<div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
     <!-- ЕДИНЫЙ СПОСОБ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ -->
     <template v-if="getProductImages(p).length > 0">
         <img v-for="(img, idx) in getProductImages(p)" 
              :key="idx" 
              :src="img" 
-             loading="lazy">
+             loading="lazy"
+             onerror="this.src='https://via.placeholder.com/300x400?text=No+Image'">
     </template>
     <div v-else style="width:100%; height:100%; background:#f9f9f9; display:flex; align-items:center; justify-content:center;">
         <span style="color:#ccc;">Нет фото</span>
     </div>
 </div>
 
-                <div class="dots" v-if="p.variants?.[0]?.images?.length > 1">
-                    <span v-for="(img, i) in p.variants[0].images" :key="i" :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
-                </div>
+<!-- Обновите также отображение точек (dots) -->
+<div class="dots" v-if="getProductImages(p).length > 1">
+    <span v-for="(img, i) in getProductImages(p)" 
+          :key="i" 
+          :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
+</div>
 
                 <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
                 <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
@@ -1117,216 +1126,254 @@
 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
 <div style="margin-top: 20px;">
-    <label style="font-weight: 800; font-size: 12px;">ЦВЕТА, РАЗМЕРЫ, ФОТО</label>
+    <label style="font-weight: 800; font-size: 12px; margin-bottom: 15px; display: block;">🎨 ЦВЕТА, РАЗМЕРЫ И ФОТО (для каждого цвета отдельно)</label>
     
-    <div v-for="(v, vIdx) in newP.variants" :key="vIdx" 
-         style="border: 1px solid #eee; padding: 15px; margin-top: 10px; position: relative; background: #fafafa; border-radius: 8px;">
+    <!-- КАЖДЫЙ ЦВЕТ - ОТДЕЛЬНЫЙ БЛОК -->
+   <div v-for="(v, vIdx) in newP.variants" :key="vIdx" 
+     class="variant-block"  
+     style="border: 2px solid #000; padding: 15px; margin-top: 15px; border-radius: 8px; background: #fafafa; position: relative;">
         
-        <button @click="newP.variants.splice(vIdx, 1)" 
-                style="position: absolute; right: 5px; top: 5px; background: none; border: none; color: red; font-weight: bold; cursor: pointer;">✕</button>
-
-        <div class="field">
-            <label>ЦВЕТ</label>
-            <input v-model="v.color" class="input-admin" placeholder="Напр: Черный">
-        </div>
-
-      <!-- РАЗМЕРЫ И ОСТАТКИ - ИСПРАВЛЕННАЯ ВЕРСИЯ -->
-<div class="field">
-    <label>РАЗМЕРЫ И ОСТАТКИ</label>
-    
-    <div style="display: flex; flex-direction: column; gap: 12px; margin: 15px 0; background: #f9f9f9; padding: 15px; border-radius: 8px;">
-        
-        <!-- 1. ПОЛЯ ДЛЯ ВВОДА РАЗМЕРОВ (динамические) -->
-        <div v-for="(sizeField, index) in (tempSizes[vIdx] || [])" 
-             :key="'size_' + vIdx + '_' + index" 
-             style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #e0e0e0;">
-            
-            <!-- Поле для названия размера -->
-            <input type="text" 
-                   v-model="sizeField.name"
-                   @input="syncSizeToStocks(vIdx, index)"
-                   :data-variant="vIdx"
-                   :data-field="index"
-                   style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center;"
-                   placeholder="Размер">
-            
-            <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
-            
-            <!-- Поле для количества -->
-            <input type="number" 
-                   v-model.number="sizeField.qty"
-                   min="0"
-                   @input="syncSizeToStocks(vIdx, index)"
-                   style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;"
-                   placeholder="0">
-            
-            <!-- Кнопка удаления поля (только для дополнительных полей) -->
-            <button v-if="index > 0" 
-                    @click="removeSizeField(vIdx, index)" 
-                    type="button" 
-                    style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
-                ×
+        <!-- ЗАГОЛОВОК ЦВЕТА С КНОПКОЙ УДАЛЕНИЯ -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; margin: 0; color: #000;">
+                ЦВЕТ #{{ vIdx + 1 }} <span v-if="v.color" style="color: #007aff;">({{ v.color }})</span>
+            </h4>
+            <button v-if="vIdx > 0" @click="removeVariant(vIdx)" 
+                    style="background: #ff3b30; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 14px;">
+                ✕
             </button>
         </div>
-        
-        <!-- Кнопка добавления нового поля -->
-        <button type="button" 
-                @click="addSizeField(vIdx)"
-                style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: #9f9f9f; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; margin-top: 10px;">
-            <span style="font-size: 16px;">+</span>
-            ДОБАВИТЬ РАЗМЕР
-        </button>
-        
-        <!-- 2. ОТОБРАЖЕНИЕ СОХРАНЕННЫХ РАЗМЕРОВ (из stocks) -->
-        
-    </div>
-</div>
-       <!-- ЗАМЕНИТЕ существующий раздел загрузки фото в admin-section -->
-<div class="field">
-    <label>ФОТО ТОВАРА</label>
-    
-    <!-- Кнопка загрузки -->
-    <input type="file" multiple @change="handleFiles($event, true)" 
-           class="input-admin" style="padding: 8px;" accept="image/*">
-    
-    <!-- СЕТКА ПРЕВЬЮ С ИНДИКАТОРАМИ -->
-    <div class="preview-container" style="margin-top: 15px;">
-        
-        <!-- СУЩЕСТВУЮЩИЕ ФОТО ИЗ БАЗЫ -->
-        <div v-for="(img, imgIdx) in editImages" :key="'db_' + imgIdx" class="preview-card">
-            <div style="position: relative;">
-                <img :src="img" alt="Превью" 
-                     style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
-                <button @click="removeEditImage(imgIdx)" class="remove-preview-btn">✕</button>
-                <div style="position: absolute; bottom: 2px; left: 2px; background: #34c759; color: white; 
-                            font-size: 8px; padding: 1px 3px; border-radius: 3px;">
-                    ✓ Загружено
+
+        <!-- НАЗВАНИЕ ЦВЕТА -->
+        <div class="field">
+            <label>НАЗВАНИЕ ЦВЕТА</label>
+            <input v-model="v.color" class="input-admin" placeholder="Например: Черный, Белый, Красный">
+        </div>
+
+        <!-- РАЗМЕРЫ И ОСТАТКИ ДЛЯ ЭТОГО ЦВЕТА -->
+        <div class="field" style="margin-top: 15px;">
+            <label>РАЗМЕРЫ И ОСТАТКИ (для этого цвета)</label>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin: 12px 0; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                
+                <!-- ДИНАМИЧЕСКИЕ ПОЛЯ ДЛЯ РАЗМЕРОВ -->
+                <div v-for="(sizeField, index) in (tempSizes[vIdx] || [])" 
+                     :key="'size_' + vIdx + '_' + index" 
+                     style="display: flex; align-items: center; gap: 12px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e0e0e0;">
+                    
+                    <!-- Название размера -->
+                    <input type="text" 
+                           v-model="sizeField.name"
+                           @input="syncSizeToStocks(vIdx, index)"
+                           :data-variant="vIdx"
+                           :data-field="index"
+                           style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-weight: 700; font-size: 12px; text-align: center;"
+                           placeholder="Размер">
+                    
+                    <span style="color: #999; font-weight: 800; font-size: 14px;">×</span>
+                    
+                    <!-- Количество -->
+                    <input type="number" 
+                           v-model.number="sizeField.qty"
+                           min="0"
+                           @input="syncSizeToStocks(vIdx, index)"
+                           style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;"
+                           placeholder="0">
+                    
+                    <!-- Кнопка удаления (только не первый размер) -->
+                    <button v-if="index > 0" 
+                            @click="removeSizeField(vIdx, index)" 
+                            type="button" 
+                            style="margin-left: auto; background: #ff3b30; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; flex-shrink: 0;">
+                        ×
+                    </button>
                 </div>
+                
+                <!-- Кнопка добавления нового размера -->
+               <button type="button" 
+        @click="addSizeField(vIdx)"
+        style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; padding: 5px; background: #000000; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 8px; margin-top: 5px; letter-spacing: 0.2px;">
+    <span style="font-size: 10px;">+</span>
+    ДОБАВИТЬ РАЗМЕР
+</button>
             </div>
         </div>
-        
-        <!-- НОВЫЕ ФОТО С ИНДИКАТОРАМИ -->
-        <div v-for="file in editNewFiles" :key="file.id" class="preview-card">
-            <div style="position: relative;">
+
+        <!-- ФОТО ДЛЯ ЭТОГО ЦВЕТА (ОТДЕЛЬНО ДЛЯ КАЖДОГО ЦВЕТА) -->
+        <div class="field" style="margin-top: 15px;">
+            <label>ФОТО ДЛЯ ЦВЕТА "{{ v.color || '...' }}"</label>
+            
+            <!-- Кнопка загрузки фото для этого цвета -->
+            <input type="file" multiple 
+                   @change="handleFilesForVariant($event, vIdx)"
+                   class="input-admin" style="padding: 8px;" 
+                   accept="image/*"
+                   :disabled="!v.color">
+            
+            <div v-if="!v.color" style="font-size: 10px; color: #ff3b30; margin-top: 5px;">
+                Сначала укажите название цвета
+            </div>
+            
+            <!-- СЕТКА ПРЕВЬЮ ДЛЯ ЭТОГО ЦВЕТА -->
+            <div class="preview-container" style="margin-top: 15px;">
                 
-                <!-- Превью изображения -->
-                <img :src="file.preview" alt="Превью"
-                     style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;"
-                     :style="{ 
-                         opacity: file.status === 'uploading' ? 0.5 : 1,
-                         border: file.status === 'completed' ? '2px solid #34c759' : 
-                                 file.status === 'failed' ? '2px solid #ff3b30' : 
-                                 file.status === 'uploading' ? '2px solid #007aff' : 
-                                 file.status === 'fallback' ? '2px solid #ff9500' : '1px solid #ddd'
-                     }">
-                
-                <!-- ИНДИКАТОР ЗАГРУЗКИ -->
-                <div v-if="file.status === 'uploading'" 
-                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-                            display: flex; align-items: center; justify-content: center; 
-                            background: rgba(255,255,255,0.8); border-radius: 8px;">
-                    
-                    <!-- Круговой индикатор прогресса -->
-                    <div style="position: relative; width: 40px; height: 40px;">
-                        <svg width="40" height="40" viewBox="0 0 40 40">
-                            <!-- Фон круга -->
-                            <circle cx="20" cy="20" r="18" 
-                                    stroke="#f0f0f0" stroke-width="3" fill="none"/>
-                            <!-- Прогресс -->
-                            <circle cx="20" cy="20" r="18" 
-                                    stroke="#007aff" stroke-width="3" fill="none"
-                                    :stroke-dasharray="113"
-                                    :stroke-dashoffset="113 - (113 * file.progress / 100)"
-                                    transform="rotate(-90 20 20)"/>
-                        </svg>
-                        <!-- Процент в центре -->
-                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                                    font-size: 9px; font-weight: 800; color: #007aff;">
-                            {{ file.progress }}%
+                <!-- СУЩЕСТВУЮЩИЕ ФОТО ИЗ БАЗЫ (при редактировании) -->
+                <div v-if="editId && v.images && v.images.length > 0">
+                    <div v-for="(img, imgIdx) in v.images" :key="'db_' + vIdx + '_' + imgIdx" class="preview-card">
+                        <div style="position: relative;">
+                            <img :src="img" alt="Превью" 
+                                 style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+                            <button @click="removeVariantImage(vIdx, imgIdx)" class="remove-preview-btn">✕</button>
+                            <div style="position: absolute; bottom: 2px; left: 2px; background: #34c759; color: white; 
+                                        font-size: 8px; padding: 1px 3px; border-radius: 3px;">
+                                ✓
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- СТАТУС ИКОНКИ -->
-                <div v-if="file.status === 'completed'" 
-                     style="position: absolute; top: -5px; right: -5px; background: #34c759; 
-                            color: white; width: 20px; height: 20px; border-radius: 50%; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 12px; font-weight: bold; border: 2px solid white;">
-                    ✓
+                <!-- НОВЫЕ ФОТО ПРИ РЕДАКТИРОВАНИИ -->
+                <div v-if="v.uploadingFiles && v.uploadingFiles.length > 0">
+                    <div v-for="file in v.uploadingFiles" :key="file.id" class="preview-card">
+                        <div style="position: relative;">
+                            <!-- Превью изображения -->
+                            <img :src="file.preview" alt="Превью"
+                                 style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;"
+                                 :style="{ 
+                                     opacity: file.status === 'uploading' ? 0.5 : 1,
+                                     border: file.status === 'completed' ? '2px solid #34c759' : 
+                                             file.status === 'failed' ? '2px solid #ff3b30' : 
+                                             file.status === 'uploading' ? '2px solid #007aff' : '1px solid #ddd'
+                                 }">
+                            
+                            <!-- ИНДИКАТОР ЗАГРУЗКИ -->
+                            <div v-if="file.status === 'uploading'" 
+                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                                        display: flex; align-items: center; justify-content: center; 
+                                        background: rgba(255,255,255,0.8); border-radius: 8px;">
+                                
+                                <!-- Круговой индикатор прогресса -->
+                                <div style="position: relative; width: 40px; height: 40px;">
+                                    <svg width="40" height="40" viewBox="0 0 40 40">
+                                        <circle cx="20" cy="20" r="18" 
+                                                stroke="#f0f0f0" stroke-width="3" fill="none"/>
+                                        <circle cx="20" cy="20" r="18" 
+                                                stroke="#007aff" stroke-width="3" fill="none"
+                                                :stroke-dasharray="113"
+                                                :stroke-dashoffset="113 - (113 * (file.progress || 0) / 100)"
+                                                transform="rotate(-90 20 20)"/>
+                                    </svg>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                                font-size: 9px; font-weight: 800; color: #007aff;">
+                                        {{ file.progress || 0 }}%
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- СТАТУС ИКОНКИ -->
+                            <div v-if="file.status === 'completed'" 
+                                 style="position: absolute; top: -5px; right: -5px; background: #34c759; 
+                                        color: white; width: 20px; height: 20px; border-radius: 50%; 
+                                        display: flex; align-items: center; justify-content: center; 
+                                        font-size: 12px; font-weight: bold; border: 2px solid white;">
+                                ✓
+                            </div>
+                            
+                            <div v-if="file.status === 'failed'" 
+                                 style="position: absolute; top: -5px; right: -5px; background: #ff3b30; 
+                                        color: white; width: 20px; height: 20px; border-radius: 50%; 
+                                        display: flex; align-items: center; justify-content: center; 
+                                        font-size: 12px; font-weight: bold; border: 2px solid white;">
+                                !
+                            </div>
+                            
+                            <!-- Кнопка удаления -->
+                            <button @click="removeVariantUploadingFile(vIdx, file.id)" 
+                                    style="position: absolute; bottom: -5px; right: -5px; 
+                                           background: #ff3b30; color: white; width: 18px; height: 18px; 
+                                           border-radius: 50%; border: 1px solid white; 
+                                           font-size: 10px; cursor: pointer;">
+                                ✕
+                            </button>
+                        </div>
+                        
+                        <!-- Название файла и статус -->
+                        <div style="font-size: 9px; text-align: center; margin-top: 4px; 
+                                    font-weight: 600; overflow: hidden; text-overflow: ellipsis; 
+                                    white-space: nowrap; max-width: 70px;">
+                            {{ file.name?.substring(0, 10) || 'Файл' }}{{ file.name?.length > 10 ? '...' : '' }}
+                            <div :style="{ 
+                                color: file.status === 'completed' ? '#34c759' : 
+                                       file.status === 'failed' ? '#ff3b30' : 
+                                       file.status === 'uploading' ? '#007aff' : '#999',
+                                fontSize: '8px'
+                            }">
+                                {{ 
+                                    file.status === 'uploading' ? 'Загрузка...' :
+                                    file.status === 'completed' ? 'Готово' :
+                                    file.status === 'failed' ? 'Ошибка' : 'Ожидает'
+                                }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div v-if="file.status === 'failed'" 
-                     style="position: absolute; top: -5px; right: -5px; background: #ff3b30; 
-                            color: white; width: 20px; height: 20px; border-radius: 50%; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 12px; font-weight: bold; border: 2px solid white;">
-                    !
+                <!-- LOCAL FILES для создания нового товара -->
+                <div v-if="!editId && v.localFiles && v.localFiles.length > 0">
+                    <div v-for="file in v.localFiles" :key="file.id" class="preview-card">
+                        <div style="position: relative;">
+                            <img :src="file.preview" alt="Превью"
+                                 style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+                            <button @click="removeVariantLocalFile(vIdx, file.id)"
+                                    style="position: absolute; top: -5px; right: -5px; 
+                                           background: #ff3b30; color: white; width: 18px; height: 18px; 
+                                           border-radius: 50%; border: 1px solid white; font-size: 10px; cursor: pointer;">
+                                ✕
+                            </button>
+                        </div>
+                        <div style="font-size: 9px; text-align: center; margin-top: 2px;">
+                            {{ file.name?.substring(0, 10) || 'Файл' }}{{ file.name?.length > 10 ? '...' : '' }}
+                        </div>
+                    </div>
                 </div>
                 
-                <div v-if="file.status === 'fallback'" 
-                     style="position: absolute; top: -5px; right: -5px; background: #ff9500; 
-                            color: white; width: 20px; height: 20px; border-radius: 50%; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 12px; font-weight: bold; border: 2px solid white;">
-                    ⚠
-                </div>
-                
-                <!-- Кнопка удаления -->
-                <button @click="removeEditNewFileById(file.id)" 
-                        style="position: absolute; bottom: -5px; right: -5px; 
-                               background: #ff3b30; color: white; width: 18px; height: 18px; 
-                               border-radius: 50%; border: 1px solid white; 
-                               font-size: 10px; cursor: pointer;">
-                    ✕
-                </button>
-            </div>
-            
-            <!-- Название файла и статус -->
-            <div style="font-size: 9px; text-align: center; margin-top: 4px; 
-                        font-weight: 600; overflow: hidden; text-overflow: ellipsis; 
-                        white-space: nowrap; max-width: 70px;">
-                {{ file.name.substring(0, 10) }}{{ file.name.length > 10 ? '...' : '' }}
-                <div :style="{ 
-                    color: file.status === 'completed' ? '#34c759' : 
-                           file.status === 'failed' ? '#ff3b30' : 
-                           file.status === 'uploading' ? '#007aff' : 
-                           file.status === 'fallback' ? '#ff9500' : '#999',
-                    fontSize: '8px'
-                }">
-                    {{ 
-                        file.status === 'pending' ? 'Ожидает' :
-                        file.status === 'uploading' ? 'Загружается...' :
-                        file.status === 'completed' ? 'Готово' :
-                        file.status === 'failed' ? 'Ошибка' :
-                        file.status === 'fallback' ? 'Локальное' : ''
-                    }}
+                <!-- СООБЩЕНИЕ ЕСЛИ НЕТ ФОТО -->
+                <div v-if="(!v.images || v.images.length === 0) && 
+                          (!v.uploadingFiles || v.uploadingFiles.length === 0) && 
+                          (!v.localFiles || v.localFiles.length === 0)" 
+                     style="text-align: center; padding: 20px; color: #999; font-size: 11px;">
+                    📸 Загрузите фото для этого цвета
                 </div>
             </div>
         </div>
         
-        <!-- LOCAL FILES (для создания нового товара) -->
-        <div v-if="!editId && localFiles && localFiles.length > 0">
-            <div v-for="file in localFiles" :key="file.id" class="preview-card">
-                <!-- Тот же код индикаторов, что и для editNewFiles -->
-                <!-- ... -->
+        <!-- РАЗДЕЛИТЕЛЬ МЕЖДУ ЦВЕТАМИ -->
+        <div v-if="vIdx < newP.variants.length - 1" 
+             style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #ddd;">
+            <div style="text-align: center; font-size: 10px; color: #666; font-weight: 700;">
+                ⬇ Следующий цвет ⬇
             </div>
         </div>
     </div>
-</div>
-    </div>
 
-    <button type="button" class="btn-black" @click="addVariant" style="margin-top: 10px; background: #333 !important; width: 100%;">+ ДОБАВИТЬ ЦВЕТ</button>
-</div>
-
-<div style="margin-top: 20px;">
-    <button class="btn-black" style="width:100%;" @click="saveProduct" :disabled="loading">
-        {{ loading ? 'ЗАГРУЗКА...' : (editId ? 'СОХРАНИТЬ ИЗМЕНЕНИЯ' : 'ОПУБЛИКОВАТЬ ТОВАР') }}
+    <!-- КНОПКА ДОБАВЛЕНИЯ НОВОГО ЦВЕТА -->
+    <button type="button" class="btn-black" @click="addVariant" 
+            style="margin-top: 20px; background: #28a745 !important; width: 100%;">
+        <span style="font-size: 16px; margin-right: 8px;">+</span>
+        ДОБАВИТЬ ЕЩЕ ОДИН ЦВЕТ
     </button>
-    <button v-if="editId" class="cat-tab" style="width:100%; margin-top:10px;" @click="cancelEdit">ОТМЕНА</button>
-</div>
 
-       <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
+    <!-- КНОПКИ СОХРАНЕНИЯ -->
+    <div style="margin-top: 25px;">
+        <button class="btn-black" style="width:100%;" @click="saveProduct" :disabled="loading">
+            {{ loading ? '🔄 ЗАГРУЗКА...' : (editId ? '💾 СОХРАНИТЬ ИЗМЕНЕНИЯ' : '🚀 ОПУБЛИКОВАТЬ ТОВАР') }}
+        </button>
+        <button v-if="editId" class="cat-tab" style="width:100%; margin-top:10px;" @click="cancelEdit">
+            ❌ ОТМЕНА
+        </button>
+    </div>
+</div>
+   <div style="margin-top: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f9f9f9;">
   <div @click="showProductList = !showProductList" style="padding: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
     <span style="font-weight: 800; font-size: 11px; letter-spacing: 1px;">
         📦 СПИСОК ТОВАРОВ ({{ products.length }})
@@ -1345,158 +1392,136 @@
             
             <div style="display: flex; gap: 15px;">
                 <!-- Левая часть: фото и информация -->
-                <div style="display: flex; gap: 15px; flex: 1;">
+                <div style="display: flex; gap: 15px; flex: 1; min-width: 0;">
                     <img :src="v.images?.[0] || ''" 
-                         style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #eee;"
+                         style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0;"
                          class="product-image">
                     
-                    <div style="flex: 1;">
-                        <div class="product-title" style="font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 5px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="product-title" style="font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             {{ p.title }}
                         </div>
                         <div class="product-color" style="font-size: 11px; color: #000; font-weight: 700; margin-bottom: 12px;">
                             ЦВЕТ: {{ v.color }}
                         </div>
                         
-                        <!-- СЕТКА РАЗМЕРОВ С РЕДАКТИРОВАНИЕМ -->
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <!-- Если редактирование остатков активно -->
-                            <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
-                                <div class="size-editing-container">
-                                    <!-- РЕДАКТИРОВАНИЕ ТОЛЬКО ОСТАТКОВ -->
-                                    <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
-                                         style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 8px;"
-                                         class="editing-size-item">
-                                        
-                                        <!-- Размер (не редактируется) -->
-                                        <span style="font-size: 14px; font-weight: 700; min-width: 40px; color: #000; text-transform: uppercase;"
-                                              class="size-name">
-                                            {{ sz }}
-                                        </span>
-                                        
-                                        <div style="display: flex; align-items: center; gap: 15px;"
-                                             class="editing-size-controls">
-                                            <!-- Поле для изменения количества -->
-                                            <div style="display: flex; align-items: center; gap: 8px;"
-                                                 class="stock-input-wrapper">
-                                                <span style="font-size: 11px; color: #999; font-weight: 600;">ОСТАТОК:</span>
-                                                <input type="number" 
-                                                       v-model.number="v.stocks[sz]" 
-                                                       min="0"
-                                                       step="1"
-                                                       @input="v.editState = true"
-                                                       style="width: 65px; border: 1px solid #ddd; border-radius: 6px; padding: 8px; font-size: 12px; font-weight: bold; text-align: center; background: #fff;">
-                                            </div>
-                                            
-                                            <!-- Кнопка удалить размер -->
-                                            <div class="size-action-buttons">
-                                                <button @click="removeSizeFromVariant(p, vIdx, sz)" 
-                                                        type="button" 
-                                                        style="width: 28px; height: 28px; border-radius: 6px; border: none; background: #ff3b30; color: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
-                                                        class="compact-btn">
-                                                    ×
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <!-- СЕТКА РАЗМЕРОВ -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <!-- Для всех существующих размеров -->
+                            <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
+                                 style="display: flex; align-items: center; justify-content: space-between;
+                                        background: #f9f9f9; padding: 8px; border-radius: 8px; 
+                                        border: 1px solid #eee; min-width: 0;"
+                                 class="size-item">
+                                
+                                <!-- Размер слева -->
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 14px; font-weight: 700; 
+                                                 color: #000; text-transform: uppercase;"
+                                          class="size-name">
+                                        {{ sz }}:
+                                    </span>
                                 </div>
                                 
-                                <!-- Поле для добавления нового размера -->
-                                <div style="display: flex; align-items: center; gap: 10px; background: #f0f0f0; padding: 10px; border-radius: 8px; margin-top: 5px;"
-                                     class="add-size-compact">
-                                    <div class="add-size-fields">
-                                        <input type="text" 
-                                               v-model="v.newSizeName"
-                                               placeholder="Новый размер"
-                                               style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                                        <input type="number" 
-                                               v-model.number="v.newSizeQty"
-                                               min="0"
-                                               placeholder="Кол-во"
-                                               style="width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;">
-                                    </div>
-                                    <button @click="addSizeToVariant(p, vIdx)" 
-                                            style="padding: 8px 12px; background: #34c759; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;"
-                                            class="add-size-button">
-                                        + Добавить размер
-                                    </button>
-                                </div>
-                            </template>
-                            
-                            <!-- Если редактирование не активно (только просмотр) -->
-                            <template v-else>
-                                <!-- ПРОСМОТР ОСТАТКОВ -->
-                                <div v-for="(qty, sz) in (v.stocks || v.stock || {})" :key="sz" 
-                                     style="display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee;"
-                                     class="viewing-size-item">
+                                <!-- Количество и кнопки справа -->
+                                <div style="display: flex; align-items: center; gap: 8px;">
                                     
-                                    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
-                                        <span style="font-size: 13px; font-weight: 700; min-width: 30px; color: #000;"
-                                              class="size-name-compact">
-                                            {{ sz }}
-                                        </span>
+                                    <!-- Если редактирование активно -->
+                                    <template v-if="p.editingVariant === vIdx && !p.fullEditMode">
+                                        <!-- Поле ввода для редактирования -->
+                                        <input type="number" 
+                                               v-model.number="v.stocks[sz]" 
+                                               min="0"
+                                               step="1"
+                                               @input="v.editState = true"
+                                               style="width: 50px; min-width: 50px; 
+                                                      border: 1px solid #007aff; 
+                                                      border-radius: 6px; padding: 5px; 
+                                                      font-size: 13px; font-weight: bold; 
+                                                      text-align: center; background: #fff; 
+                                                      box-shadow: 0 0 0 1px #007aff; flex-shrink: 0;">
                                         
-                                        <div style="display: flex; align-items: center; gap: 8px;"
-                                             class="stock-info-compact">
-                                            <span style="font-size: 10px; color: #999; font-weight: 600;"
-                                                  class="stock-label-compact">ОСТАТОК:</span>
-                                            <span style="font-size: 13px; font-weight: 700; color: #000; min-width: 40px;"
-                                                  class="stock-value-compact">
-                                                {{ qty }} шт.
-                                            </span>
-                                        </div>
-                                    </div>
+                                        <!-- Кнопка удаления размера -->
+                                        <button @click="removeSizeFromVariant(p, vIdx, sz)" 
+                                                type="button" 
+                                                style="width: 22px; height: 22px; border-radius: 4px; 
+                                                       border: none; background: #ff3b30; color: white; 
+                                                       font-weight: bold; font-size: 14px; cursor: pointer; 
+                                                       display: flex; align-items: center; justify-content: center;
+                                                       flex-shrink: 0;"
+                                                class="delete-size-btn">
+                                            ×
+                                        </button>
+                                    </template>
+                                    
+                                    <!-- Если только просмотр -->
+                                    <template v-else>
+                                        <!-- Просто отображаем количество -->
+                                        <span style="font-size: 13px; font-weight: 700; color: #000;"
+                                              class="stock-value">
+                                            {{ qty }}
+                                        </span>
+                                    </template>
                                 </div>
-                            </template>
+                            </div>
+                            
+                            
                         </div>
                     </div>
                 </div>
                 
                 <!-- Правая часть: вертикальные кнопки управления -->
-               <!-- Правая часть: вертикальные кнопки управления -->
-<div class="control-buttons-compact">
-    
-    <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
-    <button @click="toggleQuickEdit(p, vIdx)" 
-            :style="{ 
-                background: (p.editingVariant === vIdx && !p.fullEditMode) ? '#007aff' : '#f5f5f5',
-            }"
-            :title="(p.editingVariant === vIdx && !p.fullEditMode) ? 'Сохранить остатки' : 'Быстрое редактирование остатков'"
-            class="control-btn-compact">
-        {{ (p.editingVariant === vIdx && !p.fullEditMode) ? '💾' : '✏️' }}
-    </button>
-    
-    <!-- Кнопка 2: Полное редактирование карточки 📝 -->
-    <button @click="editFullProduct(p)" 
-            style="background: #f5f5f5;"
-            title="Полное редактирование карточки"
-            class="control-btn-compact">
-        📝
-    </button>
-    
-    <!-- Кнопка 3: Скрыть/показать товар -->
-    <button @click="toggleProductVisibility(p)" 
-            :style="{ 
-                background: p.hidden ? '#34c759' : '#f5f5f5',
-            }"
-            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'"
-            class="control-btn-compact">
-        {{ p.hidden ? '👁' : '👁‍🗨' }}
-    </button>
-    
-    <!-- Кнопка 4: Удалить товар -->
-    <button @click="deleteProductWithConfirm(p.id)" 
-            style="background: #f5f5f5;"
-            title="Удалить товар"
-            class="control-btn-compact">
-        🗑
-    </button>
-</div>
+                <div class="control-buttons-compact" style="flex-shrink: 0; width: 55px; min-width: 55px;">
+                    
+                    <!-- Кнопка 1: Быстрое редактирование остатков ✏️ -->
+                    <button @click="toggleQuickEdit(p, vIdx)" 
+                            :style="{ 
+                                background: (p.editingVariant === vIdx && !p.fullEditMode) ? '#007aff' : '#f5f5f5',
+                                color: (p.editingVariant === vIdx && !p.fullEditMode) ? '#fff' : '#000'
+                            }"
+                            :title="(p.editingVariant === vIdx && !p.fullEditMode) ? 'Сохранить остатки' : 'Быстрое редактирование остатков'"
+                            class="control-btn-compact"
+                            style="width: 45px; height: 45px;">
+                        {{ (p.editingVariant === vIdx && !p.fullEditMode) ? '💾' : '✏️' }}
+                    </button>
+                    
+                    <!-- Кнопка 2: Полное редактирование карточки 📝 -->
+                    <button @click="editFullProduct(p)" 
+                            :style="{ 
+                                background: p.fullEditMode ? '#007aff' : '#f5f5f5',
+                                color: p.fullEditMode ? '#fff' : '#000'
+                            }"
+                            :title="p.fullEditMode ? 'Редактирование активно' : 'Полное редактирование карточки'"
+                            class="control-btn-compact"
+                            style="width: 45px; height: 45px;">
+                        📝
+                    </button>
+                    
+                    <!-- Кнопка 3: Скрыть/показать товар -->
+                    <button @click="toggleProductVisibility(p)" 
+                            :style="{ 
+                                background: p.hidden ? '#34c759' : '#f5f5f5',
+                                color: p.hidden ? '#fff' : '#000'
+                            }"
+                            :title="p.hidden ? 'Показать товар' : 'Скрыть товар'"
+                            class="control-btn-compact"
+                            style="width: 45px; height: 45px;">
+                        {{ p.hidden ? '👁' : '👁‍🗨' }}
+                    </button>
+                    
+                    <!-- Кнопка 4: Удалить товар -->
+                    <button @click="deleteProductWithConfirm(p.id)" 
+                            style="background: #f5f5f5;"
+                            title="Удалить товар"
+                            class="control-btn-compact"
+                            style="width: 45px; height: 45px;">
+                        🗑
+                    </button>
+                </div>
             </div>
         </div>
     </template>
 </div>
-
 
         <hr style="margin: 20px 0; border: none; border-top: 2px solid #000;">   
         <h3 class="brand-name" style="font-size:12px; margin-top:2px;">ЗАКАЗЫ ({{allOrders.length}}) | ВЫРУЧКА: {{revenue}} ₽</h3>
@@ -1723,13 +1748,13 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
-         uploadFiles: [], 
+        showNewSizeFields: false, 
+        uploadFiles: [], 
         editUploading: false,
-          tempSizes: [],
-         sizeKeys: [{}], 
+        tempSizes: [],           // Изменил на пустой массив
+        sizeKeys: [{}], 
         expandedDescriptionId: null, 
-        selVariantIdx: 0, // Индекс выбранного цвета
-        deliv: 'доставка', // Значение по умолчанию
+        selVariantIdx: 0,
         tab: 'catalog',
         currentCat: '',
         searchQuery: '',
@@ -1750,7 +1775,7 @@ Vue.createApp({
         
         selP: false,
         currentVariantIndex: 0,
-        deliv: '',
+        deliv: '',               // Только одно определение
         address: '',
         map: null,
         form: {
@@ -1759,29 +1784,29 @@ Vue.createApp({
         },
         
         // Поля для админки
-       // data() -> newP.variants
-newP: {
-    title: '',
-    desc: '',
-    price: null,
-    oldPrice: null,
-    category: '',
-    isNew: false,
-    hidden: false,
-    variants: [
-        { 
-            color: '', 
-            images: [], 
-            stocks: {},  // ПУСТОЙ объект вместо { '42': 0, '44': 0, '46': 0, '48': 0 }
-              uploadingFiles: []
-        }
-    ]
-},
+        newP: {
+            title: '',
+            desc: '',
+            price: null,
+            oldPrice: null,
+            category: '',
+            isNew: false,
+            hidden: false,
+            variants: [
+                { 
+                    color: '', 
+                    images: [], 
+                    stocks: {}  // Пустой объект
+                }
+            ]
+        },
         newCat: '',
         editId: null,
         allOrders: [],
         chart: null,
         localFiles: [], 
+        editNewFiles: [],    // ✅ Добавил
+        editImages: [],      // ✅ Добавил
         myOrders: [],
 
         nav: [
@@ -1932,6 +1957,12 @@ total() {
     // Если корзина не пуста, всегда добавляем 200
     return itemsTotal > 0 ? (itemsTotal + 200) : 0;
 },
+removeEditImage(imgIdx) {
+    if (confirm("Удалить это фото из товара?")) {
+        this.editImages.splice(imgIdx, 1);
+        this.vib();
+    }
+},
 async updateStock(product, size) {
     // Если редактирование активно, просто обновляем локальные данные
     if (product.editingVariant !== null) {
@@ -1982,31 +2013,75 @@ toggleDescription(productId) {
         this.vib();
     },
     // Метод для получения изображений товара (универсальный)
+// Метод для получения изображений товара (универсальный)
 getProductImages(product) {
     if (!product) return [];
     
-    // 1. Проверяем новый формат (с вариантами)
+    // 1. Проверяем новый формат с вариантами
     if (product.variants && 
         Array.isArray(product.variants) && 
-        product.variants.length > 0 && 
-        product.variants[0].images && 
-        Array.isArray(product.variants[0].images)) {
+        product.variants.length > 0) {
         
-        return product.variants[0].images;
+        // Берем фото из первого варианта
+        const firstVariant = product.variants[0];
+        if (firstVariant.images && Array.isArray(firstVariant.images)) {
+            return firstVariant.images;
+        }
     }
     
-    // 2. Проверяем старый формат
+    // 2. Проверяем старый прямой формат
     if (product.images && Array.isArray(product.images)) {
         return product.images;
     }
     
-    // 3. Проверяем другие возможные места
-    if (product.image) {
+    // 3. Проверяем одиночное изображение
+    if (product.image && typeof product.image === 'string') {
         return [product.image];
+    }
+    
+    // 4. Проверяем в основном объекте товара
+    if (product.img) {
+        return [product.img];
     }
     
     return [];
 },
+handleFilesForVariant(e, vIdx) {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        const variant = this.newP.variants[vIdx];
+        
+        // Инициализируем массивы если их нет
+        if (!variant.localFiles) variant.localFiles = [];
+        if (!variant.uploadingFiles) variant.uploadingFiles = [];
+        
+        files.forEach(file => {
+            if (!file.type.startsWith('image/')) {
+                alert(`Файл "${file.name}" не является изображением`);
+                return;
+            }
+            
+            const previewUrl = URL.createObjectURL(file);
+            const fileObj = {
+                id: Date.now() + Math.random(),
+                file: file,
+                preview: previewUrl,
+                name: file.name,
+                status: 'pending'
+            };
+            
+            // Добавляем в соответствующий массив
+            if (this.editId) {
+                variant.uploadingFiles.push(fileObj);
+            } else {
+                variant.localFiles.push(fileObj);
+            }
+        });
+        
+        e.target.value = '';
+        this.vib();
+    },
     getShortDescription(fullDesc) {
         if (!fullDesc) return 'Нажмите для просмотра описания';
         
@@ -2047,41 +2122,40 @@ toggleEditSizes(product, variantIndex) {
     this.vib();
 },
 // Удаление файла по ID
-removeEditNewFileById(fileId) {
+rremoveEditNewFileById(fileId) {
     const index = this.editNewFiles.findIndex(f => f.id === fileId);
     if (index > -1) {
         const file = this.editNewFiles[index];
-        
-        // Освобождаем память
         if (file.preview && file.preview.startsWith('blob:')) {
             URL.revokeObjectURL(file.preview);
         }
-        
         this.editNewFiles.splice(index, 1);
-        
-        // Вибрация
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
+        this.vib();
     }
 },
-
-// Удаление локального файла
 removeLocalFileById(fileId) {
     const index = this.localFiles.findIndex(f => f.id === fileId);
     if (index > -1) {
         const file = this.localFiles[index];
-        
         if (file.preview && file.preview.startsWith('blob:')) {
             URL.revokeObjectURL(file.preview);
         }
-        
         this.localFiles.splice(index, 1);
-        
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
+        this.vib();
     }
+},
+
+
+
+// Удаление локального файла
+removeLocalFile(index) {
+    if (index < 0 || index >= this.localFiles.length) return;
+    const file = this.localFiles[index];
+    if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+    }
+    this.localFiles.splice(index, 1);
+    this.vib();
 },
 removeFile(fileId) {
     const index = this.uploadFiles.findIndex(f => f.id === fileId);
@@ -2153,29 +2227,82 @@ removeSizeFromVariant(product, variantIndex, sizeName) {
 },
 // Удалить фото из варианта
 removeVariantImage(vIdx, imgIdx) {
-    if (confirm("Удалить это фото?")) {
-        this.newP.variants[vIdx].images.splice(imgIdx, 1);
-        this.vib();
-    }
-},
-
-// Удалить загружаемый файл
-removeUploadingFile(vIdx, fileId) {
-    const variant = this.newP.variants[vIdx];
-    if (!variant.uploadingFiles) return;
-    
-    const fileIndex = variant.uploadingFiles.findIndex(f => f.id === fileId);
-    if (fileIndex > -1) {
-        const file = variant.uploadingFiles[fileIndex];
-        
-        // Очищаем URL превью
-        if (file.preview) {
-            URL.revokeObjectURL(file.preview);
+        if (confirm("Удалить это фото?")) {
+            this.newP.variants[vIdx].images.splice(imgIdx, 1);
+            this.vib();
         }
+    },
+
+removeVariantUploadingFile(vIdx, fileId) {
+        const variant = this.newP.variants[vIdx];
+        if (!variant.uploadingFiles) return;
         
-        variant.uploadingFiles.splice(fileIndex, 1);
-        this.vib();
+        const fileIndex = variant.uploadingFiles.findIndex(f => f.id === fileId);
+        if (fileIndex > -1) {
+            const file = variant.uploadingFiles[fileIndex];
+            
+            // Очищаем URL превью
+            if (file.preview) {
+                URL.revokeObjectURL(file.preview);
+            }
+            
+            variant.uploadingFiles.splice(fileIndex, 1);
+            this.vib();
+        }
+    },
+removeVariantLocalFile(vIdx, fileId) {
+        const variant = this.newP.variants[vIdx];
+        if (!variant.localFiles) return;
+        
+        const fileIndex = variant.localFiles.findIndex(f => f.id === fileId);
+        if (fileIndex > -1) {
+            const file = variant.localFiles[fileIndex];
+            
+            // Очищаем URL превью
+            if (file.preview) {
+                URL.revokeObjectURL(file.preview);
+            }
+            
+            variant.localFiles.splice(fileIndex, 1);
+            this.vib();
+        }
+    },
+    removeVariant(vIdx) {
+        if (confirm(`Удалить цвет "${this.newP.variants[vIdx].color || 'без названия'}"?`)) {
+            this.newP.variants.splice(vIdx, 1);
+            this.tempSizes.splice(vIdx, 1);
+            this.vib();
+        }
+    },
+     addVariant() {
+    const newIndex = this.newP.variants.length;
+    
+    // Добавляем новый вариант с пустыми массивами для фото
+    this.newP.variants.push({
+        color: '',
+        images: [],
+        localFiles: [],      // Для нового товара
+        uploadingFiles: [],  // Для редактирования
+        stocks: {}
+    });
+    
+    // Инициализируем tempSizes для нового варианта
+    if (!this.tempSizes[newIndex]) {
+        this.tempSizes[newIndex] = [];
     }
+    
+    // Добавляем первое пустое поле для размера
+    this.addSizeField(newIndex);
+    
+    // Прокручиваем к новому цвету
+    this.$nextTick(() => {
+        const newColorElement = document.querySelectorAll('.variant-block')[newIndex];
+        if (newColorElement) {
+            newColorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+    
+    this.vib();
 },
 
 // Добавить новый размер в вариант
@@ -2385,18 +2512,7 @@ editProduct(p) {
             // Создаем массив полей для этого варианта
             const fields = [];
             
-            // Если есть сохраненные размеры, добавляем их как заполненные поля
-            const stocks = variant.stocks || {};
-            Object.keys(stocks).forEach(sizeName => {
-                fields.push({
-                    name: sizeName,
-                    qty: stocks[sizeName] || 0,
-                    hidden: false,
-                    focused: false,
-                    tempKey: null,
-                    savedName: sizeName
-                });
-            });
+            
             
             // Добавляем ОДНО пустое поле в конце для новых размеров
             fields.push({
@@ -2492,6 +2608,7 @@ toggleQuickEdit(product, variantIndex) {
         this.saveVariantSizes(product, variantIndex);
         product.editingVariant = null;
         product.fullEditMode = false;
+        this.showNewSizeFields = false; // скрываем поля добавления
     } else {
         // Если редактируем другой вариант или полное редактирование - сохраняем предыдущее
         if (product.editingVariant !== null && product.editingVariant !== undefined) {
@@ -2507,6 +2624,7 @@ toggleQuickEdit(product, variantIndex) {
         // Начинаем быстрое редактирование
         product.editingVariant = variantIndex;
         product.fullEditMode = false;
+        this.showNewSizeFields = false; // скрываем поля при переключении
         
         // Инициализируем поля для нового размера
         const variant = product.variants[variantIndex];
@@ -2692,20 +2810,34 @@ async saveFullProduct(product) {
     }
 },
 cancelEdit() {
+    // 1. Очищаем URL превью для всех файлов
+    const freePreviewUrls = (filesArray) => {
+        if (filesArray && Array.isArray(filesArray)) {
+            filesArray.forEach(file => {
+                if (file.preview && file.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(file.preview);
+                }
+            });
+        }
+    };
+    
+    // Освобождаем память от всех превью
+    freePreviewUrls(this.editNewFiles);
+    freePreviewUrls(this.localFiles);
+    
+    // 2. Сбрасываем все флаги редактирования
     this.editId = null;
     this.fullEditMode = false;
     this.showProductList = true;
+    this.showNewSizeFields = false;
     
-    // Очищаем массивы фото
+    // 3. Очищаем ВСЕ массивы файлов
     this.editImages = [];
-    this.editNewFiles.forEach(file => {
-        if (file.preview) URL.revokeObjectURL(file.preview);
-    });
     this.editNewFiles = [];
-    
-    // Сбрасываем временные поля для размеров
+    this.localFiles = [];
     this.tempSizes = [];
     
+    // 4. Сбрасываем форму создания/редактирования товара
     this.newP = {
         title: '',
         desc: '',
@@ -2713,55 +2845,70 @@ cancelEdit() {
         oldPrice: null,
         category: '',
         isNew: false,
+        hidden: false,
         hiddenSizes: [],
         variants: [
-            { color: '', images: [], stocks: {} }
+            { 
+                color: '', 
+                images: [], 
+                stocks: {},
+                uploadingFiles: [] 
+            }
         ]
     };
     
-    if (this.localFiles) this.localFiles = []; 
+    // 5. Сбрасываем режимы редактирования у ВСЕХ товаров
+    if (this.products && Array.isArray(this.products)) {
+        this.products.forEach(p => {
+            p.editingVariant = null;
+            p.fullEditMode = false;
+            p.tempSize = null;
+            p.aIdx = 0;
+            
+            // Также сбрасываем временные поля в вариантах
+            if (p.variants && Array.isArray(p.variants)) {
+                p.variants.forEach(v => {
+                    delete v.newSizeName;
+                    delete v.newSizeQty;
+                    delete v.editState;
+                });
+            }
+        });
+    }
     
-    // Сбрасываем режимы редактирования у всех товаров
-    this.products.forEach(p => {
-        p.editingVariant = null;
-        p.fullEditMode = false;
-    });
+    // 6. Сбрасываем индекс выбранного цвета
+    this.currentVariantIndex = 0;
+    
+    // 7. Прокручиваем наверх для лучшего UX
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // 8. Тактильный отклик (если в Telegram)
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+    
+    console.log('Редактирование отменено, память очищена');
 },
 
 // Синхронизация поля с stocks
 syncSizeToStocks(vIdx, fieldIndex) {
-    if (!this.tempSizes[vIdx] || !this.tempSizes[vIdx][fieldIndex]) {
-        return;
-    }
+    if (!this.tempSizes[vIdx] || !this.tempSizes[vIdx][fieldIndex]) return;
     
     const field = this.tempSizes[vIdx][fieldIndex];
+    const sizeName = (field.name || '').trim().toUpperCase();
+    const qty = Number(field.qty) || 0;
     
-    // Если поле пустое - удаляем из stocks
-    if (!field.name || field.name.trim() === '') {
+    if (!sizeName) {
+        // Если поле пустое, удаляем из stocks
         if (field.savedName) {
             delete this.newP.variants[vIdx].stocks[field.savedName];
-            field.savedName = '';
         }
         return;
     }
     
-    const sizeName = field.name.trim();
-    const quantity = field.qty || 0;
-    
-    // Если у поля уже был сохраненный размер, удаляем старую запись
-    if (field.savedName && field.savedName !== sizeName) {
-        delete this.newP.variants[vIdx].stocks[field.savedName];
-    }
-    
-    // Сохраняем в stocks
-  this.newP.variants[vIdx].stocks[sizeName] = quantity;
+    // Обновляем stocks
+    this.newP.variants[vIdx].stocks[sizeName] = qty;
     field.savedName = sizeName;
-    
-    // Автоматически добавляем новое пустое поле, если это последнее заполненное
-    const lastFieldIndex = this.tempSizes[vIdx].length - 1;
-    if (fieldIndex === lastFieldIndex && sizeName && quantity > 0) {
-        this.addSizeField(vIdx);
-    }
 },
 
 // Удалить сохраненный размер
@@ -2775,25 +2922,47 @@ removeSavedSize(vIdx, sizeName) {
 // При добавлении нового варианта цвета
 addVariant() {
     const newIndex = this.newP.variants.length;
+    
+    // Добавляем новый вариант
     this.newP.variants.push({
         color: '',
         images: [],
         stocks: {}
     });
     
-    // ✅ Vue 3: Используем обычное присваивание или Vue.set (если импортирован)
-    if (!this.tempSizes) {
-        this.tempSizes = [];
+    // Инициализируем tempSizes для нового варианта
+    // Используем Vue.set для реактивности
+    if (!this.tempSizes[newIndex]) {
+        this.tempSizes[newIndex] = [];
+    } else {
+        this.tempSizes.splice(newIndex, 0, []);
     }
-    this.tempSizes[newIndex] = [{
+    
+    // Добавляем первое пустое поле для размера
+    this.tempSizes[newIndex].push({
         name: '',
         qty: 0,
-        focused: false,
-        tempKey: null,
         savedName: ''
-    }];
+    });
 },
-
+// В методе editProduct добавьте:
+initTempSizesForEdit(variant) {
+    const sizes = variant.stocks || {};
+    const tempSizeFields = Object.keys(sizes).map(sizeName => ({
+        name: sizeName,
+        qty: sizes[sizeName],
+        savedName: sizeName
+    }));
+    
+    // Добавляем одно пустое поле для нового размера
+    tempSizeFields.push({
+        name: '',
+        qty: 0,
+        savedName: ''
+    });
+    
+    return tempSizeFields;
+},
 // При удалении варианта цвета
 removeVariant(vIdx) {
     this.newP.variants.splice(vIdx, 1);
@@ -2829,14 +2998,16 @@ openProductFromCart(item) {
     }
 },
 
-        handleScroll(e, p) {
-    if (!p) return; // Обязательно!
+       handleScroll(e, p) {
+    if (!p) return;
+    const images = this.getProductImages(p);
+    if (images.length <= 1) return; // Не обновляем индекс если изображение одно
+    
     const width = e.target.offsetWidth;
     if (width > 0) {
         p.aIdx = Math.round(e.target.scrollLeft / width);
     }
 },
-
 
      openProduct(p) {
     // УБЕРИТЕ эту строку - она вызывает проблему!
@@ -3264,62 +3435,47 @@ removeFromCart(cartId) {
         return false;
     }
 },
- async uploadFile(file) {
-         return new Promise((resolve, reject) => {
+ async uploadToImgBB(file, fileObj) {
+    return new Promise((resolve, reject) => {
         const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
         
-        // 1. Обновляем статус на "загрузка"
-        fileObj.status = 'uploading';
-        fileObj.progress = 0;
-        
-        // 2. Создаем FormData
+        // 1. Создаем FormData
         const formData = new FormData();
-        formData.append('image', fileObj.file);
+        formData.append('image', file);
         
-        // 3. Создаем XMLHttpRequest для отслеживания прогресса
-        const xhr = new XMLHttpRequest();
+        // 2. Используем fetch с AbortController для таймаута
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort();
+            reject(new Error('Timeout (15 seconds)'));
+        }, 15000);
         
-        // Отслеживание прогресса
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                fileObj.progress = Math.round((event.loaded / event.total) * 100);
-                // Форсируем обновление Vue
-                this.$forceUpdate();
+        // 3. Отправляем запрос
+        fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+        })
+        .then(async response => {
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
-        };
-        
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                try {
-                    const result = JSON.parse(xhr.responseText);
-                    if (result.success) {
-                        fileObj.status = 'completed';
-                        fileObj.progress = 100;
-                        fileObj.serverUrl = result.data.url;
-                        resolve(result.data.url);
-                    } else {
-                        fileObj.status = 'failed';
-                        reject(new Error(result.error?.message || 'ImgBB error'));
-                    }
-                } catch (e) {
-                    fileObj.status = 'failed';
-                    reject(e);
-                }
+            
+            const result = await response.json();
+            
+            if (result.success && result.data && result.data.url) {
+                resolve(result.data.url);
             } else {
-                fileObj.status = 'failed';
-                reject(new Error(`HTTP ${xhr.status}`));
+                throw new Error(result.error?.message || 'Unknown ImgBB error');
             }
-            this.$forceUpdate();
-        };
-        
-        xhr.onerror = () => {
-            fileObj.status = 'failed';
-            this.$forceUpdate();
-            reject(new Error('Network error'));
-        };
-        
-        xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
-        xhr.send(formData);
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            reject(error);
+        });
     });
 },
 async uploadFileWithProgress(file, fileObj) {
@@ -3390,294 +3546,237 @@ async uploadFileWithProgress(file, fileObj) {
         xhr.send(formData);
     });
 },
- async compressImage(file) {
-    console.log('Сжимаем изображение:', file.name);
-    
+async compressImage(file, maxWidth = 800, quality = 0.7) {
     return new Promise((resolve, reject) => {
+        // Для очень маленьких файлов (<500KB) не сжимаем
+        if (file.size < 500 * 1024) {
+            resolve(file);
+            return;
+        }
+        
+        const img = new Image();
         const reader = new FileReader();
         
         reader.onload = (e) => {
-            const img = new Image();
             img.src = e.target.result;
             
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Максимальные размеры
-                const MAX_WIDTH = 1200;
-                const MAX_HEIGHT = 1600;
-                
                 let width = img.width;
                 let height = img.height;
                 
-                // Изменяем размеры, сохраняя пропорции
+                // Рассчитываем новые размеры
                 if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
                     }
                 } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
+                    if (height > maxWidth) {
+                        width = Math.round((width * maxWidth) / height);
+                        height = maxWidth;
                     }
                 }
                 
                 canvas.width = width;
                 canvas.height = height;
                 
-                // Рисуем изображение на canvas
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF'; // Белый фон
+                ctx.fillRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Создаем сжатый blob
-                canvas.toBlob(
-                    (blob) => {
-                        if (!blob) {
-                            reject(new Error('Не удалось сжать изображение'));
-                            return;
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        // Проверяем, стал ли файл меньше
+                        if (blob.size < file.size * 0.9) { // Минимум на 10% меньше
+                            resolve(new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            }));
+                        } else {
+                            resolve(file); // Возвращаем оригинал если сжатие не эффективно
                         }
-                        
-                        console.log('Сжатие завершено:', {
-                            оригинал: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-                            сжатый: (blob.size / 1024 / 1024).toFixed(2) + 'MB',
-                            сжатие: Math.round((1 - blob.size / file.size) * 100) + '%'
-                        });
-                        
-                        const compressedFile = new File([blob], file.name, {
-                            type: 'image/jpeg',
-                            lastModified: Date.now()
-                        });
-                        
-                        resolve(compressedFile);
-                    },
-                    'image/jpeg',
-                    0.85 // Качество 85%
-                );
+                    } else {
+                        resolve(file);
+                    }
+                }, 'image/jpeg', quality);
             };
             
             img.onerror = () => {
-                reject(new Error('Ошибка загрузки изображения для сжатия'));
+                console.warn('Image compression failed, using original');
+                resolve(file);
             };
         };
         
-        reader.onerror = () => {
-            reject(new Error('Ошибка чтения файла'));
-        };
-        
+        reader.onerror = () => resolve(file);
         reader.readAsDataURL(file);
     });
 },
-async saveProduct() {
+ async saveProduct() {
     console.log('=== НАЧАЛО СОХРАНЕНИЯ ===');
     console.log('Режим:', this.editId ? 'Редактирование' : 'Создание');
-    console.log('editImages:', this.editImages?.length);
-    console.log('editNewFiles:', this.editNewFiles?.length);
-    console.log('localFiles:', this.localFiles?.length);
+    console.log('Количество цветов:', this.newP.variants.length);
     
-    // 1. ОЧИСТКА ВРЕМЕННЫХ КЛЮЧЕЙ
-    const cleanedVariants = JSON.parse(JSON.stringify(this.newP.variants));
-    
-    cleanedVariants.forEach(variant => {
-        const cleanedStocks = {};
-        Object.keys(variant.stocks || {}).forEach(key => {
-            if (!key.startsWith('temp_')) {
-                cleanedStocks[key] = variant.stocks[key];
-            }
-        });
-        variant.stocks = cleanedStocks;
-        
-        delete variant.tempKey;
-        delete variant.savedName;
-    });
-    
-    // 2. Валидация
+    // 1. ВАЛИДАЦИЯ
     if (!this.newP.title || !this.newP.price || !this.newP.category) {
-        return alert('Заполните название, цену и категорию!');
+        alert('Заполните название, цену и категорию товара!');
+        return;
     }
     
-    let hasValidSizes = false;
-    cleanedVariants.forEach(variant => {
-        Object.values(variant.stocks || {}).forEach(qty => {
-            if (qty > 0) hasValidSizes = true;
+    // Проверяем каждый цвет
+    for (let i = 0; i < this.newP.variants.length; i++) {
+        const v = this.newP.variants[i];
+        
+        // Название цвета
+        if (!v.color || v.color.trim() === '') {
+            alert(`Укажите название для цвета #${i + 1}`);
+            return;
+        }
+        
+        // Размеры
+        const stocks = v.stocks || {};
+        const hasSizes = Object.keys(stocks).length > 0;
+        if (!hasSizes) {
+            alert(`Добавьте хотя бы один размер для цвета "${v.color}"`);
+            return;
+        }
+        
+        // Проверяем есть ли хоть какое-то количество
+        let hasQuantity = false;
+        Object.values(stocks).forEach(qty => {
+            if (qty > 0) hasQuantity = true;
         });
-    });
-    
-    if (!hasValidSizes) {
-        return alert('Добавьте хотя бы один размер с количеством больше 0!');
+        if (!hasQuantity) {
+            alert(`Укажите количество больше 0 хотя бы для одного размера цвета "${v.color}"`);
+            return;
+        }
+        
+        // Фото
+        const hasImages = (v.images && v.images.length > 0) || 
+                         (v.localFiles && v.localFiles.length > 0) || 
+                         (v.uploadingFiles && v.uploadingFiles.length > 0);
+        if (!hasImages) {
+            alert(`Загрузите хотя бы одно фото для цвета "${v.color}"`);
+            return;
+        }
     }
     
     this.loading = true;
     
     try {
-        // 3. ПОДГОТОВКА ФАЙЛОВ ДЛЯ ЗАГРУЗКИ
-        const filesToUpload = [];
-        const uploadedUrls = [];
+        // 2. ПОДГОТОВКА ВАРИАНТОВ С ФОТО
+        const preparedVariants = [];
         
-        // ОПРЕДЕЛЯЕМ, КАКИЕ ФАЙЛЫ ЗАГРУЖАТЬ
-        if (this.editId) {
-            // РЕДАКТИРОВАНИЕ: используем editNewFiles
-            console.log('Режим редактирования, файлы:', this.editNewFiles.length);
+        for (let i = 0; i < this.newP.variants.length; i++) {
+            const variant = this.newP.variants[i];
+            console.log(`Обработка цвета ${i + 1}: ${variant.color}`);
             
-            // Добавляем новые файлы для загрузки
-            this.editNewFiles.forEach(fileObj => {
-                if (fileObj.file && fileObj.status !== 'uploaded' && fileObj.status !== 'completed') {
-                    fileObj.status = 'pending';
-                    filesToUpload.push(fileObj);
-                } else if (fileObj.serverUrl) {
-                    // Файл уже загружен ранее
-                    uploadedUrls.push(fileObj.serverUrl);
-                }
-            });
+            const variantImages = [];
             
-            // Добавляем существующие фото из базы
-            if (this.editImages && this.editImages.length > 0) {
-                this.editImages.forEach(img => {
-                    if (img && img.startsWith('http') && !uploadedUrls.includes(img)) {
-                        uploadedUrls.push(img);
+            // 2.1. Копируем существующие фото (при редактировании)
+            if (variant.images && Array.isArray(variant.images)) {
+                variant.images.forEach(img => {
+                    if (img && img.trim() !== '') {
+                        variantImages.push(img);
                     }
                 });
             }
             
-        } else {
-            // СОЗДАНИЕ НОВОГО: используем localFiles ИЛИ editNewFiles
-            console.log('Режим создания нового товара');
-            
-            // Объединяем все файлы в один массив для загрузки
-            const allFileObjects = [];
-            
-            if (this.localFiles && this.localFiles.length > 0) {
-                console.log('Добавляем localFiles:', this.localFiles.length);
-                this.localFiles.forEach(fileObj => {
-                    if (fileObj.file) {
-                        allFileObjects.push({
-                            ...fileObj,
-                            status: 'pending',
-                            progress: 0
-                        });
+            // 2.2. Загружаем локальные файлы (для нового товара)
+            if (variant.localFiles && variant.localFiles.length > 0) {
+                console.log(`Локальные файлы для цвета ${variant.color}:`, variant.localFiles.length);
+                
+                for (const fileObj of variant.localFiles) {
+                    try {
+                        fileObj.status = 'uploading';
+                        this.$forceUpdate();
+                        
+                        const compressedFile = await this.compressImage(fileObj.file, 800, 0.7);
+                        const imageUrl = await this.uploadToImgBB(compressedFile, fileObj);
+                        
+                        variantImages.push(imageUrl);
+                        fileObj.status = 'completed';
+                        
+                        console.log(`✅ Фото загружено: ${fileObj.name}`);
+                    } catch (error) {
+                        console.error('Ошибка загрузки фото:', error);
+                        
+                        // Fallback: используем Data URL
+                        try {
+                            const dataUrl = await this.fileToDataURL(fileObj.file);
+                            variantImages.push(dataUrl);
+                            fileObj.status = 'completed';
+                            console.log(`⚠ Использован Data URL для: ${fileObj.name}`);
+                        } catch (fallbackError) {
+                            console.error('Ошибка создания Data URL:', fallbackError);
+                        }
                     }
-                });
-            }
-            
-            if (this.editNewFiles && this.editNewFiles.length > 0) {
-                console.log('Добавляем editNewFiles:', this.editNewFiles.length);
-                this.editNewFiles.forEach(fileObj => {
-                    if (fileObj.file && fileObj.status !== 'uploaded' && fileObj.status !== 'completed') {
-                        fileObj.status = 'pending';
-                        fileObj.progress = 0;
-                        allFileObjects.push(fileObj);
-                    } else if (fileObj.serverUrl) {
-                        uploadedUrls.push(fileObj.serverUrl);
-                    }
-                });
-            }
-            
-            // Преобразуем в единый формат
-            filesToUpload.push(...allFileObjects.map(fileObj => ({
-                ...fileObj,
-                status: 'pending',
-                progress: 0
-            })));
-        }
-        
-        console.log('Файлов для загрузки:', filesToUpload.length);
-        console.log('Уже загруженных URL:', uploadedUrls.length);
-        
-        // 4. ЗАГРУЗКА ФАЙЛОВ С ИНДИКАТОРАМИ
-        if (filesToUpload.length > 0) {
-            console.log(`Начинаю загрузку ${filesToUpload.length} файлов...`);
-            
-            for (let fileObj of filesToUpload) {
-                try {
-                    console.log('Загружаю:', fileObj.name || fileObj.file?.name);
                     
-                    // Проверяем, есть ли уже serverUrl и загружен ли файл
-                    if (fileObj.serverUrl && (fileObj.status === 'uploaded' || fileObj.status === 'completed')) {
-                        console.log('Файл уже загружен ранее, URL:', fileObj.serverUrl);
-                        uploadedUrls.push(fileObj.serverUrl);
+                    this.$forceUpdate();
+                }
+            }
+            
+            // 2.3. Загружаем новые файлы (при редактировании существующего товара)
+            if (variant.uploadingFiles && variant.uploadingFiles.length > 0) {
+                console.log(`Новые файлы для цвета ${variant.color}:`, variant.uploadingFiles.length);
+                
+                for (const fileObj of variant.uploadingFiles) {
+                    if (fileObj.status === 'completed') {
+                        // Если уже загружено ранее, добавляем URL
+                        if (fileObj.serverUrl) {
+                            variantImages.push(fileObj.serverUrl);
+                        }
                         continue;
                     }
                     
-                    // Обновляем статус на "загрузка"
-                    fileObj.status = 'uploading';
-                    fileObj.progress = 0;
-                    this.$forceUpdate(); // Принудительное обновление для отображения прогресса
-                    
-                    // Сжимаем изображение
-                    console.log('Сжимаем изображение...');
-                    const compressedFile = await this.compressImage(fileObj.file);
-                    
-                    // Загружаем на сервер с отслеживанием прогресса
-                    console.log('Отправляем на сервер...');
-                    const imageUrl = await this.uploadFileWithProgress(compressedFile, fileObj);
-                    
-                    console.log('✅ Успешно загружено, URL:', imageUrl);
-                    uploadedUrls.push(imageUrl);
-                    
-                    // Обновляем статус файла
-                    fileObj.status = 'completed';
-                    fileObj.progress = 100;
-                    fileObj.serverUrl = imageUrl;
-                    this.$forceUpdate();
-                    
-                    // Небольшая пауза для отображения прогресса
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    
-                } catch (uploadError) {
-                    console.error('❌ Ошибка загрузки файла:', uploadError);
-                    
-                    // Обновляем статус на "ошибка"
-                    fileObj.status = 'failed';
-                    fileObj.error = uploadError.message;
-                    this.$forceUpdate();
-                    
-                    // Fallback: создаем Data URL
                     try {
-                        const fallbackUrl = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => resolve(e.target.result);
-                            reader.readAsDataURL(fileObj.file);
-                        });
-                        
-                        console.log('Используем Data URL как fallback');
-                        uploadedUrls.push(fallbackUrl);
-                        fileObj.serverUrl = fallbackUrl;
-                        fileObj.status = 'fallback';
+                        fileObj.status = 'uploading';
                         this.$forceUpdate();
-                    } catch (fallbackError) {
-                        console.error('Ошибка создания Data URL:', fallbackError);
+                        
+                        const compressedFile = await this.compressImage(fileObj.file, 800, 0.7);
+                        const imageUrl = await this.uploadToImgBB(compressedFile, fileObj);
+                        
+                        variantImages.push(imageUrl);
+                        fileObj.status = 'completed';
+                        fileObj.serverUrl = imageUrl;
+                        
+                        console.log(`✅ Новое фото загружено: ${fileObj.name}`);
+                    } catch (error) {
+                        console.error('Ошибка загрузки нового фото:', error);
+                        
+                        // Fallback: Data URL
+                        try {
+                            const dataUrl = await this.fileToDataURL(fileObj.file);
+                            variantImages.push(dataUrl);
+                            fileObj.status = 'completed';
+                            console.log(`⚠ Использован Data URL для нового файла: ${fileObj.name}`);
+                        } catch (fallbackError) {
+                            console.error('Ошибка создания Data URL:', fallbackError);
+                        }
                     }
+                    
+                    this.$forceUpdate();
                 }
             }
-        }
-        
-        // 5. ФОРМИРОВАНИЕ СПИСКА ВСЕХ ФОТО
-        let allImages = [...uploadedUrls];
-        
-        // Добавляем существующие фото из базы (только для редактирования)
-        if (this.editId && this.editImages && this.editImages.length > 0) {
-            this.editImages.forEach(img => {
-                if (img && img.startsWith('http') && !allImages.includes(img)) {
-                    allImages.push(img);
-                }
+            
+            // 2.4. Проверяем, что есть хотя бы одно фото
+            if (variantImages.length === 0) {
+                throw new Error(`Нет фото для цвета "${variant.color}"`);
+            }
+            
+            // 2.5. Создаем подготовленный вариант
+            preparedVariants.push({
+                color: variant.color.trim(),
+                images: variantImages,
+                stocks: variant.stocks || {},
+                createdAt: Date.now()
             });
+            
+            console.log(`✅ Цвет "${variant.color}" подготовлен: ${variantImages.length} фото`);
         }
         
-        // Удаляем дубликаты и фильтруем
-        allImages = [...new Set(allImages.filter(img => 
-            img && img.trim() !== '' && (img.startsWith('http') || img.startsWith('data:'))
-        ))];
-        
-        console.log('Всего уникальных фото:', allImages.length);
-        console.log('Список фото:', allImages);
-        
-        // 6. ПРОВЕРКА НАЛИЧИЯ ФОТО
-        if (allImages.length === 0) {
-            this.loading = false;
-            return alert('Загрузите хотя бы одно фото!');
-        }
-        
-        // 7. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ
+        // 3. ФОРМИРОВАНИЕ ДАННЫХ ДЛЯ СОХРАНЕНИЯ
         const productData = {
             title: this.newP.title.trim(),
             desc: this.newP.desc || '',
@@ -3685,114 +3784,120 @@ async saveProduct() {
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
-            images: allImages, // Для обратной совместимости
             hidden: !!this.newP.hidden,
-            hiddenSizes: this.newP.hiddenSizes || [],
-            variants: cleanedVariants.map(variant => ({
-        ...variant,
-        images: [...allImages] // Каждому варианту свои изображения
-    })),
-            
+            variants: preparedVariants,
             updatedAt: Date.now()
         };
         
-        // 8. ДОБАВЛЯЕМ ФОТО К КАЖДОМУ ВАРИАНТУ
-        productData.variants.forEach(variant => {
-            variant.images = [...allImages];
+        console.log('=== ДАННЫЕ ДЛЯ СОХРАНЕНИЯ ===');
+        console.log('Название:', productData.title);
+        console.log('Цена:', productData.price);
+        console.log('Категория:', productData.category);
+        console.log('Количество вариантов:', productData.variants.length);
+        productData.variants.forEach((v, idx) => {
+            console.log(`Вариант ${idx + 1} (${v.color}): ${v.images.length} фото`);
         });
         
-        // 9. СОХРАНЕНИЕ В БАЗЕ
-        console.log('Сохранение в Firestore...');
-        
+        // 4. СОХРАНЕНИЕ В FIREBASE
         if (this.editId) {
-            // Редактирование
+            // Редактирование существующего товара
+            console.log('Редактирование товара ID:', this.editId);
+            
             const docRef = window.fb.doc(window.db, "products", this.editId);
             await window.fb.updateDoc(docRef, productData);
             
             // Обновляем локально
             const idx = this.products.findIndex(p => p.id === this.editId);
             if (idx !== -1) {
-                this.products.splice(idx, 1, { 
-                    id: this.editId, 
+                const updatedProduct = {
+                    id: this.editId,
                     ...productData,
-                    aIdx: 0 
-                });
+                    aIdx: 0
+                };
+                this.products.splice(idx, 1, updatedProduct);
             }
             
-            console.log('✅ Товар обновлен!');
-            alert('Товар успешно обновлен!');
+            this.showTempMessage('✅ Товар обновлен!');
             
         } else {
-            // Создание нового
+            // Создание нового товара
+            console.log('Создание нового товара');
+            
             productData.createdAt = Date.now();
+            
             const docRef = await window.fb.addDoc(
-                window.fb.collection(window.db, "products"), 
+                window.fb.collection(window.db, "products"),
                 productData
             );
             
             // Добавляем локально
-            this.products.unshift({ 
-                id: docRef.id, 
+            const newProduct = {
+                id: docRef.id,
                 ...productData,
-                aIdx: 0 
-            });
+                aIdx: 0
+            };
+            this.products.unshift(newProduct);
             
-            console.log('✅ Товар создан! ID:', docRef.id);
-            alert('Товар успешно создан!');
+            this.showTempMessage('✅ Товар создан!');
+            console.log('Создан товар с ID:', docRef.id);
         }
         
-        // 10. ОЧИСТКА ПАМЯТИ
-        this.cleanupMemory();
+        // 5. ОЧИСТКА ФОРМЫ И ПАМЯТИ
+        this.cleanupAfterSave();
         
-        // 11. ЗАВЕРШЕНИЕ
-        this.cancelEdit();
-        this.tab = 'profile';
+        // 6. ПЕРЕХОД В СПИСОК ТОВАРОВ
+        setTimeout(() => {
+            this.showProductList = true;
+            window.scrollTo(0, 0);
+        }, 500);
         
-    } catch (e) {
-        console.error("Критическая ошибка сохранения:", e);
-        alert('Ошибка сохранения: ' + e.message);
+    } catch (error) {
+        console.error('Критическая ошибка сохранения:', error);
+        console.error('Стек ошибки:', error.stack);
+        
+        let errorMessage = 'Ошибка сохранения товара: ';
+        if (error.message.includes('network')) {
+            errorMessage += 'Проблема с интернет-соединением';
+        } else if (error.message.includes('quota')) {
+            errorMessage += 'Превышен лимит хранилища';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
+        
+        // Визуальная индикация ошибки
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+        }
     } finally {
         this.loading = false;
     }
 },
-
-// Добавьте этот метод для очистки памяти
-cleanupMemory() {
-    // Освобождаем превью URL из всех массивов
-    const freePreviewUrls = (filesArray) => {
-        if (filesArray && Array.isArray(filesArray)) {
-            filesArray.forEach(fileObj => {
-                if (fileObj.preview && fileObj.preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(fileObj.preview);
+cleanupAfterSave() {
+    // Очищаем превью URL для всех файлов
+    const cleanupFiles = (variants) => {
+        variants?.forEach(variant => {
+            // Локальные файлы
+            variant.localFiles?.forEach(file => {
+                if (file.preview && file.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(file.preview);
                 }
             });
-        }
+            
+            // Загружаемые файлы
+            variant.uploadingFiles?.forEach(file => {
+                if (file.preview && file.preview.startsWith('blob:')) {
+                    URL.revokeObjectURL(file.preview);
+                }
+            });
+        });
     };
     
-    freePreviewUrls(this.editNewFiles);
-    freePreviewUrls(this.localFiles);
+    // Очищаем файлы из формы
+    cleanupFiles(this.newP.variants);
     
-    // Очищаем массивы
-    this.editNewFiles = [];
-    this.localFiles = [];
-    this.editImages = [];
-    
-    console.log('Память очищена');
-},
-
-
-// Обновите метод cancelEdit
-cancelEdit() {
-    this.editId = null;
-    this.fullEditMode = false;
-    this.showProductList = true;
-    
-    // Очищаем память
-    this.cleanupMemory();
-    
-    // Сбрасываем временные поля
-    this.tempSizes = [];
-    
+    // Сбрасываем форму
     this.newP = {
         title: '',
         desc: '',
@@ -3800,20 +3905,45 @@ cancelEdit() {
         oldPrice: null,
         category: '',
         isNew: false,
-        hiddenSizes: [],
+        hidden: false,
         variants: [
-            { color: '', images: [], stocks: {} }
+            {
+                color: '',
+                images: [],
+                localFiles: [],
+                uploadingFiles: [],
+                stocks: {}
+            }
         ]
     };
     
-    // Сбрасываем режимы редактирования
-    if (this.products) {
-        this.products.forEach(p => {
-            p.editingVariant = null;
-            p.fullEditMode = false;
-        });
-    }
+    // Сбрасываем временные размеры
+    this.tempSizes = [[]];
+    this.addSizeField(0);
+    
+    // Сбрасываем режим редактирования
+    this.editId = null;
+    
+    // Сбрасываем флаги редактирования у всех товаров
+    this.products.forEach(p => {
+        p.editingVariant = null;
+        p.fullEditMode = false;
+    });
+    
+    console.log('Форма очищена, память освобождена');
 },
+
+// Вспомогательный метод для Data URL
+fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+},
+
+
         async deleteProduct(id) {
             const msg = "⚠️ Удалить заказ навсегда?";
     
@@ -4049,25 +4179,22 @@ async updateStatus(order, newStatus) {
         order.isUpdating = false;
     }
 },
-async handleFiles(e, isEdit = false) {
+handleFiles(e, isEdit = false) {
     const files = Array.from(e.target.files);
+    if (files.length === 0) return;
     
     for (const file of files) {
-        // Проверяем тип файла
         if (!file.type.startsWith('image/')) {
-            alert(`Файл "${file.name}" не является изображением. Пропускаем.`);
+            alert(`Файл "${file.name}" не является изображением`);
             continue;
         }
         
-        // Проверяем размер файла (максимум 10MB)
         if (file.size > 10 * 1024 * 1024) {
-            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 10MB.`);
+            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB)`);
             continue;
         }
         
-        // Создаем превью
         const previewUrl = URL.createObjectURL(file);
-        
         const fileObj = {
             id: Date.now() + Math.random(),
             file: file,
@@ -4075,36 +4202,29 @@ async handleFiles(e, isEdit = false) {
             name: file.name,
             size: file.size,
             type: file.type,
-            status: 'pending', // pending, uploading, completed, failed, fallback
+            status: 'pending',
             progress: 0,
-            serverUrl: null,
-            error: null
+            serverUrl: null
         };
         
-        // Добавляем в соответствующий массив
         if (isEdit) {
+            // Для редактирования товара
             if (!this.editNewFiles) this.editNewFiles = [];
             this.editNewFiles.push(fileObj);
         } else {
+            // Для создания нового товара
             if (!this.localFiles) this.localFiles = [];
             this.localFiles.push(fileObj);
         }
         
-        // Вибрация для каждого файла
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
-        
-        console.log('Добавлен файл:', file.name);
     }
     
-    // Очищаем input для возможности повторной загрузки
     e.target.value = '';
-    
-    // Форсируем обновление Vue
     this.$forceUpdate();
 },
-
 calculateListHeight() {
     // 1. Проверка условий: работает только когда список открыт и пользователь - админ
     if (this.showProductList && this.isAdmin) {
