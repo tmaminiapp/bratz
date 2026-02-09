@@ -1798,7 +1798,7 @@ Vue.createApp({
         showNewSizeFields: false, 
         uploadFiles: [], 
         editUploading: false,
-        tempSizes: [],           // Изменил на пустой массив
+        tempSizes: [[]],        // Изменил на пустой массив
         sizeKeys: [{}], 
         expandedDescriptionId: null, 
         selVariantIdx: 0,
@@ -2586,37 +2586,33 @@ removeVariantLocalFile(variantIndex, fileId) {
             this.vib();
         }
     },
-     addVariant() {
+    addVariant() {
     const newIndex = this.newP.variants.length;
     
-    // Добавляем новый вариант с пустыми массивами для фото
+    // Добавляем новый вариант
     this.newP.variants.push({
         color: '',
         images: [],
-        localFiles: [],      // Для нового товара
-        uploadingFiles: [],  // Для редактирования
-        stocks: {}
+        stocks: {},
+        localFiles: [],
+        uploadingFiles: []
     });
     
-    // Инициализируем tempSizes для нового варианта
-    if (!this.tempSizes[newIndex]) {
-        this.tempSizes[newIndex] = [];
-    }
+    // ВАЖНО: Инициализируем пустой массив для этого варианта
+    // Используйте Vue.set для реактивности
+    this.$set(this.tempSizes, newIndex, []);
     
-    // Добавляем первое пустое поле для размера
-    this.addSizeField(newIndex);
-    
-    // Прокручиваем к новому цвету
-    this.$nextTick(() => {
-        const newColorElement = document.querySelectorAll('.variant-block')[newIndex];
-        if (newColorElement) {
-            newColorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+    // Добавляем одно пустое поле для размера
+    this.tempSizes[newIndex].push({
+        name: '',
+        qty: 0,
+        hidden: false,
+        focused: false,
+        savedName: ''
     });
     
     this.vib();
 },
-
 // Добавить новый размер в вариант
 addSizeToVariant(product, variantIndex) {
     const variant = product.variants[variantIndex];
@@ -3135,7 +3131,15 @@ cancelEdit() {
     this.editImages = [];
     this.editNewFiles = [];
     this.localFiles = [];
-    this.tempSizes = [];
+
+    this.tempSizes = [[]];
+    this.tempSizes[0] = [{
+        name: '',
+        qty: 0,
+        hidden: false,
+        focused: false,
+        savedName: ''
+    }];
     
     // 4. Сбрасываем форму создания/редактирования товара
     this.newP = {
@@ -3156,7 +3160,9 @@ cancelEdit() {
             }
         ]
     };
-    
+    if (this.newP.variants[0]) {
+        this.newP.variants[0].stocks = {};
+    }
     // 5. Сбрасываем режимы редактирования у ВСЕХ товаров
     if (this.products && Array.isArray(this.products)) {
         this.products.forEach(p => {
@@ -3308,7 +3314,34 @@ openProductFromCart(item) {
         p.aIdx = Math.round(e.target.scrollLeft / width);
     }
 },
-
+initNewProduct() {
+    this.newP = {
+        title: '',
+        desc: '',
+        price: null,
+        oldPrice: null,
+        category: '',
+        isNew: false,
+        hidden: false,
+        variants: [{
+            color: '',
+            images: [],
+            stocks: {},
+            localFiles: [],
+            uploadingFiles: []
+        }]
+    };
+    
+    // Инициализируем tempSizes с одним пустым полем
+    this.tempSizes = [[]];
+    this.tempSizes[0] = [{
+        name: '',
+        qty: 0,
+        hidden: false,
+        focused: false,
+        savedName: ''
+    }];
+},
      openProduct(p) {
     // УБЕРИТЕ эту строку - она вызывает проблему!
     // this.tab = 'product';   // ❌ УДАЛИТЬ!
@@ -3874,11 +3907,12 @@ async saveProduct() {
     
     // 2. Проверка размеров
     let hasValidSizes = false;
-    this.newP.variants.forEach(variant => {
-        Object.values(variant.stocks || {}).forEach(qty => {
-            if (qty > 0) hasValidSizes = true;
-        });
-    });
+    this.newP.variants.forEach((variant, idx) => {
+    console.log(`Вариант ${idx} (${variant.color}):`);
+    console.log('- localFiles:', variant.localFiles?.length || 0);
+    console.log('- uploadingFiles:', variant.uploadingFiles?.length || 0);
+    console.log('- images (старые):', variant.images?.length || 0);
+});
     
     if (!hasValidSizes) {
         return alert('Добавьте хотя бы один размер с количеством больше 0!');
