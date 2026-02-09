@@ -2690,6 +2690,10 @@ showTempMessage(text) {
 
     // Если перешли в профиль, рисуем график
     if (id === 'profile') {
+        // Сбрасываем форму создания товара
+        if (this.isAdmin) {
+            this.resetNewProductForm();
+        }
         this.$nextTick(() => {
             // Даем достаточно времени для рендеринга DOM
             setTimeout(() => {
@@ -3135,7 +3139,7 @@ cancelEdit() {
     this.editImages = [];
     this.editNewFiles = [];
     this.localFiles = [];
-    this.tempSizes = [];
+     this.tempSizes = [[]]; 
     
     // 4. Сбрасываем форму создания/редактирования товара
     this.newP = {
@@ -3152,6 +3156,7 @@ cancelEdit() {
                 color: '', 
                 images: [], 
                 stocks: {},
+                localFiles: [],
                 uploadingFiles: [] 
             }
         ]
@@ -3178,6 +3183,12 @@ cancelEdit() {
     
     // 6. Сбрасываем индекс выбранного цвета
     this.currentVariantIndex = 0;
+    // 6. Добавляем первое пустое поле для размера
+    this.$nextTick(() => {
+        if (this.tempSizes[0] && this.tempSizes[0].length === 0) {
+            this.addSizeField(0);
+        }
+    });
     
     // 7. Прокручиваем наверх для лучшего UX
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3227,7 +3238,9 @@ addVariant() {
     this.newP.variants.push({
         color: '',
         images: [],
-        stocks: {}
+        stocks: {},  // Пустой объект!
+        localFiles: [],
+        uploadingFiles: []
     });
     
     // Инициализируем tempSizes для нового варианта
@@ -3243,6 +3256,12 @@ addVariant() {
         name: '',
         qty: 0,
         savedName: ''
+    });
+    this.$nextTick(() => {
+        const newColorElement = document.querySelectorAll('.variant-block')[newIndex];
+        if (newColorElement) {
+            newColorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     });
 },
 // В методе editProduct добавьте:
@@ -3359,6 +3378,46 @@ openProductFromCart(item) {
     if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
+},
+resetNewProductForm() {
+    // Очищаем все превью URL
+    this.cleanupAllPreviews();
+    
+    // Сбрасываем tempSizes с одним пустым массивом
+    this.tempSizes = [[]];
+    
+    // Сбрасываем newP до начального состояния
+    this.newP = {
+        title: '',
+        desc: '',
+        price: null,
+        oldPrice: null,
+        category: '',
+        isNew: false,
+        hidden: false,
+        hiddenSizes: [],
+        variants: [
+            { 
+                color: '', 
+                images: [], 
+                stocks: {},
+                localFiles: [],
+                uploadingFiles: []
+            }
+        ]
+    };
+    
+    // Сбрасываем ID редактирования
+    this.editId = null;
+    
+    // Добавляем первое поле для размера
+    this.$nextTick(() => {
+        if (this.tempSizes[0] && this.tempSizes[0].length === 0) {
+            this.addSizeField(0);
+        }
+    });
+    
+    console.log('Форма создания товара сброшена');
 },
         isFav(p) { return p && this.favorites.includes(p.id); },
         
@@ -4850,6 +4909,13 @@ updateChart() {
     // 3. Проверка админа
     this.isAdmin = this.adminIds.includes(Number(this.user.id));
     console.log('Is admin:', this.isAdmin);
+
+
+    if (this.isAdmin && this.tab === 'profile') {
+    this.$nextTick(() => {
+        this.resetNewProductForm();
+    });
+}
     
     // 4. Восстановление из localStorage
     const savedAddr = localStorage.getItem('naran_last_addr');
@@ -4919,17 +4985,21 @@ updateChart() {
                 ),
                 snap => {
                     this.allOrders = snap.docs.map(doc => {
-                        const data = doc.data();
-                        return {
-                            id: doc.id,
-                            ...data,
-                            // Добавляем дополнительные поля для удобства
-                            displayDate: data.createdAt?.toDate 
-                                ? data.createdAt.toDate().toLocaleDateString('ru-RU')
-                                : new Date().toLocaleDateString('ru-RU')
-                        };
-                    });
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data
+                };
+            });
                     console.log('Orders loaded:', this.allOrders.length);
+                    if (this.isAdmin && this.tab === 'profile') {
+                this.$nextTick(() => {
+                    this.resetNewProductForm(); // Добавьте эту строку!
+                    setTimeout(() => {
+                        this.updateChart();
+                    }, 800);
+                });
+            }
                     console.log('Sample order:', this.allOrders[0]);
                     
                     // Если мы на вкладке профиля и админ - обновляем график
