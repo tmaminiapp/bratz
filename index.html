@@ -895,23 +895,24 @@
             <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
             <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
 
-            <div v-if="p.variants && p.variants.filter(v => !v.hidden).length > 1" 
-              style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
-                 <div v-for="(v, vIdx) in p.variants.filter(v => !v.hidden)" 
-               :key="vIdx"
-                @click.stop="selectColorInCatalog(p, getOriginalVariantIndex(p, vIdx))"
-                :style="{
-               width: '12px',
-                height: '12px',
-               borderRadius: '50%',
-               border: '2px solid white',
-               background: catalogActiveColors[p.id] === vIdx ? '#000' : '#ccc',
-               cursor: 'pointer',
-               boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-               }"
-               :title="v.color">
-               </div>
-          </div>
+           <!-- В блоке products-grid, замените существующий блок с выбором цвета: -->
+<div v-if="p.variants && getVisibleVariants(p).length > 1" 
+     style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
+    <div v-for="(v, vIdx) in getVisibleVariants(p)" 
+         :key="vIdx"
+         @click.stop="selectVisibleColor(p, v)"
+         :style="{
+             width: '12px',
+             height: '12px',
+             borderRadius: '50%',
+             border: '2px solid white',
+             background: getActiveColorIndex(p) === vIdx ? '#000' : '#ccc',
+             cursor: 'pointer',
+             boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+         }"
+         :title="v.color">
+    </div>
+</div>
         </div>
 
         <div class="card-info">
@@ -2390,22 +2391,21 @@ handleImageError(e) {
         e.target.style.fontWeight = 'bold';
     }
 },
-        setCategory(name) {
-            try {
-                this.vib();
-                // "Все товары" сбрасывают в пустую строку строго
-                this.currentCat = name || '';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } catch (err) {
-                console.error("Ошибка смены категории:", err);
-                this.currentCat = '';
-            }
-        },
-     
-
-       
- 
-
+      setCategory(name) {
+    try {
+        this.vib();
+        // "Все товары" сбрасывают в пустую строку строго
+        this.currentCat = name || '';
+        
+        // Сбрасываем активные цвета при смене категории
+        this.catalogActiveColors = {};
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+        console.error("Ошибка смены категории:", err);
+        this.currentCat = '';
+    }
+},
 toggleDescription(productId) {
         if (this.expandedDescriptionId === productId) {
             this.expandedDescriptionId = null;
@@ -2414,13 +2414,51 @@ toggleDescription(productId) {
         }
         this.vib();
     },
+    // Метод для получения только видимых вариантов
+getVisibleVariants(product) {
+    if (!product || !product.variants) return [];
+    return product.variants.filter(v => !v.hidden);
+},
+
+// Метод для получения активного индекса цвета
+getActiveColorIndex(product) {
+    if (!product || !product.id) return 0;
+    return this.catalogActiveColors[product.id] || 0;
+},
+
+// Метод для выбора видимого цвета
+selectVisibleColor(product, variant) {
+    if (!product || !product.variants) return;
+    
+    // Находим индекс этого варианта среди видимых
+    const visibleVariants = this.getVisibleVariants(product);
+    const visibleIndex = visibleVariants.findIndex(v => v.color === variant.color);
+    
+    if (visibleIndex !== -1) {
+        // Находим реальный индекс в массиве всех вариантов
+        let realIndex = 0;
+        let visibleCount = 0;
+        for (let i = 0; i < product.variants.length; i++) {
+            if (!product.variants[i].hidden) {
+                if (visibleCount === visibleIndex) {
+                    realIndex = i;
+                    break;
+                }
+                visibleCount++;
+            }
+        }
+        
+        // Вызываем существующий метод
+        this.selectColorInCatalog(product, realIndex);
+    }
+},
    getProductImages(product) {
-    if (!product || !product.id) {
+    if (!product || !product.id || !product.variants) {
         return [this.defaultPlaceholder];
     }
     
     // Получаем список ВИДИМЫХ вариантов
-    const visibleVariants = product.variants?.filter(v => 
+    const visibleVariants = product.variants.filter(v => 
         !v.hidden && v.images && v.images.length > 0
     );
     
@@ -2432,33 +2470,16 @@ toggleDescription(productId) {
     // Определяем, какой вариант показывать для этого товара
     let variantIndex = this.catalogActiveColors[product.id] || 0;
     
-    // Проверяем, что выбранный индекс не скрыт
+    // Проверяем, что выбранный индекс не превышает количество видимых вариантов
     if (variantIndex >= visibleVariants.length) {
         variantIndex = 0;
+        this.$set(this.catalogActiveColors, product.id, variantIndex);
     }
     
-    // Находим соответствующий вариант в полном массиве
-    let actualVariantIndex = 0;
-    let foundIndex = -1;
-    
-    for (let i = 0; i < product.variants.length; i++) {
-        const variant = product.variants[i];
-        if (!variant.hidden && variant.images && variant.images.length > 0) {
-            foundIndex++;
-            if (foundIndex === variantIndex) {
-                actualVariantIndex = i;
-                break;
-            }
-        }
-    }
-    
-    // Сохраняем выбор для будущих показов
-    this.$set(this.catalogActiveColors, product.id, variantIndex);
-    
-    const variant = product.variants[actualVariantIndex];
+    // Берем изображения из видимого варианта
+    const variant = visibleVariants[variantIndex];
     
     if (variant && variant.images && variant.images.length > 0) {
-        // Фильтруем только валидные изображения
         return variant.images.filter(img => 
             img && typeof img === 'string' && 
             (img.startsWith('http://') || 
@@ -2603,19 +2624,19 @@ removeVariantImage(vIdx, imgIdx) {
             this.vib();
         }
     },
-   selectColorInCatalog(product, variantIndex) {
-    if (!product || !product.id) return;
-    
-    // Проверяем, что вариант не скрыт
-    const variant = product.variants?.[variantIndex];
-    if (!variant || variant.hidden) return;
+ selectColorInCatalog(product, variantIndex) {
+    if (!product || !product.id || !product.variants) return;
     
     // Находим индекс этого варианта среди видимых
     let visibleIndex = 0;
     let visibleCount = 0;
+    let found = false;
+    
     for (let i = 0; i < product.variants.length; i++) {
-        if (!product.variants[i].hidden) {
+        const variant = product.variants[i];
+        if (!variant.hidden) {
             if (i === variantIndex) {
+                found = true;
                 visibleIndex = visibleCount;
                 break;
             }
@@ -2623,11 +2644,33 @@ removeVariantImage(vIdx, imgIdx) {
         }
     }
     
-    // Сохраняем выбор цвета для этого товара
-    this.$set(this.catalogActiveColors, product.id, visibleIndex);
+    if (found) {
+        // Сохраняем выбор цвета для этого товара
+        this.$set(this.catalogActiveColors, product.id, visibleIndex);
+    } else {
+        // Если выбранный цвет скрыт, сбрасываем на первый видимый
+        this.$set(this.catalogActiveColors, product.id, 0);
+    }
     
     // Вибрация
     this.vib();
+},
+// Вставьте этот метод в секцию methods
+resetActiveColorIfHidden(product) {
+    if (!product || !product.id || !product.variants) return;
+    
+    const currentIndex = this.catalogActiveColors[product.id] || 0;
+    
+    // Получаем видимые варианты
+    const visibleVariants = product.variants.filter(v => !v.hidden);
+    
+    // Если текущий индекс больше количества видимых вариантов, сбрасываем на 0
+    if (currentIndex >= visibleVariants.length) {
+        this.$set(this.catalogActiveColors, product.id, 0);
+    }
+    
+    // Также сбрасываем временный размер
+    product.tempSize = null;
 },
     
     addVariant() {
@@ -2792,6 +2835,9 @@ async toggleVariantVisibility(product, variantIndex) {
         // Обновляем локально
         variant.hidden = newHiddenState;
         
+        // Сбрасываем активный цвет если нужно
+        this.resetActiveColorIfHidden(product);
+        
         // Сохраняем в Firebase
         const productRef = window.fb.doc(window.db, "products", product.id);
         await window.fb.updateDoc(productRef, {
@@ -2801,6 +2847,9 @@ async toggleVariantVisibility(product, variantIndex) {
         
         this.vib('light');
         alert(newHiddenState ? 'Цвет скрыт' : 'Цвет показан');
+        
+        // Принудительно обновляем отображение
+        this.$forceUpdate();
     } catch (e) {
         console.error("Ошибка:", e);
         alert("Не удалось изменить видимость цвета");
