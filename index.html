@@ -896,6 +896,7 @@
             <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
 
            <!-- В блоке products-grid, замените существующий блок с выбором цвета: -->
+<!-- В блоке products-grid, замените существующий блок с выбором цвета: -->
 <div v-if="p.variants && getVisibleVariants(p).length > 1" 
      style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
     <div v-for="(v, vIdx) in getVisibleVariants(p)" 
@@ -922,9 +923,10 @@
                 <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
             </div>
             
-          <div class="card-sizes" v-if="p.variants && p.variants[catalogActiveColors[p.id] || 0]">
-   <div v-for="(qty, sz) in (p.variants[catalogActiveColors[p.id] || 0].stocks || {})" 
-        :key="sz"
+        <div class="card-sizes" v-if="p.variants && visibleVariants.length > 0">
+    <!-- Получаем активный ВИДИМЫЙ вариант -->
+    <div v-for="(qty, sz) in (visibleVariants[getActiveColorIndex(p)]?.stocks || {})" 
+         :key="sz"
          @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
          :class="['size-chip', {
             active: p.tempSize === sz,
@@ -2087,6 +2089,17 @@ selVariant() {
                 }, 0);
             },
     },
+    watch: {
+    products: {
+        handler(newProducts) {
+            // При изменении списка товаров сбрасываем выбор цветов для скрытых вариантов
+            newProducts.forEach(product => {
+                this.resetActiveColorIfHidden(product);
+            });
+        },
+        deep: true
+    }
+},
     methods: {
         vib() { tg.HapticFeedback.impactOccurred('light'); },
 total() {
@@ -2415,12 +2428,13 @@ toggleDescription(productId) {
         this.vib();
     },
     // Метод для получения только видимых вариантов
+// Метод для получения только видимых вариантов
 getVisibleVariants(product) {
     if (!product || !product.variants) return [];
     return product.variants.filter(v => !v.hidden);
 },
 
-// Метод для получения активного индекса цвета
+// Метод для получения активного индекса цвета среди видимых
 getActiveColorIndex(product) {
     if (!product || !product.id) return 0;
     return this.catalogActiveColors[product.id] || 0;
@@ -2430,29 +2444,21 @@ getActiveColorIndex(product) {
 selectVisibleColor(product, variant) {
     if (!product || !product.variants) return;
     
-    // Находим индекс этого варианта среди видимых
-    const visibleVariants = this.getVisibleVariants(product);
+    // Находим индекс этого варианта среди ВИДИМЫХ
+    const visibleVariants = product.variants.filter(v => !v.hidden);
     const visibleIndex = visibleVariants.findIndex(v => v.color === variant.color);
     
     if (visibleIndex !== -1) {
-        // Находим реальный индекс в массиве всех вариантов
-        let realIndex = 0;
-        let visibleCount = 0;
-        for (let i = 0; i < product.variants.length; i++) {
-            if (!product.variants[i].hidden) {
-                if (visibleCount === visibleIndex) {
-                    realIndex = i;
-                    break;
-                }
-                visibleCount++;
-            }
-        }
+        // Сохраняем индекс видимого варианта
+        this.$set(this.catalogActiveColors, product.id, visibleIndex);
         
-        // Вызываем существующий метод
-        this.selectColorInCatalog(product, realIndex);
+        // Принудительно обновляем отображение
+        this.$forceUpdate();
+        
+        this.vib();
     }
 },
-   getProductImages(product) {
+  getProductImages(product) {
     if (!product || !product.id || !product.variants) {
         return [this.defaultPlaceholder];
     }
@@ -2467,20 +2473,20 @@ selectVisibleColor(product, variant) {
         return [this.defaultPlaceholder];
     }
     
-    // Определяем, какой вариант показывать для этого товара
-    let variantIndex = this.catalogActiveColors[product.id] || 0;
+    // Получаем индекс активного цвета для этого товара
+    let activeIndex = this.catalogActiveColors[product.id] || 0;
     
-    // Проверяем, что выбранный индекс не превышает количество видимых вариантов
-    if (variantIndex >= visibleVariants.length) {
-        variantIndex = 0;
-        this.$set(this.catalogActiveColors, product.id, variantIndex);
+    // Проверяем, что активный индекс не превышает количество видимых вариантов
+    if (activeIndex >= visibleVariants.length) {
+        activeIndex = 0;
+        this.$set(this.catalogActiveColors, product.id, activeIndex);
     }
     
-    // Берем изображения из видимого варианта
-    const variant = visibleVariants[variantIndex];
+    // Берем изображения из активного ВИДИМОГО варианта
+    const activeVariant = visibleVariants[activeIndex];
     
-    if (variant && variant.images && variant.images.length > 0) {
-        return variant.images.filter(img => 
+    if (activeVariant && activeVariant.images && activeVariant.images.length > 0) {
+        return activeVariant.images.filter(img => 
             img && typeof img === 'string' && 
             (img.startsWith('http://') || 
              img.startsWith('https://') || 
@@ -2627,30 +2633,26 @@ removeVariantImage(vIdx, imgIdx) {
  selectColorInCatalog(product, variantIndex) {
     if (!product || !product.id || !product.variants) return;
     
-    // Находим индекс этого варианта среди видимых
+    // Находим индекс этого варианта среди ВИДИМЫХ
+    const visibleVariants = product.variants.filter(v => !v.hidden);
     let visibleIndex = 0;
-    let visibleCount = 0;
-    let found = false;
     
     for (let i = 0; i < product.variants.length; i++) {
-        const variant = product.variants[i];
-        if (!variant.hidden) {
+        if (!product.variants[i].hidden) {
             if (i === variantIndex) {
-                found = true;
-                visibleIndex = visibleCount;
                 break;
             }
-            visibleCount++;
+            visibleIndex++;
         }
     }
     
-    if (found) {
-        // Сохраняем выбор цвета для этого товара
-        this.$set(this.catalogActiveColors, product.id, visibleIndex);
-    } else {
-        // Если выбранный цвет скрыт, сбрасываем на первый видимый
-        this.$set(this.catalogActiveColors, product.id, 0);
+    // Ограничиваем индекс количеством видимых вариантов
+    if (visibleIndex >= visibleVariants.length) {
+        visibleIndex = 0;
     }
+    
+    // Сохраняем индекс видимого варианта
+    this.$set(this.catalogActiveColors, product.id, visibleIndex);
     
     // Вибрация
     this.vib();
@@ -3649,15 +3651,17 @@ quickAddToCart(p) {
     if (!p) return;
     this.vib();
 
-     const activeColorIndex = this.catalogActiveColors[p.id] || 0;
-    const variant = p.variants?.[activeColorIndex];
+    // Получаем активный ВИДИМЫЙ вариант
+    const visibleVariants = this.getVisibleVariants(p);
+    const activeIndex = this.getActiveColorIndex(p);
+    const variant = visibleVariants[activeIndex];
     
     if (!variant) {
         return this.openProduct(p);
     }
     
-    // Остальной код остается прежним, но использует variant вместо p.variants[0]
-    const currentStock = variant.stocks || variant.stock || {}; 
+    // Используем variant вместо p.variants[0]
+    const currentStock = variant.stocks || variant.stock || {};
 
     // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
     // Если клиент кликнул на чип в каталоге — берем его (tempSize)
@@ -3678,8 +3682,7 @@ quickAddToCart(p) {
     }
 
     // 4. ФОРМИРУЕМ УНИКАЛЬНЫЙ ID (ID товара + Цвет + Размер)
-    const currentColor = variant.color;
-    const cartId = `${p.id}_${currentColor}_${selSize}`;
+    const cartId = `${p.id}_${variant.color}_${selSize}`;
     
     // 5. ДОБАВЛЕНИЕ В КОРЗИНУ
     const exist = this.cart.find(i => i.cartId === cartId);
@@ -3697,16 +3700,16 @@ quickAddToCart(p) {
     } else {
         // Добавляем новый товар в корзину
         this.cart.push({ 
-            id: p.id,
-            cartId: cartId,
-            title: p.title,
-            price: Number(p.price),
-            // Берем фото именно выбранного цвета
-            img: currentVariant.images[0] || (p.images ? p.images[0] : ''),
-            selSize: selSize,
-            selColor: currentColor,
-            qty: 1
-        });
+        id: p.id,
+        cartId: cartId,
+        title: p.title,
+        price: Number(p.price),
+        // Берем фото из активного ВИДИМОГО варианта
+        img: variant.images[0] || (p.images ? p.images[0] : ''),
+        selSize: selSize,
+        selColor: variant.color,
+        qty: 1
+    });
     }
 
     this.saveCart();
