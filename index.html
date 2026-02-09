@@ -774,7 +774,7 @@
     /* ========== MEDIA QUERIES ========== */
    @media (max-width: 480px) {
     .products-grid {
-        grid-template-columns: 1fr; /* На очень маленьких - одна колонка */
+        grid-template-columns: 1fr 1fr; /* 2 колонки даже на мобильных */
         gap: 10px;
     }
     
@@ -1859,7 +1859,7 @@ Vue.createApp({
         },
         
         // === ВРЕМЕННЫЕ ДАННЫЕ ДЛЯ ФОРМЫ ===
-        tempSizes: [], // Используем только этот массив
+       tempSizes: [[]], // Первый вариант имеет одно пустое поле
         newSizeFields: {}, // Для хранения полей ввода размеров
         
         // === ОСНОВНЫЕ СОСТОЯНИЯ ===
@@ -2199,6 +2199,33 @@ removeFileFromQueue(variantIndex, fileId) {
         this.vib();
     }
 },
+resetForm() {
+    // Сбрасываем форму к исходному состоянию
+    this.newP = {
+        title: '',
+        desc: '',
+        price: null,
+        oldPrice: null,
+        category: '',
+        isNew: false,
+        hidden: false,
+        variants: [
+            { 
+                color: '', 
+                images: [], 
+                stocks: {},
+                fileQueue: []
+            }
+        ]
+    };
+    
+    // Сбрасываем временные размеры
+    this.tempSizes = [[]];
+    
+    // Сбрасываем режим редактирования
+    this.editId = null;
+    this.fullEditMode = false;
+},
 // === УДАЛЕНИЕ СУЩЕСТВУЮЩЕГО ИЗОБРАЖЕНИЯ ИЗ ВАРИАНТА ===
 removeVariantImage(vIdx, imgIdx) {
     if (confirm("Удалить это фото из товара?")) {
@@ -2531,13 +2558,20 @@ removeVariantImage(vIdx, imgIdx) {
         fileQueue: [] // ТОЛЬКО ОДИН МАССИВ ДЛЯ ФАЙЛОВ
     });
     
-    // Инициализируем tempSizes для нового варианта
-    if (!this.tempSizes[newIndex]) {
-        this.tempSizes[newIndex] = [];
+    // ВАЖНО: Инициализируем tempSizes для нового варианта ПРАВИЛЬНО
+    if (!this.tempSizes) {
+        this.tempSizes = [];
     }
     
+    // Создаем новый массив для этого варианта
+    this.tempSizes[newIndex] = [];
+    
     // Добавляем первое пустое поле для размера
-    this.addSizeField(newIndex);
+    this.tempSizes[newIndex].push({
+        name: '',
+        qty: 0,
+        savedName: ''
+    });
     
     // Прокручиваем к новому цвету
     this.$nextTick(() => {
@@ -2666,18 +2700,19 @@ getProductSizes(p) {
 },
 addSizeField(vIdx) {
     // Инициализируем массив для этого варианта, если его нет
+    if (!this.tempSizes) {
+        this.tempSizes = [];
+    }
+    
     if (!this.tempSizes[vIdx]) {
-        // Используем обычное присваивание вместо this.$set
-        this.tempSizes[vIdx] = [];
+        // Используем Vue.set для реактивности
+        this.$set(this.tempSizes, vIdx, []);
     }
     
     // Добавляем новое пустое поле
     this.tempSizes[vIdx].push({
         name: '',
         qty: 0,
-        hidden: false,
-        focused: false,
-        tempKey: null,
         savedName: ''
     });
     
@@ -2691,7 +2726,6 @@ addSizeField(vIdx) {
         }
     });
 },
-
 // Удалить поле размера (только для дополнительных полей)
 removeSizeField(vIdx, fieldIndex) {
     if (fieldIndex === 0) return; // Не удаляем первое поле
@@ -2701,7 +2735,8 @@ removeSizeField(vIdx, fieldIndex) {
     // Если поле было заполнено, удаляем из stocks
     if (field.name && field.name.trim()) {
         const sizeName = field.name.trim();
-        if (this.newP.variants[vIdx].stocks[sizeName] !== undefined) {
+        if (this.newP.variants[vIdx].stocks && 
+            this.newP.variants[vIdx].stocks[sizeName] !== undefined) {
             delete this.newP.variants[vIdx].stocks[sizeName];
         }
     }
@@ -2709,6 +2744,9 @@ removeSizeField(vIdx, fieldIndex) {
     // Удаляем поле из массива
     this.tempSizes[vIdx].splice(fieldIndex, 1);
     this.vib();
+    
+    // Обновляем DOM
+    this.$forceUpdate();
 },
 editProduct(p) {
     const list = document.querySelector('.stable-list');
@@ -3096,25 +3134,36 @@ cancelEdit() {
 
 // Синхронизация поля с stocks
 syncSizeToStocks(vIdx, fieldIndex) {
-    if (!this.tempSizes[vIdx] || !this.tempSizes[vIdx][fieldIndex]) return;
+    // Проверяем существование массивов
+    if (!this.tempSizes || !this.tempSizes[vIdx] || !this.tempSizes[vIdx][fieldIndex]) {
+        console.warn('tempSizes не инициализирован');
+        return;
+    }
     
     const field = this.tempSizes[vIdx][fieldIndex];
     const sizeName = (field.name || '').trim().toUpperCase();
     const qty = Number(field.qty) || 0;
     
-    if (!sizeName) {
-        // Если поле пустое, удаляем из stocks
-        if (field.savedName) {
-            delete this.newP.variants[vIdx].stocks[field.savedName];
-        }
-        return;
+    // Инициализируем stocks если их нет
+    if (!this.newP.variants[vIdx].stocks) {
+        this.newP.variants[vIdx].stocks = {};
     }
     
-    // Обновляем stocks
-    this.newP.variants[vIdx].stocks[sizeName] = qty;
-    field.savedName = sizeName;
+    // Удаляем старый размер если название изменилось
+    if (field.savedName && field.savedName !== sizeName) {
+        delete this.newP.variants[vIdx].stocks[field.savedName];
+    }
+    
+    if (sizeName) {
+        // Обновляем stocks
+        this.newP.variants[vIdx].stocks[sizeName] = qty;
+        field.savedName = sizeName;
+    } else if (field.savedName) {
+        // Если поле пустое, удаляем из stocks
+        delete this.newP.variants[vIdx].stocks[field.savedName];
+        field.savedName = '';
+    }
 },
-
 // Удалить сохраненный размер
 removeSavedSize(vIdx, sizeName) {
     if (confirm(`Удалить размер "${sizeName}"?`)) {
@@ -3970,6 +4019,7 @@ async saveProduct() {
         
         // ОЧИСТКА ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ
         this.cleanupAfterSave();
+        this.resetForm();
         this.tab = 'profile';
         
     } catch (error) {
