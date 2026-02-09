@@ -3898,7 +3898,12 @@ compressImageFast(file) {
     });
 },
 async saveProduct() {
-    console.log('=== НАЧАЛО СОХРАНЕНИЯ ===');
+    console.log('Проверка tempSizes:', JSON.stringify(this.tempSizes, null, 2));
+    console.log('Проверка newP.variants:', JSON.stringify(this.newP.variants.map(v => ({
+    color: v.color,
+    stocks: v.stocks,
+    hasStocks: v.stocks && Object.keys(v.stocks).length > 0
+})), null, 2));
     
     // 1. Валидация
     if (!this.newP.title || !this.newP.price || !this.newP.category) {
@@ -3906,18 +3911,53 @@ async saveProduct() {
     }
     
     // 2. Проверка размеров
-    let hasValidSizes = false;
-    this.newP.variants.forEach((variant, idx) => {
-    console.log(`Вариант ${idx} (${variant.color}):`);
-    console.log('- localFiles:', variant.localFiles?.length || 0);
-    console.log('- uploadingFiles:', variant.uploadingFiles?.length || 0);
-    console.log('- images (старые):', variant.images?.length || 0);
-});
+    // 2. Проверка размеров
+let hasValidSizes = false;
+let allSizeDetails = [];
+
+this.newP.variants.forEach((variant, idx) => {
+    const variantSizes = [];
     
-    if (!hasValidSizes) {
-        return alert('Добавьте хотя бы один размер с количеством больше 0!');
+    // Проверяем tempSizes (новые/редактируемые размеры)
+    if (this.tempSizes[idx] && Array.isArray(this.tempSizes[idx])) {
+        this.tempSizes[idx].forEach(sizeField => {
+            const sizeName = (sizeField.name || '').trim().toUpperCase();
+            const sizeQty = Number(sizeField.qty) || 0;
+            
+            if (sizeName && sizeQty > 0) {
+                variantSizes.push(`${sizeName}: ${sizeQty} шт.`);
+                hasValidSizes = true;
+            }
+        });
     }
     
+    // Проверяем существующие stocks
+    if (!hasValidSizes && variant.stocks && Object.keys(variant.stocks).length > 0) {
+        Object.entries(variant.stocks).forEach(([sizeName, qty]) => {
+            const qtyNum = Number(qty) || 0;
+            if (sizeName.trim() && qtyNum > 0) {
+                variantSizes.push(`${sizeName}: ${qtyNum} шт.`);
+                hasValidSizes = true;
+            }
+        });
+    }
+    
+    if (variantSizes.length > 0) {
+        allSizeDetails.push(`Цвет "${variant.color || 'без названия'}": ${variantSizes.join(', ')}`);
+    }
+    
+    console.log(`Вариант ${idx} (${variant.color}):`, {
+        stocks: variant.stocks,
+        tempSizes: this.tempSizes[idx],
+        hasSizes: variantSizes.length > 0
+    });
+});
+
+if (!hasValidSizes) {
+    return alert('Добавьте хотя бы один размер с количеством больше 0!');
+} else {
+    console.log('Найдены размеры:', allSizeDetails);
+}
     this.loading = true;
     
     // 3. ОБЪЯВЛЯЕМ finalVariants ЗДЕСЬ - ЭТО ИСПРАВЛЕНИЕ!
