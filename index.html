@@ -807,15 +807,11 @@
 <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
     <!-- ЕДИНЫЙ СПОСОБ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ -->
     <template v-if="getProductImages(p).length > 0">
-       <img v-for="(img, idx) in getProductImages(p)" 
-     :key="idx" 
-     :src="img" 
-     loading="lazy"
-     decoding="async"
-     :style="{opacity: imgLoaded[p.id] ? 1 : 0.3}"
-     @load="onImageLoad(p.id)"
-     @error="onImageError(p.id, img)"
-     class="product-img">
+        <img v-for="(img, idx) in getProductImages(p)" 
+             :key="idx" 
+             :src="img" 
+             loading="lazy"
+             onerror="this.src='https://via.placeholder.com/300x400?text=No+Image'">
     </template>
     <div v-else style="width:100%; height:100%; background:#f9f9f9; display:flex; align-items:center; justify-content:center;">
         <span style="color:#ccc;">Нет фото</span>
@@ -880,14 +876,11 @@
 <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
     <!-- ЕДИНЫЙ СПОСОБ ПОЛУЧЕНИЯ ИЗОБРАЖЕНИЙ -->
     <template v-if="getProductImages(p).length > 0">
-       <img v-for="(img, idx) in getProductImages(p)" 
-     :key="idx" 
-     :src="img" 
-     loading="lazy"
-     decoding="async"
-     :style="{opacity: imgLoaded[p.id] ? 1 : 0.3}"
-     @load="onImageLoad(p.id)"
-     @error="onImageError(p.id, img)">
+        <img v-for="(img, idx) in getProductImages(p)" 
+             :key="idx" 
+             :src="img" 
+             loading="lazy"
+             onerror="this.src='https://via.placeholder.com/300x400?text=No+Image'">
     </template>
     <div v-else style="width:100%; height:100%; background:#f9f9f9; display:flex; align-items:center; justify-content:center;">
         <span style="color:#ccc;">Нет фото</span>
@@ -1579,20 +1572,8 @@
     <div class="slider-wrapper" style="aspect-ratio: 1/1.2; position: relative; background: #f9f9f9;">
         <template v-if="selP.variants && selP.variants[currentVariantIndex]">
             <div class="slider-inner" id="modalSlider" @scroll="e => handleScroll(e, selP)">
-               <img v-for="(img, idx) in selP.variants[currentVariantIndex].images" 
-     :key="idx" 
-     :src="img" 
-     :alt="'Изображение ' + (idx + 1)"
-     loading="lazy"
-     decoding="async"
-     :style="{
-         width: '100%', 
-         height: '100%', 
-         objectFit: 'cover',
-         opacity: modalImgLoaded[idx] ? 1 : 0.3
-     }"
-     @load="onModalImageLoad(idx)"
-     @error="onModalImageError(idx)">
+                <img v-for="(img, idx) in selP.variants[currentVariantIndex].images" 
+                     :key="idx" :src="img" :alt="'Изображение ' + (idx + 1)" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
             
             <div class="dots" v-if="selP.variants[currentVariantIndex].images.length > 1">
@@ -1776,8 +1757,6 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
-        imgLoaded: {}, // Для отслеживания загрузки изображений в каталоге
-        modalImgLoaded: {}, 
          uploadProgress: 0,
         uploadQueue: [],
         isUploading: false,
@@ -2288,23 +2267,6 @@ removeSizeFromVariant(product, variantIndex, sizeName) {
         this.vib();
     }
 },
-onImageLoad(productId) {
-        this.$set(this.imgLoaded, productId, true);
-    },
-    
-    onImageError(productId, imgUrl) {
-        console.error('Ошибка загрузки изображения:', imgUrl);
-        this.$set(this.imgLoaded, productId, true); // Все равно показываем
-    },
-    
-    // Для модального окна
-    onModalImageLoad(imgIndex) {
-        this.$set(this.modalImgLoaded, imgIndex, true);
-    },
-    
-    onModalImageError(imgIndex) {
-        this.$set(this.modalImgLoaded, imgIndex, true);
-    },
 // Удалить фото из варианта
 removeVariantImage(vIdx, imgIdx) {
         if (confirm("Удалить это фото?")) {
