@@ -1753,6 +1753,11 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
     data() {
     return {
+        placeholders: {
+            white: '',
+            gray: '',
+            light: ''
+        },
         // === НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ БЫСТРОЙ ЗАГРУЗКИ ФОТО ===
         // Конфигурация загрузки
         IMGBB_API_KEY: '4d4ab43d9b15c3dbadb9058518e4db23',
@@ -2116,54 +2121,24 @@ handleFilesForVariant(event, variantIndex) {
     }
 },
 handleImageError(e) {
-    // Проверяем, не пытаемся ли мы заменить уже замененное
-    if (e.target.src && e.target.src.includes('data:image/svg')) {
-        return; // Уже заменили, выходим
-    }
+    const originalSrc = e.target.src;
+    console.warn('Telegram не загрузил изображение:', originalSrc?.substring(0, 100));
     
-    // Создаем простой SVG плейсхолдер
-    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
-        <rect width="300" height="400" fill="#f5f5f5"/>
-        <text x="150" y="200" font-family="Arial" font-size="14" fill="#666" text-anchor="middle">
-            No Image
-        </text>
-    </svg>`;
+    // Используем безопасный плейсхолдер
+    e.target.src = this.placeholders.gray;
     
-    // Правильное кодирование в base64
-    try {
-        // Метод для корректного кодирования
-        const encodeSVG = (svg) => {
-            // Убираем лишние пробелы и переносы
-            const cleaned = svg.replace(/\s+/g, ' ').trim();
-            // Кодируем
-            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(cleaned)));
-        };
-        
-        const dataUrl = encodeSVG(svgString);
-        
-        // Заменяем битое изображение
-        e.target.src = dataUrl;
-        
-        // Предотвращаем дальнейшие ошибки
-        e.target.onerror = null;
-        
-        // Добавляем стили для плейсхолдера
-        e.target.style.opacity = '0.8';
-        e.target.style.backgroundColor = '#f9f9f9';
-        
-    } catch (error) {
-        console.warn('Ошибка создания SVG:', error);
-        // Fallback на текстовый placeholder
-        e.target.src = '';
-        e.target.alt = 'No Image';
-        e.target.style.backgroundColor = '#eee';
-        e.target.style.display = 'flex';
-        e.target.style.alignItems = 'center';
-        e.target.style.justifyContent = 'center';
-        e.target.style.color = '#999';
-        e.target.style.fontSize = '12px';
-        e.target.style.fontWeight = 'bold';
-    }
+    // Предотвращаем дальнейшие ошибки
+    e.target.onerror = null;
+    
+    // Стили для плейсхолдера
+    e.target.style.opacity = '0.9';
+    e.target.style.backgroundColor = 'transparent';
+    e.target.style.filter = 'none';
+    
+    // Добавляем небольшую анимацию
+    e.target.style.transition = 'opacity 0.3s ease';
+    
+    console.log('Изображение заменено на безопасный SVG плейсхолдер');
 },
         setCategory(name) {
             try {
@@ -2192,7 +2167,7 @@ toggleDescription(productId) {
     
 getProductImages(product) {
     if (!product) {
-        return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
+        return [this.placeholders.gray];
     }
     
     // НОВАЯ АРХИТЕКТУРА: проверяем variants
@@ -2200,30 +2175,49 @@ getProductImages(product) {
         Array.isArray(product.variants) && 
         product.variants.length > 0) {
         
-        // Берем ПЕРВЫЙ вариант (первый цвет)
         const firstVariant = product.variants[0];
         
-        // Проверяем images внутри варианта
         if (firstVariant.images && 
             Array.isArray(firstVariant.images) && 
             firstVariant.images.length > 0) {
             
-            // Фильтруем и исправляем URL
+            // Фильтруем изображения для Telegram
             const validImages = firstVariant.images.filter(img => {
                 if (!img || typeof img !== 'string') return false;
                 
                 const trimmed = img.trim();
                 
-                // ВАЖНО: Проверяем протокол для Telegram
+                // Telegram требует HTTPS или Data URL
                 if (trimmed.startsWith('http://')) {
-                    console.warn('⚠️ Найден HTTP URL в товаре:', trimmed);
-                    // Можно автоматически исправить
-                    return false; // Пропускаем HTTP
+                    console.warn('Telegram блокирует HTTP, используем плейсхолдер');
+                    return false;
                 }
                 
-                return trimmed !== '' && 
-                       (trimmed.startsWith('https://') || 
-                        trimmed.startsWith('data:image/'));
+                if (trimmed.startsWith('https://')) {
+                    // Проверяем безопасные домены
+                    const urlObj = new URL(trimmed);
+                    const hostname = urlObj.hostname;
+                    
+                    // Разрешенные домены для Telegram
+                    const safeDomains = [
+                        'i.ibb.co',     // ImgBB CDN
+                        'ibb.co',       // ImgBB
+                        'imgbb.com',    // ImgBB
+                        'telegra.ph',   // Telegraph (Telegram)
+                        't.me'          // Telegram
+                    ];
+                    
+                    const isSafe = safeDomains.some(domain => hostname.includes(domain));
+                    
+                    if (!isSafe) {
+                        console.warn('Домен не в списке безопасных для Telegram:', hostname);
+                    }
+                    
+                    return isSafe;
+                }
+                
+                // Разрешаем data URL
+                return trimmed.startsWith('data:image/');
             });
             
             if (validImages.length > 0) {
@@ -2232,75 +2226,10 @@ getProductImages(product) {
         }
     }
     
-    // Плейсхолдер с HTTPS
-    return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
+    // Используем безопасный плейсхолдер для Telegram
+    return [this.placeholders.gray];
 },
-handleImageError(e) {
-    // Логируем ошибку для отладки
-    const originalSrc = e.target.src;
-    const datasetSrc = e.target.dataset.src;
-    
-    console.warn('Ошибка загрузки изображения:', {
-        originalSrc: originalSrc?.substring(0, 100),
-        datasetSrc,
-        tagName: e.target.tagName,
-        className: e.target.className,
-        currentSrc: e.target.currentSrc
-    });
-    
-    // Если это уже плейсхолдер, не обрабатываем повторно
-    if (originalSrc && (
-        originalSrc.includes('placehold.co') || 
-        originalSrc.includes('dummyimage.com') ||
-        originalSrc.includes('via.placeholder.com')
-    )) {
-        console.log('Уже плейсхолдер, пропускаем');
-        return;
-    }
-    
-    try {
-        // Используем рабочий плейсхолдер
-        const placeholderUrl = 'https://placehold.co/300x400/f5f5f5/999999?text=No+Image';
-        
-        // Заменяем изображение
-        e.target.src = placeholderUrl;
-        
-        // Добавляем аттрибуты для отладки
-        e.target.setAttribute('data-failed-src', originalSrc || '');
-        e.target.setAttribute('data-replaced-at', new Date().toISOString());
-        
-        // Предотвращаем дальнейшие ошибки
-        e.target.onerror = null;
-        
-        // Добавляем стили для визуального обозначения плейсхолдера
-        e.target.style.opacity = '0.85';
-        e.target.style.filter = 'grayscale(20%)';
-        e.target.style.border = '1px dashed #ddd';
-        e.target.style.boxSizing = 'border-box';
-        
-        // Для карточек в каталоге - более тонкие стили
-        if (e.target.closest('.slider-inner')) {
-            e.target.style.backgroundColor = '#fafafa';
-        }
-        
-        console.log('Изображение заменено на плейсхолдер');
-        
-    } catch (error) {
-        console.error('Ошибка в handleImageError:', error);
-        
-        // Последний fallback
-        e.target.src = '';
-        e.target.alt = 'Image failed to load';
-        e.target.style.backgroundColor = '#f0f0f0';
-        e.target.style.display = 'flex';
-        e.target.style.alignItems = 'center';
-        e.target.style.justifyContent = 'center';
-        e.target.style.color = '#999';
-        e.target.style.fontSize = '12px';
-        e.target.style.fontWeight = '600';
-        e.target.style.fontFamily = 'Montserrat, sans-serif';
-    }
-},
+
 
     getShortDescription(fullDesc) {
         if (!fullDesc) return 'Нажмите для просмотра описания';
@@ -3762,7 +3691,7 @@ async uploadFileToImgBB(file) {
                     
                     // Или используем HTTPS placeholder
                     console.log('🔄 Использую HTTPS placeholder');
-                    return 'https://placehold.co/300x400/ffffff/000000?text=No+Image';
+                    return 'https://placehold.co/300x400/f5f5f5/999999?text=No+Image';
                 }
                 
             } else {
@@ -4611,6 +4540,25 @@ cleanupAllPreviews() {
         cleanupArray(this.localFiles);
         cleanupArray(this.uploadFiles);
     },
+     createSafePlaceholders() {
+        // Создаем безопасные SVG плейсхолдеры для Telegram
+        const createSvg = (bgColor, textColor, text = 'No Image') => {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+                <rect width="300" height="400" fill="${bgColor}"/>
+                <text x="150" y="200" font-family="Arial, sans-serif" font-size="14" fill="${textColor}" 
+                      text-anchor="middle" dominant-baseline="middle">${text}</text>
+            </svg>`;
+            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+        };
+        
+        this.placeholders = {
+            white: createSvg('#ffffff', '#000000'),
+            gray: createSvg('#f5f5f5', '#999999'),
+            light: createSvg('#f9f9f9', '#666666')
+        };
+        
+        console.log('Созданы безопасные плейсхолдеры для Telegram');
+    },
 updateChart() {
     console.log('=== updateChart() called ===');
     console.log('Current tab:', this.tab);
@@ -4926,7 +4874,7 @@ updateChart() {
             setTimeout(initFirebaseData, 300);
         }
     };
-    
+     this.createSafePlaceholders();
     // Запускаем инициализацию Firebase
     initFirebaseData();
     
