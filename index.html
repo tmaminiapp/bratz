@@ -1989,20 +1989,17 @@ selVariant() {
     methods: {
         vib() { tg.HapticFeedback.impactOccurred('light'); },
 total() {
-    let itemsTotal = 0;
-    if (this.cart && this.cart.length > 0) {
-        itemsTotal = this.cart.reduce((sum, item) => {
-            let rawPrice = item.price || 0;
-            let priceNumber = typeof rawPrice === 'string' 
-                ? parseInt(rawPrice.replace(/[^\d]/g, '')) || 0 
-                : Number(rawPrice);
-            let quantity = parseInt(item.count || item.qty || 1);
-            return sum + (priceNumber * quantity);
-        }, 0);
+    if (!this.cart || !this.cart.length) return 0;
+    
+    // Быстрая сумма без сложных преобразований
+    let sum = 0;
+    for (let i = 0; i < this.cart.length; i++) {
+        const item = this.cart[i];
+        sum += (Number(item.price) || 0) * (Number(item.qty) || 1);
     }
-
-    // Если корзина не пуста, всегда добавляем 200
-    return itemsTotal > 0 ? (itemsTotal + 200) : 0;
+    
+    // Доставка 200 рублей, если есть товары
+    return sum > 0 ? sum + 200 : 0;
 },
 removeEditImage(imgIdx) {
     if (confirm("Удалить это фото из товара?")) {
@@ -2678,7 +2675,7 @@ showTempMessage(text) {
         }
     }, 2000);
 },
-      setTab(id) {
+       setTab(id) {
     if (this.vib) this.vib(); 
     this.tab = id;
 
@@ -2688,23 +2685,15 @@ showTempMessage(text) {
         });
     }
 
-    // Если перешли в профиль
+    // Если перешли в профиль, рисуем график
     if (id === 'profile') {
-        // Сбрасываем форму только если админ
-        if (this.isAdmin) {
-            // Ждем немного перед сбросом формы
-            setTimeout(() => {
-                this.resetNewProductForm();
-            }, 100);
-        }
-        
-        // Ждем рендеринг DOM перед обновлением графика
         this.$nextTick(() => {
+            // Даем достаточно времени для рендеринга DOM
             setTimeout(() => {
-                if (this.isAdmin && this.allOrders.length > 0) {
+                if (this.isAdmin) { // Важно: проверяем, что это админ
                     this.updateChart();
                 }
-            }, 500);
+            }, 300); // Увеличиваем время ожидания
         });
     }
 },
@@ -3143,7 +3132,7 @@ cancelEdit() {
     this.editImages = [];
     this.editNewFiles = [];
     this.localFiles = [];
-     this.tempSizes = [[]]; 
+    this.tempSizes = [];
     
     // 4. Сбрасываем форму создания/редактирования товара
     this.newP = {
@@ -3160,7 +3149,6 @@ cancelEdit() {
                 color: '', 
                 images: [], 
                 stocks: {},
-                localFiles: [],
                 uploadingFiles: [] 
             }
         ]
@@ -3187,12 +3175,6 @@ cancelEdit() {
     
     // 6. Сбрасываем индекс выбранного цвета
     this.currentVariantIndex = 0;
-    // 6. Добавляем первое пустое поле для размера
-    this.$nextTick(() => {
-        if (this.tempSizes[0] && this.tempSizes[0].length === 0) {
-            this.addSizeField(0);
-        }
-    });
     
     // 7. Прокручиваем наверх для лучшего UX
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3242,9 +3224,7 @@ addVariant() {
     this.newP.variants.push({
         color: '',
         images: [],
-        stocks: {},  // Пустой объект!
-        localFiles: [],
-        uploadingFiles: []
+        stocks: {}
     });
     
     // Инициализируем tempSizes для нового варианта
@@ -3260,12 +3240,6 @@ addVariant() {
         name: '',
         qty: 0,
         savedName: ''
-    });
-    this.$nextTick(() => {
-        const newColorElement = document.querySelectorAll('.variant-block')[newIndex];
-        if (newColorElement) {
-            newColorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
     });
 },
 // В методе editProduct добавьте:
@@ -3382,46 +3356,6 @@ openProductFromCart(item) {
     if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
-},
-resetNewProductForm() {
-    // Очищаем все превью URL
-    this.cleanupAllPreviews();
-    
-    // Сбрасываем tempSizes с одним пустым массивом
-    this.tempSizes = [[]];
-    
-    // Сбрасываем newP до начального состояния
-    this.newP = {
-        title: '',
-        desc: '',
-        price: null,
-        oldPrice: null,
-        category: '',
-        isNew: false,
-        hidden: false,
-        hiddenSizes: [],
-        variants: [
-            { 
-                color: '', 
-                images: [], 
-                stocks: {},
-                localFiles: [],
-                uploadingFiles: []
-            }
-        ]
-    };
-    
-    // Сбрасываем ID редактирования
-    this.editId = null;
-    
-    // Добавляем первое поле для размера
-    this.$nextTick(() => {
-        if (this.tempSizes[0] && this.tempSizes[0].length === 0) {
-            this.addSizeField(0);
-        }
-    });
-    
-    console.log('Форма создания товара сброшена');
 },
         isFav(p) { return p && this.favorites.includes(p.id); },
         
@@ -4169,6 +4103,7 @@ async saveProduct() {
                 }))
             });
             alert('✅ Товар успешно создан!');
+            await this.refreshProducts();
         }
         
         // 12. ОЧИСТКА ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ
@@ -4180,6 +4115,27 @@ async saveProduct() {
         alert('Ошибка сохранения: ' + e.message);
     } finally {
         this.loading = false;
+    }
+},
+async refreshProducts() {
+    try {
+        const querySnapshot = await window.fb.getDocs(
+            window.fb.query(
+                window.fb.collection(window.db, "products"),
+                window.fb.orderBy("createdAt", "desc")
+            )
+        );
+        
+        this.products = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            aIdx: 0,
+            tempSize: null
+        }));
+        
+        console.log('Товары обновлены:', this.products.length);
+    } catch (error) {
+        console.error('Ошибка обновления товаров:', error);
     }
 },
 cleanupAfterSave() {
@@ -4913,13 +4869,6 @@ updateChart() {
     // 3. Проверка админа
     this.isAdmin = this.adminIds.includes(Number(this.user.id));
     console.log('Is admin:', this.isAdmin);
-
-
-    if (this.isAdmin && this.tab === 'profile') {
-    this.$nextTick(() => {
-        this.resetNewProductForm();
-    });
-}
     
     // 4. Восстановление из localStorage
     const savedAddr = localStorage.getItem('naran_last_addr');
@@ -4989,21 +4938,17 @@ updateChart() {
                 ),
                 snap => {
                     this.allOrders = snap.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data
-                };
-            });
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            ...data,
+                            // Добавляем дополнительные поля для удобства
+                            displayDate: data.createdAt?.toDate 
+                                ? data.createdAt.toDate().toLocaleDateString('ru-RU')
+                                : new Date().toLocaleDateString('ru-RU')
+                        };
+                    });
                     console.log('Orders loaded:', this.allOrders.length);
-                    if (this.isAdmin && this.tab === 'profile') {
-                this.$nextTick(() => {
-                    this.resetNewProductForm(); // Добавьте эту строку!
-                    setTimeout(() => {
-                        this.updateChart();
-                    }, 800);
-                });
-            }
                     console.log('Sample order:', this.allOrders[0]);
                     
                     // Если мы на вкладке профиля и админ - обновляем график
