@@ -160,6 +160,13 @@
         overflow: hidden; 
         background: #f9f9f9; 
     }
+    .slider-wrapper {
+    touch-action: pan-y pinch-zoom; /* Улучшенный touch */
+}
+
+.slider-inner {
+    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
+}
 
     .slider-inner { 
         display: flex; 
@@ -573,7 +580,60 @@
     transform: scale(0.95);
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
+.image-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+/* Скрыть детали файлов на мобильных */
+@media (max-width: 768px) {
+    .file-info-desktop {
+        display: none !important;
+    }
+}
 
+/* Показать на десктопе */
+@media (min-width: 769px) {
+    .file-info-desktop {
+        display: block !important;
+    }
+}
+/* Мобильная оптимизация изображений */
+@media (max-width: 768px) {
+    .product-image {
+        height: auto;
+        min-height: 200px;
+        object-fit: cover;
+    }
+    
+    /* Улучшение касаний */
+    .slider-inner img {
+        touch-action: manipulation;
+    }
+    
+    /* Улучшение загрузки */
+    .image-loading-placeholder {
+        aspect-ratio: 3/4;
+        background: #f5f5f5;
+    }
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+@media (max-width: 480px) {
+    .preview-card {
+        width: 50px;
+        height: 50px; /* Меньше на мобильных */
+    }
+    
+    .remove-preview-btn {
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+    }
+}
 /* Улучшаем отображение на маленьких экранах */
 @media (max-width: 480px) {
     .control-buttons-compact {
@@ -639,7 +699,7 @@
     /* ========== PREVIEW IMAGES ========== */
     .preview-container {
         display: flex;
-        gap: 8px;
+        gap: 5px;
         flex-wrap: wrap;
         margin: 10px 0;
     }
@@ -702,14 +762,26 @@
     .description-container.expanded {
         max-height: 500px;
     }
-
-    /* ========== MEDIA QUERIES ========== */
-    @media (max-width: 480px) {
-        .size-grid {
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-        }
+@media (max-width: 480px) {
+    .close-modal {
+        top: 10px;
+        right: 10px;
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
     }
+}
+    /* ========== MEDIA QUERIES ========== */
+   @media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: 1fr; /* На очень маленьких - одна колонка */
+        gap: 10px;
+    }
+    
+    .card {
+        border-radius: 8px; /* Более мягкие углы на мобильных */
+    }
+}
 </style>
 </head>
 <body>
@@ -804,14 +876,19 @@
             </button>
 
           <!-- В products-grid (каталог) -->
- <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-        <img v-for="(img, idx) in getProductImages(p)" 
-             :key="idx" 
-             :src="img" 
-             :alt="'Изображение ' + (idx + 1)"
-             loading="lazy"
-             @error="handleImageError">
-    </div>
+ <!-- В products-grid (каталог) -->
+<div class="slider-inner" 
+     @scroll="e => handleScroll(e, p)" 
+     @click="openProduct(p)">
+    <img v-for="(img, idx) in getProductImages(p)" 
+         :key="idx" 
+         :src="img" 
+         :alt="'Изображение ' + (idx + 1)"
+         loading="lazy"
+         decoding="async"
+         @error="handleImageError"
+         class="product-image">
+</div>
     <div class="dots" v-if="getProductImages(p).length > 1">
         <span v-for="(img, i) in getProductImages(p)" 
               :key="i" 
@@ -865,20 +942,23 @@
                     </svg>
                 </button>
 
-             <!-- В products-grid (каталог) -->
- <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-        <img v-for="(img, idx) in getProductImages(p)" 
-             :key="idx" 
-             :src="img" 
-             :alt="'Изображение ' + (idx + 1)"
-             loading="lazy"
-             @error="handleImageError">
-    </div>
-    <div class="dots" v-if="getProductImages(p).length > 1">
-        <span v-for="(img, i) in getProductImages(p)" 
-              :key="i" 
-              :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
-    </div>
+      <div class="slider-inner" 
+     @scroll="e => handleScroll(e, p)" 
+     @click="openProduct(p)">
+    <img v-for="(img, idx) in getProductImages(p)" 
+         :key="idx" 
+         :src="img" 
+         :alt="'Изображение ' + (idx + 1)"
+         loading="lazy"
+         decoding="async"
+         @error="handleImageError"
+         class="product-image">
+</div>
+<div class="dots" v-if="getProductImages(p).length > 1">
+    <span v-for="(img, i) in getProductImages(p)" 
+          :key="i" 
+          :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
+</div>
 
                 <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
                 <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
@@ -1186,36 +1266,53 @@
 
         <!-- РАЗМЕРЫ И ОСТАТКИ ДЛЯ ЭТОГО ЦВЕТА -->
         <!-- ФОТО ДЛЯ ЭТОГО ЦВЕТА (ОТДЕЛЬНО ДЛЯ КАЖДОГО ЦВЕТА) -->
+<!-- ФОТО ДЛЯ ЭТОГО ЦВЕТА (ОТДЕЛЬНО ДЛЯ КАЖДОГО ЦВЕТА) -->
 <div class="field" style="margin-top: 15px;">
     <label>ФОТО ДЛЯ ЦВЕТА "{{ v.color || '...' }}"</label>
     
-    <!-- Кнопка загрузки фото для этого цвета -->
-   <!-- В форме создания товара, в блоке для каждого цвета -->
-<input 
-    type="file" 
-    multiple 
-    @change="handleFilesForVariant($event, vIdx)"
-    class="input-admin" 
-    style="padding: 8px;" 
-    accept="image/*"
-    :disabled="!v.color">
+    <!-- ЕДИНАЯ КНОПКА ЗАГРУЗКИ -->
+    <input 
+        type="file" 
+        multiple 
+        @change="handleFileUpload($event, vIdx)"
+        class="input-admin" 
+        style="padding: 8px;" 
+        accept="image/*"
+        :disabled="!v.color">
     
     <div v-if="!v.color" style="font-size: 10px; color: #ff3b30; margin-top: 5px;">
-        Сначала укажите название цвета
+        ⚠️ Сначала укажите название цвета
     </div>
     
-    <!-- ГОРИЗОНТАЛЬНАЯ СЕТКА ПРЕВЬЮ ДЛЯ ЭТОГО ЦВЕТА -->
+    <!-- ИНДИКАТОР ЗАГРУЗКИ -->
+    <div v-if="uploadState.isUploading" style="margin: 10px 0; padding: 8px; background: #f0f0f0; border-radius: 6px;">
+        <div style="font-size: 10px; font-weight: 700; margin-bottom: 5px;">
+            Загрузка: {{ uploadState.uploadedFiles }} из {{ uploadState.totalFiles }}
+        </div>
+        <div style="height: 4px; background: #ddd; border-radius: 2px; overflow: hidden;">
+            <div :style="{ 
+                width: uploadState.progress + '%', 
+                height: '100%', 
+                background: '#000', 
+                transition: 'width 0.3s' 
+            }"></div>
+        </div>
+    </div>
+    
+    <!-- ГОРИЗОНТАЛЬНАЯ СЕТКА ПРЕВЬЮ -->
     <div class="preview-container" style="margin-top: 15px;">
         
-        <!-- СУЩЕСТВУЮЩИЕ ФОТО ИЗ БАЗЫ (при редактировании) -->
-        <div v-if="editId && v.images && v.images.length > 0" 
+        <!-- 1. СУЩЕСТВУЮЩИЕ ФОТО ИЗ БАЗЫ -->
+        <div v-if="v.images && v.images.length > 0" 
              style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-            <div v-for="(img, imgIdx) in v.images" :key="'db_' + vIdx + '_' + imgIdx" 
+            <div v-for="(img, imgIdx) in v.images" 
+                 :key="'db_' + vIdx + '_' + imgIdx" 
                  style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
                 <img :src="img" alt="Превью" 
-                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;">
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 2px solid #34c759;"
+                     @error="handleImageError">
                 <button @click="removeVariantImage(vIdx, imgIdx)" 
-                        style="position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; width: 18px; height: 18px; border-radius: 50%; border: 1px solid white; font-size: 10px; cursor: pointer;">
+                        style="position: absolute; top: -5px; right: -5px; background: #ff3b30; color: white; width: 18px; height: 18px; border-radius: 50%; border: 1px solid white; font-size: 10px; cursor: pointer; z-index: 2;">
                     ✕
                 </button>
                 <div style="position: absolute; bottom: 2px; left: 2px; background: #34c759; color: white; 
@@ -1225,44 +1322,34 @@
             </div>
         </div>
         
-        <!-- НОВЫЕ ФОТО ПРИ РЕДАКТИРОВАНИИ -->
-        <div v-if="v.uploadingFiles && v.uploadingFiles.length > 0" 
-             style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-            <div v-for="file in v.uploadingFiles" :key="file.id" 
+        <!-- 2. ФАЙЛЫ В ОЧЕРЕДИ (ОБЪЕДИНЕННЫЙ МАССИВ) -->
+        <div v-if="v.fileQueue && v.fileQueue.length > 0" 
+             style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <div v-for="file in v.fileQueue" 
+                 :key="file.id" 
                  style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
-                <div style="position: relative;">
+                
+                <!-- Контейнер превью -->
+                <div style="position: relative; width: 100%; height: 100%;">
+                    
                     <!-- Превью изображения -->
                     <img :src="file.preview" alt="Превью"
                          style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;"
                          :style="{ 
-                             opacity: file.status === 'uploading' ? 0.5 : 1,
+                             opacity: file.status === 'uploading' ? 0.7 : 1,
                              border: file.status === 'completed' ? '2px solid #34c759' : 
-                                     file.status === 'failed' ? '2px solid #ff3b30' : 
-                                     file.status === 'uploading' ? '2px solid #007aff' : '1px solid #ddd'
-                         }">
+                                     file.status === 'failed' ? '2px solid #ff3b30' : '1px solid #ddd'
+                         }"
+                         @error="handleImageError">
                     
                     <!-- ИНДИКАТОР ЗАГРУЗКИ -->
                     <div v-if="file.status === 'uploading'" 
                          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
                                 display: flex; align-items: center; justify-content: center; 
-                                background: rgba(255,255,255,0.8); border-radius: 6px;">
+                                background: rgba(255,255,255,0.9); border-radius: 6px;">
                         
-                        <!-- Круговой индикатор прогресса -->
-                        <div style="position: relative; width: 30px; height: 30px;">
-                            <svg width="30" height="30" viewBox="0 0 30 30">
-                                <circle cx="15" cy="15" r="13" 
-                                        stroke="#f0f0f0" stroke-width="2" fill="none"/>
-                                <circle cx="15" cy="15" r="13" 
-                                        stroke="#007aff" stroke-width="2" fill="none"
-                                        :stroke-dasharray="82"
-                                        :stroke-dashoffset="82 - (82 * (file.progress || 0) / 100)"
-                                        transform="rotate(-90 15 15)"/>
-                            </svg>
-                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                                        font-size: 7px; font-weight: 800; color: #007aff;">
-                                {{ file.progress || 0 }}%
-                            </div>
-                        </div>
+                        <!-- Простой спиннер -->
+                        <div class="loader-mini"></div>
                     </div>
                     
                     <!-- СТАТУС ИКОНКИ -->
@@ -1270,7 +1357,7 @@
                          style="position: absolute; top: -4px; right: -4px; background: #34c759; 
                                 color: white; width: 16px; height: 16px; border-radius: 50%; 
                                 display: flex; align-items: center; justify-content: center; 
-                                font-size: 10px; font-weight: bold; border: 1px solid white;">
+                                font-size: 10px; font-weight: bold; border: 1px solid white; z-index: 2;">
                         ✓
                     </div>
                     
@@ -1278,30 +1365,32 @@
                          style="position: absolute; top: -4px; right: -4px; background: #ff3b30; 
                                 color: white; width: 16px; height: 16px; border-radius: 50%; 
                                 display: flex; align-items: center; justify-content: center; 
-                                font-size: 10px; font-weight: bold; border: 1px solid white;">
+                                font-size: 10px; font-weight: bold; border: 1px solid white; z-index: 2;">
                         !
                     </div>
                     
                     <!-- Кнопка удаления -->
-                    <button @click="removeVariantUploadingFile(vIdx, file.id)" 
+                    <button @click="removeFileFromQueue(vIdx, file.id)" 
                             style="position: absolute; bottom: -4px; right: -4px; 
                                    background: #ff3b30; color: white; width: 16px; height: 16px; 
                                    border-radius: 50%; border: 1px solid white; 
-                                   font-size: 9px; cursor: pointer;">
+                                   font-size: 9px; cursor: pointer; z-index: 2;">
                         ✕
                     </button>
                 </div>
                 
-                <!-- Название файла и статус -->
-                <div style="font-size: 8px; text-align: center; margin-top: 2px; 
-                            font-weight: 600; overflow: hidden; text-overflow: ellipsis; 
-                            white-space: nowrap;">
-                    {{ file.name?.substring(0, 8) || 'Файл' }}{{ file.name?.length > 8 ? '...' : '' }}
+                <!-- Название файла и статус (ТОЛЬКО ДЛЯ ДЕСКТОПА) -->
+                <div class="file-info-desktop" style="display: none;">
+                    <div style="font-size: 8px; text-align: center; margin-top: 2px; 
+                                font-weight: 600; overflow: hidden; text-overflow: ellipsis; 
+                                white-space: nowrap;">
+                        {{ file.name?.substring(0, 8) || 'Файл' }}{{ file.name?.length > 8 ? '...' : '' }}
+                    </div>
                     <div :style="{ 
                         color: file.status === 'completed' ? '#34c759' : 
                                file.status === 'failed' ? '#ff3b30' : 
                                file.status === 'uploading' ? '#007aff' : '#999',
-                        fontSize: '7px'
+                        fontSize: '7px', textAlign: 'center'
                     }">
                         {{ 
                             file.status === 'uploading' ? 'Загр...' :
@@ -1313,35 +1402,14 @@
             </div>
         </div>
         
-        <!-- LOCAL FILES для создания нового товара -->
-        <div v-if="!editId && v.localFiles && v.localFiles.length > 0" 
-             style="display: flex; flex-wrap: wrap; gap: 8px;">
-            <div v-for="file in v.localFiles" :key="file.id" 
-                 style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
-                <div style="position: relative;">
-                    <img :src="file.preview" alt="Превью"
-                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;">
-                    <button @click="removeVariantLocalFile(vIdx, file.id)"
-                            style="position: absolute; top: -4px; right: -4px; 
-                                   background: #ff3b30; color: white; width: 16px; height: 16px; 
-                                   border-radius: 50%; border: 1px solid white; font-size: 9px; cursor: pointer;">
-                        ✕
-                    </button>
-                </div>
-                <div style="font-size: 8px; text-align: center; margin-top: 2px; 
-                            font-weight: 600; overflow: hidden; text-overflow: ellipsis; 
-                            white-space: nowrap;">
-                    {{ file.name?.substring(0, 8) || 'Файл' }}{{ file.name?.length > 8 ? '...' : '' }}
-                </div>
-            </div>
-        </div>
-        
         <!-- СООБЩЕНИЕ ЕСЛИ НЕТ ФОТО -->
         <div v-if="(!v.images || v.images.length === 0) && 
-                  (!v.uploadingFiles || v.uploadingFiles.length === 0) && 
-                  (!v.localFiles || v.localFiles.length === 0)" 
-             style="text-align: center; padding: 15px; color: #999; font-size: 10px; border: 1px dashed #ddd; border-radius: 6px;">
+                  (!v.fileQueue || v.fileQueue.length === 0)" 
+             style="text-align: center; padding: 15px; color: #999; font-size: 10px; border: 1px dashed #ddd; border-radius: 6px; width: 100%;">
             📸 Нажмите "Выбрать файлы" чтобы загрузить фото для этого цвета
+            <div style="font-size: 8px; margin-top: 5px; color: #666;">
+                Максимум {{ IMAGE_LIMITS.MAX_TOTAL_IMAGES }} фото, каждый файл до {{ IMAGE_LIMITS.MAX_FILE_SIZE / (1024*1024) }}MB
+            </div>
         </div>
     </div>
 </div>
@@ -1392,9 +1460,12 @@
             <div style="display: flex; gap: 15px;">
                 <!-- Левая часть: фото и информация -->
                 <div style="display: flex; gap: 15px; flex: 1; min-width: 0;">
-                    <img :src="v.images?.[0] || ''" 
-                         style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0;"
-                         class="product-image">
+                    <img :src="getVariantImage(v) || defaultPlaceholder" 
+     style="width: 55px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0;"
+     class="product-image"
+     loading="lazy"
+     decoding="async"
+     @error="handleImageError">
                     
                     <div style="flex: 1; min-width: 0;">
                         <div class="product-title" style="font-weight: 800; font-size: 13px; text-transform: uppercase; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -1561,10 +1632,18 @@
 
     <div class="slider-wrapper" style="aspect-ratio: 1/1.2; position: relative; background: #f9f9f9;">
         <template v-if="selP.variants && selP.variants[currentVariantIndex]">
-            <div class="slider-inner" id="modalSlider" @scroll="e => handleScroll(e, selP)">
-                <img v-for="(img, idx) in selP.variants[currentVariantIndex].images" 
-                     :key="idx" :src="img" :alt="'Изображение ' + (idx + 1)" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
+            <!-- В products-grid (каталог) -->
+<div class="slider-inner" id="modalSlider" 
+     @scroll="e => handleScroll(e, selP)">
+   <img v-for="(img, idx) in (selP.variants[currentVariantIndex]?.images || [])" 
+         :key="idx" 
+         :src="img" 
+         :alt="'Изображение ' + (idx + 1)"
+         loading="lazy"
+         decoding="async"
+         @error="handleImageError"
+         class="product-image">
+</div>
             
             <div class="dots" v-if="selP.variants[currentVariantIndex].images.length > 1">
                 <span v-for="(img, i) in selP.variants[currentVariantIndex].images" 
@@ -1751,56 +1830,42 @@ document.addEventListener('error', function(e) {
 const tg = window.Telegram.WebApp;
 
 Vue.createApp({
-    data() {
+  data() {
     return {
-        // === НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ БЫСТРОЙ ЗАГРУЗКИ ФОТО ===
-        // Конфигурация загрузки
+        // === КОНФИГУРАЦИЯ ===
         IMGBB_API_KEY: '4d4ab43d9b15c3dbadb9058518e4db23',
         IMGBB_UPLOAD_URL: 'https://api.imgbb.com/1/upload',
         
-        // Флаги состояния загрузки
-        uploading: false,
-        uploadSuccess: false,
-        uploadError: false,
-        uploadErrorMessage: '',
-        
-        // Прогресс загрузки
-        uploadProgressMap: new Map(), // Для отслеживания прогресса каждого файла
-        
-        // Кэш превью изображений для быстрого отображения
-        imagePreviewCache: new Map(),
-        
-        // Настройки оптимизации изображений
-        imageOptimizationSettings: {
-            maxWidth: 1200,
-            maxHeight: 1600,
-            quality: 0.8,
-            format: 'webp' // Более быстрый формат
+        // === ЕДИНОЕ СОСТОЯНИЕ ЗАГРУЗКИ ===
+        uploadState: {
+            isUploading: false,
+            progress: 0,
+            totalFiles: 0,
+            uploadedFiles: 0,
+            errors: []
         },
         
-        // Очередь загрузки для параллельной обработки
-        uploadQueue: {
-            pending: [],
-            inProgress: [],
-            completed: [],
-            failed: []
-        },
-        
-        // Лимиты
-        MAX_CONCURRENT_UPLOADS: 3, // Максимум 3 одновременные загрузки
-        UPLOAD_TIMEOUT_MS: 30000, // 30 секунд таймаут
+        // === КЭШ И ОПТИМИЗАЦИЯ ===
+        imageCache: new Map(),
         defaultPlaceholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDMwMCA0MDAiIGZpbGw9IiNmZmYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzAwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==',
-        MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
-        MAX_TOTAL_IMAGES: 10,
-         uploadProgress: 0,
-        uploadQueue: [],
-        isUploading: false,
-        showNewSizeFields: false, 
-        uploadFiles: [], 
+        
+        // === ЛИМИТЫ ===
+        IMAGE_LIMITS: {
+            MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+            MAX_TOTAL_IMAGES: 10,
+            MAX_WIDTH: 1200,
+            MAX_HEIGHT: 1600,
+            QUALITY: 0.8
+        },
+        
+        // === ВРЕМЕННЫЕ ДАННЫЕ ДЛЯ ФОРМЫ ===
+        tempSizes: [], // Используем только этот массив
+        newSizeFields: {}, // Для хранения полей ввода размеров
+        
+        // === ОСНОВНЫЕ СОСТОЯНИЯ ===
+        showNewSizeFields: false,
         editUploading: false,
-        tempSizes: [],           // Изменил на пустой массив
-        sizeKeys: [{}], 
-        expandedDescriptionId: null, 
+        expandedDescriptionId: null,
         selVariantIdx: 0,
         tab: 'catalog',
         currentCat: '',
@@ -1811,7 +1876,8 @@ Vue.createApp({
         showProductList: false,
         activeInfo: null,
         
-        products: [], 
+        // === ДАННЫЕ ===
+        products: [],
         categories: [],
         cart: JSON.parse(localStorage.getItem('naran_cart_v3') || '[]'),
         favorites: JSON.parse(localStorage.getItem('naran_favs_v3') || '[]'),
@@ -1822,15 +1888,16 @@ Vue.createApp({
         
         selP: false,
         currentVariantIndex: 0,
-        deliv: '',               // Только одно определение
+        deliv: '',
         address: '',
         map: null,
         form: {
             name: '',
-            phone: localStorage.getItem('naran_phone') || ''
+            phone: localStorage.getItem('naran_phone') || '',
+            address: ''
         },
         
-        // Поля для админки
+        // === ДАННЫЕ ДЛЯ ФОРМЫ ТОВАРА ===
         newP: {
             title: '',
             desc: '',
@@ -1843,7 +1910,9 @@ Vue.createApp({
                 { 
                     color: '', 
                     images: [], 
-                    stocks: {}  // Пустой объект
+                    stocks: {},
+                    // ТОЛЬКО ОДИН МАССИВ ДЛЯ ФАЙЛОВ
+                    fileQueue: []
                 }
             ]
         },
@@ -1851,11 +1920,9 @@ Vue.createApp({
         editId: null,
         allOrders: [],
         chart: null,
-        localFiles: [], 
-        editNewFiles: [],    // ✅ Добавил
-        editImages: [],      // ✅ Добавил
         myOrders: [],
-
+        
+        // === НАВИГАЦИЯ ===
         nav: [
             { id: 'catalog', label: 'Каталог', icon: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>' },
             { id: 'favs', label: 'Избранное', icon: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' },
@@ -2034,86 +2101,169 @@ async updateStock(product, size) {
         alert("Ошибка сохранения: " + e.message);
     }
 },
-handleFilesForVariant(event, variantIndex) {
-    try {
-        const files = Array.from(event.target.files);
-        if (files.length === 0) return;
-        
-        console.log(`handleFilesForVariant called for variant ${variantIndex}, files:`, files.length);
-        
-        // Получаем текущий вариант
-        const variant = this.newP.variants[variantIndex];
-        if (!variant) {
-            console.error('Variant not found at index', variantIndex);
-            return;
-        }
-        
-        // Инициализируем массивы если их нет
-        if (!variant.localFiles) variant.localFiles = [];
-        if (!variant.uploadingFiles) variant.uploadingFiles = [];
-        
-        // Лимиты
-        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-        const MAX_TOTAL_IMAGES = 10;
-        
-        // Проверяем общий лимит
-        const totalImages = this.countTotalImages();
-        if (totalImages + files.length > MAX_TOTAL_IMAGES) {
-            alert(`Максимум ${MAX_TOTAL_IMAGES} изображений. Сейчас: ${totalImages}`);
-            return;
-        }
-        
-        for (const file of files) {
-            // Проверка типа файла
-            if (!file.type.startsWith('image/')) {
-                alert(`Файл "${file.name}" не является изображением`);
-                continue;
-            }
-            
-            // Проверка размера файла
-            if (file.size > MAX_FILE_SIZE) {
-                alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 5MB.`);
-                continue;
-            }
-            
-            // Создаем preview URL
-            const previewUrl = URL.createObjectURL(file);
-            
-            // Создаем объект файла
-            const fileObj = {
-                id: Date.now() + Math.random(),
-                file: file,
-                preview: previewUrl,
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                status: 'pending'
-            };
-            
-            // Добавляем в соответствующий массив
-            if (this.editId) {
-                // При редактировании
-                variant.uploadingFiles.push(fileObj);
-            } else {
-                // При создании нового товара
-                variant.localFiles.push(fileObj);
-            }
-            
-            console.log(`Файл добавлен для варианта ${variantIndex}:`, file.name);
-        }
-        
-        // Сбрасываем значение input
-        event.target.value = '';
-        
-        // Вибрация
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-        
-    } catch (error) {
-        console.error('Ошибка в handleFilesForVariant:', error);
-        alert('Ошибка при обработке файлов: ' + error.message);
+// Получить первое изображение варианта
+getVariantImage(variant) {
+    if (!variant) return this.defaultPlaceholder;
+    if (variant.images && variant.images.length > 0) {
+        return variant.images[0];
     }
+    return this.defaultPlaceholder;
+},
+// === ЕДИНЫЙ МЕТОД ДЛЯ ОБРАБОТКИ ФАЙЛОВ ===
+async handleFileUpload(event, variantIndex) {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    
+    const variant = this.newP.variants[variantIndex];
+    if (!variant) return;
+    
+    // Инициализируем очередь файлов если ее нет
+    if (!variant.fileQueue) {
+        variant.fileQueue = [];
+    }
+    
+    // Проверяем лимиты
+    const totalImages = this.countTotalImages();
+    if (totalImages + files.length > this.IMAGE_LIMITS.MAX_TOTAL_IMAGES) {
+        alert(`Максимум ${this.IMAGE_LIMITS.MAX_TOTAL_IMAGES} изображений. Сейчас: ${totalImages}`);
+        return;
+    }
+    
+    // Обрабатываем каждый файл
+    for (const file of files) {
+        // Проверка типа
+        if (!file.type.startsWith('image/')) {
+            alert(`Файл "${file.name}" не является изображением`);
+            continue;
+        }
+        
+        // Проверка размера
+        if (file.size > this.IMAGE_LIMITS.MAX_FILE_SIZE) {
+            alert(`Файл "${file.name}" слишком большой (${(file.size / (1024 * 1024)).toFixed(1)}MB). Максимум 5MB.`);
+            continue;
+        }
+        
+        // Создаем объект файла
+        const fileObj = {
+            id: Date.now() + Math.random(),
+            file: file,
+            preview: URL.createObjectURL(file),
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            status: 'pending',
+            progress: 0,
+            error: null
+        };
+        
+        variant.fileQueue.push(fileObj);
+    }
+    
+    // Сбрасываем input
+    event.target.value = '';
+    
+    // Вибрация
+    this.vib();
+},
+
+// === ПОДСЧЕТ ВСЕХ ИЗОБРАЖЕНИЙ (исправленный) ===
+countTotalImages() {
+    let count = 0;
+    
+    if (!this.newP.variants) return 0;
+    
+    this.newP.variants.forEach(variant => {
+        // ТОЛЬКО два массива: images и fileQueue
+        if (variant.images) count += variant.images.length;
+        if (variant.fileQueue) count += variant.fileQueue.length;
+        // УДАЛИТЬ: localFiles и uploadingFiles - не используем
+    });
+    
+    return count;
+},
+// === УДАЛЕНИЕ ФАЙЛА ИЗ ОЧЕРЕДИ ===
+removeFileFromQueue(variantIndex, fileId) {
+    const variant = this.newP.variants[variantIndex];
+    if (!variant || !variant.fileQueue) return;
+    
+    const index = variant.fileQueue.findIndex(f => f.id === fileId);
+    if (index > -1) {
+        const file = variant.fileQueue[index];
+        
+        // Освобождаем память
+        if (file.preview && file.preview.startsWith('blob:')) {
+            URL.revokeObjectURL(file.preview);
+        }
+        
+        variant.fileQueue.splice(index, 1);
+        this.vib();
+    }
+},
+// === УДАЛЕНИЕ СУЩЕСТВУЮЩЕГО ИЗОБРАЖЕНИЯ ИЗ ВАРИАНТА ===
+removeVariantImage(vIdx, imgIdx) {
+    if (confirm("Удалить это фото из товара?")) {
+        this.newP.variants[vIdx].images.splice(imgIdx, 1);
+        this.vib();
+    }
+},
+
+async uploadVariantFiles(variantIndex) {
+    const variant = this.newP.variants[variantIndex];
+    if (!variant || !variant.fileQueue || variant.fileQueue.length === 0) {
+        return []; // Нет файлов для загрузки
+    }
+    
+    const uploadedUrls = [];
+    
+    // Обновляем состояние загрузки
+    this.uploadState.totalFiles = variant.fileQueue.length;
+    this.uploadState.uploadedFiles = 0;
+    this.uploadState.isUploading = true;
+    
+    for (let i = 0; i < variant.fileQueue.length; i++) {
+        const fileObj = variant.fileQueue[i];
+        
+        try {
+            // Обновляем статус
+            fileObj.status = 'uploading';
+            fileObj.progress = 10;
+            
+            // Сжимаем изображение (используем существующий метод)
+            const compressedFile = await this.compressImageFast(fileObj.file);
+            fileObj.progress = 40;
+            
+            // Загружаем на ImgBB (используем существующий метод)
+            const imageUrl = await this.uploadFileToImgBB(compressedFile);
+            fileObj.progress = 100;
+            fileObj.status = 'completed';
+            
+            if (imageUrl) {
+                uploadedUrls.push(imageUrl);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            fileObj.status = 'failed';
+            fileObj.error = error.message;
+            
+            // Fallback: Data URL для маленьких файлов
+            if (fileObj.file.size < 100 * 1024) {
+                try {
+                    const dataUrl = await this.fileToDataURL(fileObj.file);
+                    uploadedUrls.push(dataUrl);
+                    fileObj.status = 'completed';
+                } catch (dataError) {
+                    console.error('Ошибка создания Data URL:', dataError);
+                }
+            }
+        }
+        
+        // Обновляем прогресс
+        this.uploadState.uploadedFiles = i + 1;
+        this.uploadState.progress = Math.round(((i + 1) / variant.fileQueue.length) * 100);
+    }
+    
+    this.uploadState.isUploading = false;
+    return uploadedUrls;
 },
 handleImageError(e) {
     // Проверяем, не пытаемся ли мы заменить уже замененное
@@ -2195,153 +2345,61 @@ toggleDescription(productId) {
 // Метод для получения изображений товара (универсальный)
 getProductImages(product) {
     if (!product) {
-        return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
+        return [this.defaultPlaceholder];
     }
     
-    // Вспомогательная функция для проверки валидности изображения
-    const isValidImage = (img) => {
-        if (!img || typeof img !== 'string') return false;
-        
-        const trimmed = img.trim();
-        if (trimmed === '') return false;
-        
-        // Проверяем различные форматы URL
-        const isHttp = trimmed.startsWith('http://') || trimmed.startsWith('https://');
-        const isDataUrl = trimmed.startsWith('data:image/');
-        const isRelative = trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../');
-        
-        // Дополнительная проверка для Data URL
-        if (isDataUrl) {
-            try {
-                // Проверяем, что Data URL корректно сформирован
-                const parts = trimmed.split(',');
-                if (parts.length !== 2) return false;
-                const header = parts[0];
-                if (!header.includes('base64') && !header.includes('utf8')) return false;
-                return true;
-            } catch {
-                return false;
-            }
-        }
-        
-        return isHttp || isRelative;
-    };
-    
-    // 1. ПРОВЕРЯЕМ ВАРИАНТЫ ЦВЕТОВ (НОВЫЙ ФОРМАТ)
+    // 1. ПРОВЕРКА: Есть ли варианты цветов?
     if (product.variants && 
         Array.isArray(product.variants) && 
         product.variants.length > 0) {
         
-        // Берем первый вариант (первый цвет)
+        // Берем ПЕРВЫЙ вариант (первый цвет) для отображения в каталоге
         const firstVariant = product.variants[0];
         
         if (firstVariant.images && 
             Array.isArray(firstVariant.images) && 
             firstVariant.images.length > 0) {
             
-            // Фильтруем только валидные изображения
-            const validImages = firstVariant.images.filter(isValidImage);
-            
-            if (validImages.length > 0) {
-                // Для отладки
-                if (validImages.length !== firstVariant.images.length) {
-                    console.warn(`Фильтрация: из ${firstVariant.images.length} осталось ${validImages.length} валидных изображений для товара ${product.id}`);
-                }
-                return validImages;
-            }
+            // Фильтруем только валидные URL
+            return firstVariant.images.filter(img => 
+                img && typeof img === 'string' && 
+                (img.startsWith('http://') || 
+                 img.startsWith('https://') || 
+                 img.startsWith('data:image/'))
+            );
         }
     }
     
-    // 2. ПРОВЕРЯЕМ СТАРЫЙ ФОРМАТ (images)
-    if (product.images && 
-        Array.isArray(product.images) && 
-        product.images.length > 0) {
-        
-        const validImages = product.images.filter(isValidImage);
-        
-        if (validImages.length > 0) {
-            return validImages;
-        }
+    // 2. ЗАПАСНЫЕ ВАРИАНТЫ (старый формат)
+    if (product.images && Array.isArray(product.images)) {
+        return product.images.filter(img => img && typeof img === 'string');
     }
     
-    // 3. ПРОВЕРЯЕМ ЕДИНОЕ ПОЛЕ image
-    if (product.image && isValidImage(product.image)) {
-        return [product.image.trim()];
+    if (product.image && typeof product.image === 'string') {
+        return [product.image];
     }
     
-    // 4. ПРОВЕРЯЕМ ЕДИНОЕ ПОЛЕ img
-    if (product.img && isValidImage(product.img)) {
-        return [product.img.trim()];
+    if (product.img && typeof product.img === 'string') {
+        return [product.img];
     }
     
-    // 5. ВОЗВРАЩАЕМ ПЛЕЙСХОЛДЕР (рабочий URL)
-    return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
+    // 3. ПЛЕЙСХОЛДЕР
+    return [this.defaultPlaceholder];
 },
-handleImageError(e) {
-    // Логируем ошибку для отладки
-    const originalSrc = e.target.src;
-    const datasetSrc = e.target.dataset.src;
+handleImageError(event) {
+    const img = event.target;
     
-    console.warn('Ошибка загрузки изображения:', {
-        originalSrc: originalSrc?.substring(0, 100),
-        datasetSrc,
-        tagName: e.target.tagName,
-        className: e.target.className,
-        currentSrc: e.target.currentSrc
-    });
+    // Если уже заменяли - выходим
+    if (img.src.includes('base64')) return;
     
-    // Если это уже плейсхолдер, не обрабатываем повторно
-    if (originalSrc && (
-        originalSrc.includes('placehold.co') || 
-        originalSrc.includes('dummyimage.com') ||
-        originalSrc.includes('via.placeholder.com')
-    )) {
-        console.log('Уже плейсхолдер, пропускаем');
-        return;
-    }
+    // Заменяем на плейсхолдер
+    img.src = this.defaultPlaceholder;
     
-    try {
-        // Используем рабочий плейсхолдер
-        const placeholderUrl = 'https://placehold.co/300x400/f5f5f5/999999?text=No+Image';
-        
-        // Заменяем изображение
-        e.target.src = placeholderUrl;
-        
-        // Добавляем аттрибуты для отладки
-        e.target.setAttribute('data-failed-src', originalSrc || '');
-        e.target.setAttribute('data-replaced-at', new Date().toISOString());
-        
-        // Предотвращаем дальнейшие ошибки
-        e.target.onerror = null;
-        
-        // Добавляем стили для визуального обозначения плейсхолдера
-        e.target.style.opacity = '0.85';
-        e.target.style.filter = 'grayscale(20%)';
-        e.target.style.border = '1px dashed #ddd';
-        e.target.style.boxSizing = 'border-box';
-        
-        // Для карточек в каталоге - более тонкие стили
-        if (e.target.closest('.slider-inner')) {
-            e.target.style.backgroundColor = '#fafafa';
-        }
-        
-        console.log('Изображение заменено на плейсхолдер');
-        
-    } catch (error) {
-        console.error('Ошибка в handleImageError:', error);
-        
-        // Последний fallback
-        e.target.src = '';
-        e.target.alt = 'Image failed to load';
-        e.target.style.backgroundColor = '#f0f0f0';
-        e.target.style.display = 'flex';
-        e.target.style.alignItems = 'center';
-        e.target.style.justifyContent = 'center';
-        e.target.style.color = '#999';
-        e.target.style.fontSize = '12px';
-        e.target.style.fontWeight = '600';
-        e.target.style.fontFamily = 'Montserrat, sans-serif';
-    }
+    // Добавляем класс для стилизации
+    img.classList.add('image-error');
+    
+    // Отключаем дальнейшие обработчики ошибок
+    img.onerror = null;
 },
 
     getShortDescription(fullDesc) {
@@ -2383,18 +2441,7 @@ toggleEditSizes(product, variantIndex) {
     }
     this.vib();
 },
-// Удаление файла по ID
-rremoveEditNewFileById(fileId) {
-    const index = this.editNewFiles.findIndex(f => f.id === fileId);
-    if (index > -1) {
-        const file = this.editNewFiles[index];
-        if (file.preview && file.preview.startsWith('blob:')) {
-            URL.revokeObjectURL(file.preview);
-        }
-        this.editNewFiles.splice(index, 1);
-        this.vib();
-    }
-},
+// Удаление файла по I
 
 countTotalImages() {
     let count = 0;
@@ -2408,78 +2455,6 @@ countTotalImages() {
     });
     
     return count;
-},
-
-removeLocalFileById(fileId) {
-    const index = this.localFiles.findIndex(f => f.id === fileId);
-    if (index > -1) {
-        const file = this.localFiles[index];
-        if (file.preview && file.preview.startsWith('blob:')) {
-            URL.revokeObjectURL(file.preview);
-        }
-        this.localFiles.splice(index, 1);
-        this.vib();
-    }
-},
-async optimizeImage(file) {
-        // Сжатие и конвертация в WebP
-    },
-    
-    // 2. Быстрая загрузка на ImgBB
-    async uploadToImgBBFast(file, variantIndex, fileIndex) {
-        // Параллельная загрузка с отслеживанием прогресса
-    },
-    
-    // 3. Кэширование превью
-    cacheImagePreview(url, imageElement) {
-        // Сохранение в кэш для быстрого повторного использования
-    },
-    
-    // 4. Управление очередью загрузок
-    processUploadQueue() {
-        // Параллельная обработка файлов из очереди
-    },
-    
-    // 5. Отображение изображения с fallback
-    async displayImageWithFallback(imgElement, url, productId, variantIndex) {
-        // Быстрая загрузка с кэшированием и fallback
-    },
-    
-    // 6. Пакетная загрузка всех файлов товара
-    async uploadAllProductImages(productData) {
-        // Загрузка всех изображений товара параллельно
-    },
-removeLocalFile(vIdx, fileIdx) {
-    const variant = this.newP.variants[vIdx];
-    if (!variant.localFiles || fileIdx >= variant.localFiles.length) return;
-    
-    const file = variant.localFiles[fileIdx];
-    
-    if (file.preview && file.preview.startsWith('blob:')) {
-        URL.revokeObjectURL(file.preview);
-    }
-    
-    variant.localFiles.splice(fileIdx, 1);
-    this.vib();
-},
-removeFile(fileId) {
-    const index = this.uploadFiles.findIndex(f => f.id === fileId);
-    if (index > -1) {
-        const file = this.uploadFiles[index];
-        
-        // Освобождаем память
-        if (file.preview && file.preview.startsWith('blob:')) {
-            URL.revokeObjectURL(file.preview);
-        }
-        
-        // Удаляем из массива
-        this.uploadFiles.splice(index, 1);
-        
-        // Вибрация
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    }
 },
 
 // Сохранить размеры варианта в Firebase
@@ -2538,47 +2513,6 @@ removeVariantImage(vIdx, imgIdx) {
         }
     },
 
-removeVariantUploadingFile(variantIndex, fileId) {
-    const variant = this.newP.variants[variantIndex];
-    if (!variant || !variant.uploadingFiles) return;
-    
-    const index = variant.uploadingFiles.findIndex(f => f.id === fileId);
-    if (index > -1) {
-        const file = variant.uploadingFiles[index];
-        
-        // Освобождаем память
-        if (file.preview && file.preview.startsWith('blob:')) {
-            URL.revokeObjectURL(file.preview);
-        }
-        
-        variant.uploadingFiles.splice(index, 1);
-        
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    }
-},
-removeVariantLocalFile(variantIndex, fileId) {
-    const variant = this.newP.variants[variantIndex];
-    if (!variant || !variant.localFiles) return;
-    
-    const index = variant.localFiles.findIndex(f => f.id === fileId);
-    if (index > -1) {
-        const file = variant.localFiles[index];
-        
-        // Освобождаем память
-        if (file.preview && file.preview.startsWith('blob:')) {
-            URL.revokeObjectURL(file.preview);
-        }
-        
-        variant.localFiles.splice(index, 1);
-        
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    }
-},
-
     removeVariant(vIdx) {
         if (confirm(`Удалить цвет "${this.newP.variants[vIdx].color || 'без названия'}"?`)) {
             this.newP.variants.splice(vIdx, 1);
@@ -2586,16 +2520,15 @@ removeVariantLocalFile(variantIndex, fileId) {
             this.vib();
         }
     },
-     addVariant() {
+    addVariant() {
     const newIndex = this.newP.variants.length;
     
-    // Добавляем новый вариант с пустыми массивами для фото
+    // Добавляем новый вариант с ЕДИНЫМ массивом fileQueue
     this.newP.variants.push({
         color: '',
         images: [],
-        localFiles: [],      // Для нового товара
-        uploadingFiles: [],  // Для редактирования
-        stocks: {}
+        stocks: {},
+        fileQueue: [] // ТОЛЬКО ОДИН МАССИВ ДЛЯ ФАЙЛОВ
     });
     
     // Инициализируем tempSizes для нового варианта
@@ -2616,7 +2549,6 @@ removeVariantLocalFile(variantIndex, fileId) {
     
     this.vib();
 },
-
 // Добавить новый размер в вариант
 addSizeToVariant(product, variantIndex) {
     const variant = product.variants[variantIndex];
@@ -2779,20 +2711,20 @@ removeSizeField(vIdx, fieldIndex) {
     this.vib();
 },
 editProduct(p) {
-   const list = document.querySelector('.stable-list');
+    const list = document.querySelector('.stable-list');
     const scrollPos = list ? list.scrollTop : 0;
     
     const cleanItem = JSON.parse(JSON.stringify(p));
     this.editId = p.id;
-    this.fullEditMode = true; // Устанавливаем флаг полного редактирования
+    this.fullEditMode = true;
     
-    // Очищаем режимы быстрого редактирования у всех товаров
+    // Очищаем режимы редактирования у всех товаров
     this.products.forEach(prod => {
         prod.editingVariant = null;
         prod.fullEditMode = false;
     });
     
-    // 1. Заполняем newP данными товара (основные поля)
+    // 1. Заполняем newP данными товара
     this.newP = {
         title: cleanItem.title || '',
         desc: cleanItem.desc || '',
@@ -2800,39 +2732,41 @@ editProduct(p) {
         oldPrice: cleanItem.oldPrice || null,
         category: cleanItem.category || '',
         isNew: !!cleanItem.isNew,
+        hidden: !!cleanItem.hidden,
         hiddenSizes: cleanItem.hiddenSizes || [],
         variants: []
     };
     
-    // 2. Инициализируем tempSizes как ПУСТОЙ массив массивов
+    // 2. Инициализируем tempSizes
     this.tempSizes = [];
     
-    // 3. ИНИЦИАЛИЗИРУЕМ МАССИВЫ ДЛЯ ФОТО (ВАЖНО!)
-    this.editImages = [];  // <-- ИНИЦИАЛИЗАЦИЯ
-    this.editNewFiles = []; // <-- ИНИЦИАЛИЗАЦИЯ
-    
-    // 4. Копируем варианты цветов
+    // 3. Копируем варианты цветов (ВАЖНО: используем fileQueue вместо старых массивов)
     if (cleanItem.variants && cleanItem.variants.length > 0) {
         this.newP.variants = cleanItem.variants.map(variant => ({
             color: variant.color || 'Стандарт',
             images: variant.images || [],
-            stocks: variant.stocks || variant.stock || {}
+            stocks: variant.stocks || variant.stock || {},
+            fileQueue: [] // Инициализируем пустую очередь для новых файлов
         }));
         
-        // 5. Для КАЖДОГО варианта создаем tempSizes
+        // 4. Для КАЖДОГО варианта создаем tempSizes
         this.newP.variants.forEach((variant, vIdx) => {
-            // Создаем массив полей для этого варианта
             const fields = [];
+            const stocks = variant.stocks || {};
             
+            // Добавляем поля для существующих размеров
+            Object.keys(stocks).forEach(sizeName => {
+                fields.push({
+                    name: sizeName,
+                    qty: stocks[sizeName] || 0,
+                    savedName: sizeName
+                });
+            });
             
-            
-            // Добавляем ОДНО пустое поле в конце для новых размеров
+            // Добавляем одно пустое поле для новых размеров
             fields.push({
                 name: '',
                 qty: 0,
-                hidden: false,
-                focused: false,
-                tempKey: null,
                 savedName: ''
             });
             
@@ -2840,38 +2774,16 @@ editProduct(p) {
             this.tempSizes[vIdx] = fields;
         });
         
-        // 6. ЗАГРУЖАЕМ ВСЕ ФОТО В editImages (ВАЖНО!)
-        // Собираем все уникальные фото из всех вариантов
-        const allImages = new Set();
-        this.newP.variants.forEach(variant => {
-            if (variant.images && Array.isArray(variant.images)) {
-                variant.images.forEach(img => {
-                    if (img && typeof img === 'string' && img.trim() !== '') {
-                        allImages.add(img);
-                    }
-                });
-            }
-        });
-        
-        // Преобразуем Set обратно в массив
-        this.editImages = Array.from(allImages);
-        
     } else {
         // Для старых товаров без вариантов создаем один вариант
         this.newP.variants = [
             { 
                 color: cleanItem.color || 'Стандарт', 
                 images: cleanItem.images || [], 
-                stocks: cleanItem.stocks || cleanItem.stock || {} 
+                stocks: cleanItem.stocks || cleanItem.stock || {},
+                fileQueue: [] // Важно: инициализируем fileQueue
             }
         ];
-        
-        // 7. ЗАГРУЖАЕМ ФОТО ИЗ СТАРОГО ФОРМАТА
-        if (cleanItem.images && Array.isArray(cleanItem.images)) {
-            this.editImages = [...cleanItem.images].filter(img => 
-                img && typeof img === 'string' && img.trim() !== ''
-            );
-        }
         
         // Создаем поля для первого варианта
         const fields = [];
@@ -2881,9 +2793,6 @@ editProduct(p) {
             fields.push({
                 name: sizeName,
                 qty: stocks[sizeName] || 0,
-                hidden: false,
-                focused: false,
-                tempKey: null,
                 savedName: sizeName
             });
         });
@@ -2892,23 +2801,18 @@ editProduct(p) {
         fields.push({
             name: '',
             qty: 0,
-            hidden: false,
-            focused: false,
-            tempKey: null,
             savedName: ''
         });
         
-        this.$set(this.tempSizes, 0, fields);
+        this.tempSizes[0] = fields;
     }
     
-    // 8. Открываем форму редактирования
+    // 5. Открываем форму редактирования
     this.showProductList = false;
     window.scrollTo(0, 0);
     
-    // 9. Дебаг информация
     console.log('Редактирование товара:', cleanItem.title);
-    console.log('Загруженные фото (editImages):', this.editImages);
-    console.log('Новые файлы (editNewFiles):', this.editNewFiles);
+    console.log('Варианты:', this.newP.variants);
     
     this.$nextTick(() => {
         if (list) list.scrollTop = scrollPos;
@@ -3296,6 +3200,54 @@ openProductFromCart(item) {
         
         this.openProduct(fullProduct);
     }
+},
+getProductImages(product) {
+    if (!product) {
+        return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
+    }
+    
+    // 1. ПЕРВЫЙ ПРИОРИТЕТ: Новый формат с вариантами цветов
+    if (product.variants && 
+        Array.isArray(product.variants) && 
+        product.variants.length > 0) {
+        
+        // Берем первый вариант (первый цвет)
+        const firstVariant = product.variants[0];
+        
+        if (firstVariant.images && 
+            Array.isArray(firstVariant.images) && 
+            firstVariant.images.length > 0) {
+            
+            // Возвращаем ВСЕ изображения первого варианта
+            // Упрощаем: не фильтруем, доверяем данным из базы
+            return firstVariant.images.filter(img => 
+                img && typeof img === 'string' && img.trim() !== ''
+            );
+        }
+    }
+    
+    // 2. ВТОРОЙ ПРИОРИТЕТ: Старый формат (images)
+    if (product.images && 
+        Array.isArray(product.images) && 
+        product.images.length > 0) {
+        
+        return product.images.filter(img => 
+            img && typeof img === 'string' && img.trim() !== ''
+        );
+    }
+    
+    // 3. ТРЕТИЙ ПРИОРИТЕТ: Единое поле image
+    if (product.image && typeof product.image === 'string') {
+        return [product.image.trim()];
+    }
+    
+    // 4. ЧЕТВЕРТЫЙ ПРИОРИТЕТ: Единое поле img
+    if (product.img && typeof product.img === 'string') {
+        return [product.img.trim()];
+    }
+    
+    // 5. ПОСЛЕДНИЙ ВАРИАНТ: Плейсхолдер (ОБЯЗАТЕЛЬНО правильный URL)
+    return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
 },
 
        handleScroll(e, p) {
@@ -3872,7 +3824,14 @@ async saveProduct() {
         return alert('Заполните название, цену и категорию!');
     }
     
-    // 2. Проверка размеров
+    // 2. Проверка цветов
+    for (const variant of this.newP.variants) {
+        if (!variant.color || variant.color.trim() === '') {
+            return alert('Укажите название цвета для всех вариантов!');
+        }
+    }
+    
+    // 3. Проверка размеров
     let hasValidSizes = false;
     this.newP.variants.forEach(variant => {
         Object.values(variant.stocks || {}).forEach(qty => {
@@ -3886,182 +3845,91 @@ async saveProduct() {
     
     this.loading = true;
     
-    // 3. ОБЪЯВЛЯЕМ finalVariants ЗДЕСЬ - ЭТО ИСПРАВЛЕНИЕ!
-    let finalVariants = [];
-    
     try {
-        // 4. ПОДГОТОВКА ДАННЫХ - ОЧИЩАЕМ ВРЕМЕННЫЕ ПОЛЯ
-        const cleanedVariants = JSON.parse(JSON.stringify(this.newP.variants));
+        const finalVariants = [];
         
-        cleanedVariants.forEach(variant => {
-            // Очищаем временные ключи из stocks
-            const cleanedStocks = {};
-            Object.keys(variant.stocks || {}).forEach(key => {
-                if (!key.startsWith('temp_')) {
-                    cleanedStocks[key] = variant.stocks[key];
-                }
-            });
-            variant.stocks = cleanedStocks;
+        // Обрабатываем каждый вариант цвета
+        for (let i = 0; i < this.newP.variants.length; i++) {
+            const variant = this.newP.variants[i];
             
-            // Удаляем временные поля
-            delete variant.tempKey;
-            delete variant.savedName;
-            delete variant.localFiles;
-            delete variant.uploadingFiles;
-            delete variant.editState;
-        });
-        
-        // 5. ФОРМИРОВАНИЕ ФИНАЛЬНЫХ ДАННЫХ С СОХРАНЕНИЕМ СВЯЗИ ЦВЕТ-ИЗОБРАЖЕНИЕ
-        for (let i = 0; i < cleanedVariants.length; i++) {
-            const variant = cleanedVariants[i];
-            const currentVariant = this.newP.variants[i];
-            let variantImages = [];
+            // Массив для изображений этого цвета
+            let variantImages = [...(variant.images || [])];
             
-            console.log(`Обработка цвета "${variant.color || 'без названия'}":`);
-            
-            // 5.1. Загружаем локальные файлы для этого цвета в IMGBB
-            if (currentVariant.localFiles && currentVariant.localFiles.length > 0) {
-                console.log(`- Найдено ${currentVariant.localFiles.length} локальных файлов`);
-                for (const fileObj of currentVariant.localFiles) {
-                    try {
-                        console.log(`Загрузка файла в ImgBB для цвета "${variant.color}": ${fileObj.file.name}`);
-                        const imageUrl = await this.uploadFileToImgBB(fileObj.file);
-                        if (imageUrl) {
-                            console.log(`✅ Загружено в ImgBB: ${imageUrl.substring(0, 60)}...`);
-                            variantImages.push(imageUrl);
-                        }
-                    } catch (e) {
-                        console.error(`❌ Ошибка загрузки файла в ImgBB для цвета "${variant.color}":`, e);
-                        // Fallback: используем Data URL для маленьких файлов
-                        if (fileObj.file.size < 100 * 1024) {
-                            try {
-                                const dataUrl = await this.fileToDataURL(fileObj.file);
-                                console.log(`⚠️ Используем Data URL fallback для ${fileObj.file.name}`);
-                                variantImages.push(dataUrl);
-                            } catch (dataErr) {
-                                console.error('Ошибка создания Data URL:', dataErr);
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // 5.2. Добавляем уже существующие изображения этого варианта
-            if (currentVariant.images && currentVariant.images.length > 0) {
-                console.log(`- Найдено ${currentVariant.images.length} существующих изображений`);
-                currentVariant.images.forEach(img => {
-                    if (img && img.trim() !== '' && !variantImages.includes(img)) {
-                        // Проверяем тип URL
-                        if (img.startsWith('http://') || img.startsWith('https://')) {
-                            variantImages.push(img);
-                            console.log(`✅ Добавлен существующий URL: ${img.substring(0, 60)}...`);
-                        } else if (img.startsWith('data:')) {
-                            // Data URL добавляем только если нет других изображений
-                            if (variantImages.length === 0) {
-                                variantImages.push(img);
-                                console.log(`⚠️ Добавлен Data URL как fallback`);
-                            }
-                        }
+            // 1. Загружаем новые файлы на ImgBB (если есть)
+            if (variant.fileQueue && variant.fileQueue.length > 0) {
+                console.log(`Загрузка ${variant.fileQueue.length} файлов для цвета "${variant.color}"`);
+                const uploadedUrls = await this.uploadVariantFiles(i);
+                variantImages.push(...uploadedUrls);
+                
+                // Очищаем очередь после загрузки
+                variant.fileQueue.forEach(fileObj => {
+                    if (fileObj.preview && fileObj.preview.startsWith('blob:')) {
+                        URL.revokeObjectURL(fileObj.preview);
                     }
                 });
+                variant.fileQueue = [];
             }
             
-            // 5.3. Если для этого цвета нет изображений
-            if (variantImages.length === 0) {
-                // Пробуем взять изображения из первого варианта как fallback
-                if (i > 0 && finalVariants.length > 0 && finalVariants[0].images.length > 0) {
-                    variantImages = [...finalVariants[0].images];
-                    console.log(`⚠️ У цвета "${variant.color}" нет своих фото, используем фото из первого цвета`);
-                } else {
-                    // Используем placeholder
-                    variantImages = ['https://placehold.co/300x400/ffffff/000000?text=No+Image'];
-                    console.log(`⚠️ Для цвета "${variant.color}" установлен плейсхолдер`);
+            // 2. Фильтруем дубликаты и валидные URL
+            const uniqueImages = [];
+            const seenUrls = new Set();
+            
+            variantImages.forEach(img => {
+                if (img && typeof img === 'string' && img.trim() !== '' && !seenUrls.has(img)) {
+                    // Проверяем, что это валидный URL
+                    if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:image/')) {
+                        uniqueImages.push(img.trim());
+                        seenUrls.add(img);
+                    }
                 }
+            });
+            
+            // 3. Если нет изображений - используем плейсхолдер
+            if (uniqueImages.length === 0) {
+                uniqueImages.push(this.defaultPlaceholder);
             }
             
-            // 5.4. Ограничиваем количество изображений (максимум 5 на цвет)
-            variantImages = variantImages.slice(0, 5);
+            // Ограничиваем количество (макс 5 на цвет)
+            const finalImages = uniqueImages.slice(0, 5);
             
-            console.log(`Итог для цвета "${variant.color}": ${variantImages.length} изображений`);
-            
-            // 6. Добавляем в финальный массив finalVariants
+            // Создаем финальный вариант
             finalVariants.push({
-                color: variant.color || `Цвет ${i + 1}`,
+                color: variant.color.trim(),
                 stocks: variant.stocks || {},
-                images: variantImages // Уникальные изображения для этого цвета!
+                images: finalImages // Фото ТОЛЬКО для этого цвета!
             });
+            
+            console.log(`Цвет "${variant.color}": ${finalImages.length} изображений`);
         }
         
-        console.log('Количество финальных вариантов:', finalVariants.length); // Исправленный лог
-        
-        // 7. Подсчитываем общее количество изображений для отладки
-        let totalImages = 0;
-        let httpImagesCount = 0;
-        let dataUrlImagesCount = 0;
-        
-        finalVariants.forEach((variant, idx) => {
-            totalImages += variant.images.length;
-            variant.images.forEach(img => {
-                if (img.startsWith('http://') || img.startsWith('https://')) {
-                    httpImagesCount++;
-                } else if (img.startsWith('data:')) {
-                    dataUrlImagesCount++;
-                }
-            });
-        });
-        
-        console.log(`Всего изображений: ${totalImages} (HTTP: ${httpImagesCount}, Data URL: ${dataUrlImagesCount})`);
-        
-        // 8. ПРОВЕРКА РАЗМЕРА ИЗОБРАЖЕНИЙ
-        let totalDataSize = 0;
-        finalVariants.forEach(variant => {
-            variant.images.forEach(img => {
-                if (img.startsWith('data:')) {
-                    totalDataSize += img.length;
-                }
-            });
-        });
-        
-        if (totalDataSize > 100 * 1024) { // Более 100KB Data URL
-            console.warn(`⚠️ Общий размер Data URL: ${(totalDataSize / 1024).toFixed(1)}KB`);
-            alert('⚠️ Слишком много изображений в формате Data URL. Рекомендуется загружать через ImgBB для лучшей производительности.');
-        }
-        
-        // 9. ФОРМИРОВАНИЕ ФИНАЛЬНЫХ ДАННЫХ ТОВАРА
+        // Подготовка данных для сохранения
         const productData = {
             title: this.newP.title.trim(),
-            desc: (this.newP.desc || '').substring(0, 500),
+            desc: (this.newP.desc || '').trim(),
             price: Number(this.newP.price),
             oldPrice: this.newP.oldPrice ? Number(this.newP.oldPrice) : null,
             category: this.newP.category,
             isNew: !!this.newP.isNew,
             hidden: !!this.newP.hidden,
-            variants: finalVariants, // Используем finalVariants здесь
+            variants: finalVariants,
             updatedAt: Date.now()
         };
         
-        // 10. ПРОВЕРКА РАЗМЕРА ПЕРЕД СОХРАНЕНИЕМ
+        // Проверка размера данных
         const dataSize = new Blob([JSON.stringify(productData)]).size;
-        console.log(`Размер данных товара: ${dataSize} байт (${(dataSize / 1024 / 1024).toFixed(2)} MB)`);
+        console.log(`Размер данных: ${(dataSize / 1024).toFixed(1)}KB`);
         
         if (dataSize > 900000) {
-            alert(`⚠️ Внимание: данные слишком большие (${(dataSize / 1024 / 1024).toFixed(2)} MB).\nРекомендации:\n1. Уменьшите количество изображений (макс 3 на цвет)\n2. Используйте меньше вариантов цветов\n3. Укоротите описание товара\n4. Загружайте изображения через ImgBB вместо Data URL`);
-            
-            console.log('Отладочная информация о размере:');
-            console.log('- Количество вариантов:', productData.variants.length);
-            productData.variants.forEach((v, idx) => {
-                console.log(`  Вариант ${idx} (${v.color}): ${v.images.length} изображений`);
-            });
-            
+            alert(`⚠️ Данные слишком большие (${(dataSize / 1024 / 1024).toFixed(2)}MB).\nУменьшите количество изображений.`);
             this.loading = false;
             return;
         }
         
-        // 11. СОХРАНЕНИЕ В FIRESTORE
+        // СОХРАНЕНИЕ В FIRESTORE
         console.log('Сохранение в Firestore...');
         
         if (this.editId) {
-            // Редактирование
+            // Редактирование существующего товара
             const docRef = window.fb.doc(window.db, "products", this.editId);
             await window.fb.updateDoc(docRef, productData);
             
@@ -4081,7 +3949,7 @@ async saveProduct() {
             alert('✅ Товар успешно обновлен!');
             
         } else {
-            // Создание нового
+            // Создание нового товара
             productData.createdAt = Date.now();
             const docRef = await window.fb.addDoc(
                 window.fb.collection(window.db, "products"), 
@@ -4097,52 +3965,43 @@ async saveProduct() {
             this.products.unshift(newProduct);
             
             console.log('✅ Товар создан! ID:', docRef.id);
-            console.log('Данные товара:', {
-                title: newProduct.title,
-                variants: newProduct.variants.map(v => ({
-                    color: v.color,
-                    imagesCount: v.images.length,
-                    firstImage: v.images[0]?.substring(0, 50) + '...'
-                }))
-            });
             alert('✅ Товар успешно создан!');
         }
         
-        // 12. ОЧИСТКА ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ
+        // ОЧИСТКА ПОСЛЕ УСПЕШНОГО СОХРАНЕНИЯ
         this.cleanupAfterSave();
         this.tab = 'profile';
         
-    } catch (e) {
-        console.error("Критическая ошибка сохранения:", e);
-        alert('Ошибка сохранения: ' + e.message);
+    } catch (error) {
+        console.error("Критическая ошибка сохранения:", error);
+        alert('Ошибка сохранения: ' + error.message);
     } finally {
         this.loading = false;
+        this.uploadState.isUploading = false;
     }
 },
 cleanupAfterSave() {
     // Очищаем превью URL для всех файлов
-    const cleanupFiles = (variants) => {
-        variants?.forEach(variant => {
-            // Локальные файлы
-            variant.localFiles?.forEach(file => {
+    const cleanupFileQueue = (variant) => {
+        if (variant.fileQueue && Array.isArray(variant.fileQueue)) {
+            variant.fileQueue.forEach(file => {
                 if (file.preview && file.preview.startsWith('blob:')) {
                     URL.revokeObjectURL(file.preview);
                 }
             });
-            
-            // Загружаемые файлы
-            variant.uploadingFiles?.forEach(file => {
-                if (file.preview && file.preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(file.preview);
-                }
-            });
-        });
+            variant.fileQueue = [];
+        }
     };
     
-    // Очищаем файлы из формы
-    cleanupFiles(this.newP.variants);
+    // Очищаем файлы из всех вариантов
+    this.newP.variants?.forEach(variant => {
+        cleanupFileQueue(variant);
+        // Удаляем старые массивы если они есть
+        delete variant.localFiles;
+        delete variant.uploadingFiles;
+    });
     
-    // Сбрасываем форму
+    // Сбрасываем форму к исходному состоянию
     this.newP = {
         title: '',
         desc: '',
@@ -4152,12 +4011,11 @@ cleanupAfterSave() {
         isNew: false,
         hidden: false,
         variants: [
-            {
-                color: '',
-                images: [],
-                localFiles: [],
-                uploadingFiles: [],
-                stocks: {}
+            { 
+                color: '', 
+                images: [], 
+                stocks: {},
+                fileQueue: [] // Используем ТОЛЬКО fileQueue
             }
         ]
     };
@@ -4168,14 +4026,43 @@ cleanupAfterSave() {
     
     // Сбрасываем режим редактирования
     this.editId = null;
+    this.fullEditMode = false;
     
-    // Сбрасываем флаги редактирования у всех товаров
-    this.products.forEach(p => {
-        p.editingVariant = null;
-        p.fullEditMode = false;
-    });
+    // Сбрасываем состояние загрузки
+    this.uploadState = {
+        isUploading: false,
+        progress: 0,
+        totalFiles: 0,
+        uploadedFiles: 0,
+        errors: []
+    };
     
     console.log('Форма очищена, память освобождена');
+},
+// Метод haptic() для вибрации (используется в HTML)
+haptic() {
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+    this.vib(); // Вызываем существующий метод
+},
+
+// Альтернатива compressImageForUpload (если нужно)
+compressImageForUpload(file) {
+    return this.compressImageFast(file); // Используем существующий метод
+},
+
+// Обновление favList (используется в setTab)
+updateFavListWithTempSize() {
+    // Устанавливаем временный размер для товаров в избранном
+    this.favList.forEach(p => {
+        if (p.variants && p.variants[0] && p.variants[0].stocks) {
+            const firstVariant = p.variants[0];
+            const availableSize = Object.keys(firstVariant.stocks)
+                .find(sz => firstVariant.stocks[sz] > 0);
+            p.tempSize = availableSize || null;
+        }
+    });
 },
 
 // Вспомогательный метод для Data URL
