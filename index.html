@@ -875,27 +875,43 @@
                 </svg>
             </button>
 
-          <!-- В products-grid (каталог) -->
- <!-- В products-grid (каталог) -->
-<div class="slider-inner" 
-     @scroll="e => handleScroll(e, p)" 
-     @click="openProduct(p)">
-    <img v-for="(img, idx) in getProductImages(p)" 
-         :key="idx" 
-         :src="img" 
-         :alt="'Изображение ' + (idx + 1)"
-         loading="lazy"
-         decoding="async"
-         @error="handleImageError"
-         class="product-image">
-</div>
+       <div class="slider-inner" 
+                     @scroll="e => handleScroll(e, p)" 
+                     @click="openProduct(p)">
+                    <img v-for="(img, idx) in getProductImages(p)" 
+                         :key="idx" 
+                         :src="img" 
+                         :alt="'Изображение ' + (idx + 1)"
+                         loading="lazy"
+                         decoding="async"
+                         @error="handleImageError"
+                         class="product-image">
+                </div>
     <div class="dots" v-if="getProductImages(p).length > 1">
-        <span v-for="(img, i) in getProductImages(p)" 
-              :key="i" 
-              :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
+                    <span v-for="(img, i) in getProductImages(p)" 
+                          :key="i" 
+                          :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
     </div>
             <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
             <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
+
+             <div v-if="p.variants && p.variants.filter(v => !v.hidden).length > 1" 
+                     style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
+                    <div v-for="(v, vIdx) in p.variants.filter(v => !v.hidden)" 
+                         :key="vIdx"
+                         @click.stop="selectColorInCatalog(p, vIdx)"
+                         :style="{
+                             width: '12px',
+                             height: '12px',
+                             borderRadius: '50%',
+                             border: '2px solid white',
+                             background: catalogActiveColors[p.id] === vIdx ? '#000' : '#ccc',
+                             cursor: 'pointer',
+                             boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                         }"
+                         :title="v.color">
+                    </div>
+                </div>
         </div>
 
         <div class="card-info">
@@ -905,9 +921,9 @@
                 <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
             </div>
             
-         <div class="card-sizes" v-if="p.variants && p.variants[0]">
-    <div v-for="(qty, sz) in (p.variants[0].stocks || {})" 
-         :key="sz"
+          <div class="card-sizes" v-if="p.variants && p.variants[catalogActiveColors[p.id] || 0]">
+   <div v-for="(qty, sz) in (p.variants[catalogActiveColors[p.id] || 0].stocks || {})" 
+        :key="sz"
          @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
          :class="['size-chip', {
             active: p.tempSize === sz,
@@ -1839,6 +1855,8 @@ const tg = window.Telegram.WebApp;
 Vue.createApp({
   data() {
     return {
+        catalogActiveColors: {}, // { productId: colorIndex }
+         productActiveVariantIndex: {},
         // === КОНФИГУРАЦИЯ ===
         IMGBB_API_KEY: '4d4ab43d9b15c3dbadb9058518e4db23',
         IMGBB_UPLOAD_URL: 'https://api.imgbb.com/1/upload',
@@ -2386,17 +2404,35 @@ toggleDescription(productId) {
 // Метод для получения изображений товара (универсальный)
 // Метод для получения изображений товара (универсальный)
 getProductImages(product) {
-    if (!product) {
+    if (!product || !product.id) {
         return [this.defaultPlaceholder];
     }
     
-    // Берем ПЕРВЫЙ ВИДИМЫЙ вариант
-    const visibleVariant = product.variants?.find(v => 
-        !v.hidden && v.images && v.images.length > 0
-    );
+    // Определяем, какой вариант показывать для этого товара
+    let variantIndex = 0;
     
-    if (visibleVariant) {
-        return visibleVariant.images.filter(img => 
+    // Если в каталоге уже выбран цвет для этого товара - используем его
+    if (this.catalogActiveColors[product.id] !== undefined) {
+        variantIndex = this.catalogActiveColors[product.id];
+    } 
+    // Иначе ищем первый видимый вариант
+    else {
+        const firstVisible = product.variants?.findIndex(v => 
+            !v.hidden && v.images && v.images.length > 0
+        );
+        if (firstVisible > -1) {
+            variantIndex = firstVisible;
+            // Сохраняем выбор для будущих показов
+            this.$set(this.catalogActiveColors, product.id, variantIndex);
+        }
+    }
+    
+    // Проверяем, существует ли вариант с таким индексом
+    const variant = product.variants?.[variantIndex];
+    
+    if (variant && !variant.hidden && variant.images && variant.images.length > 0) {
+        // Фильтруем только валидные изображения этого конкретного цвета
+        return variant.images.filter(img => 
             img && typeof img === 'string' && 
             (img.startsWith('http://') || 
              img.startsWith('https://') || 
@@ -2404,7 +2440,25 @@ getProductImages(product) {
         );
     }
     
-    // Запасные варианты...
+    // Если выбранный вариант скрыт или нет фото, ищем другой видимый вариант
+    const fallbackVariant = product.variants?.find(v => 
+        !v.hidden && v.images && v.images.length > 0
+    );
+    
+    if (fallbackVariant) {
+        // Обновляем выбор цвета для этого товара
+        const newIndex = product.variants.indexOf(fallbackVariant);
+        this.$set(this.catalogActiveColors, product.id, newIndex);
+        
+        return fallbackVariant.images.filter(img => 
+            img && typeof img === 'string' && 
+            (img.startsWith('http://') || 
+             img.startsWith('https://') || 
+             img.startsWith('data:image/'))
+        );
+    }
+    
+    // Если вообще нет видимых вариантов с фото
     return [this.defaultPlaceholder];
 },
 handleImageError(event) {
@@ -2541,6 +2595,20 @@ removeVariantImage(vIdx, imgIdx) {
             this.vib();
         }
     },
+    selectColorInCatalog(product, variantIndex) {
+        if (!product || !product.id) return;
+        
+        // Проверяем, что вариант не скрыт
+        const variant = product.variants?.[variantIndex];
+        if (!variant || variant.hidden) return;
+        
+        // Сохраняем выбор цвета для этого товара
+        this.$set(this.catalogActiveColors, product.id, variantIndex);
+        
+        // Вибрация
+        this.vib();
+    },
+    
     addVariant() {
     const newIndex = this.newP.variants.length;
     
@@ -3502,18 +3570,15 @@ quickAddToCart(p) {
     if (!p) return;
     this.vib();
 
-    // 1. ОПРЕДЕЛЯЕМ ВАРИАНТ (Для каталога всегда берем ПЕРВЫЙ доступный цвет)
-    const variant = p.variants && p.variants.length > 0 ? p.variants[0] : null;
+     const activeColorIndex = this.catalogActiveColors[p.id] || 0;
+    const variant = p.variants?.[activeColorIndex];
     
-    // Если вариантов нет (поддержка старых товаров), создаем временный объект
-    const currentVariant = variant || { 
-        color: p.color || 'Стандарт', 
-        stocks: p.stocks || p.stocks || {}, 
-        images: p.images || [] 
-    };
-
-    // Используем нормализованное имя поля stock
-    const currentStock = currentVariant.stocks || currentVariant.stocks || {};
+    if (!variant) {
+        return this.openProduct(p);
+    }
+    
+    // Остальной код остается прежним, но использует variant вместо p.variants[0]
+    const currentStock = variant.stocks || variant.stock || {}; 
 
     // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
     // Если клиент кликнул на чип в каталоге — берем его (tempSize)
@@ -3534,7 +3599,7 @@ quickAddToCart(p) {
     }
 
     // 4. ФОРМИРУЕМ УНИКАЛЬНЫЙ ID (ID товара + Цвет + Размер)
-    const currentColor = currentVariant.color;
+    const currentColor = variant.color;
     const cartId = `${p.id}_${currentColor}_${selSize}`;
     
     // 5. ДОБАВЛЕНИЕ В КОРЗИНУ
@@ -4810,6 +4875,11 @@ updateChart() {
     // 4. Восстановление из localStorage
     const savedAddr = localStorage.getItem('naran_last_addr');
     if (savedAddr) this.address = savedAddr;
+    
+    this.$watch(() => this.products, () => {
+        // При изменении списка товаров очищаем кэш выбора цветов
+        this.catalogActiveColors = {};
+    }, { deep: true });
     
     // 5. Инициализация Firebase с защитой от повторных вызовов
     let firebaseInitAttempts = 0;
