@@ -2678,7 +2678,7 @@ showTempMessage(text) {
         }
     }, 2000);
 },
-       setTab(id) {
+      setTab(id) {
     if (this.vib) this.vib(); 
     this.tab = id;
 
@@ -2688,19 +2688,23 @@ showTempMessage(text) {
         });
     }
 
-    // Если перешли в профиль, рисуем график
+    // Если перешли в профиль
     if (id === 'profile') {
-        // Сбрасываем форму создания товара
+        // Сбрасываем форму только если админ
         if (this.isAdmin) {
-            this.resetNewProductForm();
-        }
-        this.$nextTick(() => {
-            // Даем достаточно времени для рендеринга DOM
+            // Ждем немного перед сбросом формы
             setTimeout(() => {
-                if (this.isAdmin) { // Важно: проверяем, что это админ
+                this.resetNewProductForm();
+            }, 100);
+        }
+        
+        // Ждем рендеринг DOM перед обновлением графика
+        this.$nextTick(() => {
+            setTimeout(() => {
+                if (this.isAdmin && this.allOrders.length > 0) {
                     this.updateChart();
                 }
-            }, 300); // Увеличиваем время ожидания
+            }, 500);
         });
     }
 },
