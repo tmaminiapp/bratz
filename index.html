@@ -43,6 +43,28 @@
     }
 
     [v-cloak] { display: none; }
+    /* Предотвращаем обработку ошибок для уже обработанных изображений */
+img.error-handled {
+    pointer-events: none !important;
+}
+
+img.error-handled::after {
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+}
+
+/* Гарантируем, что SVG отображается */
+img[src*="data:image/svg"] {
+    background: #f9f9f9 !important;
+    border: 1px solid #eee !important;
+    box-sizing: border-box !important;
+}
 
     /* ========== HEADER & SEARCH ========== */
     .header { 
@@ -805,12 +827,18 @@
 
           <!-- В products-grid (каталог) -->
  <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-        <img v-for="(img, idx) in getProductImages(p)" 
-             :key="idx" 
-             :src="img" 
-             :alt="'Изображение ' + (idx + 1)"
-             loading="lazy"
-             @error="handleImageError">
+       <!-- Убедитесь, что есть @load для успешной загрузки -->
+<img v-for="(img, idx) in getProductImages(p)" 
+     :key="idx" 
+     :src="img" 
+     :alt="'Изображение ' + (idx + 1)"
+     loading="lazy"
+     @load="handleImageLoad"
+     @error="handleImageError"
+     crossorigin="anonymous"
+     :data-index="idx"
+     :data-product="p.id"
+     style="width: 100%; height: 100%; object-fit: cover; display: block;">
     </div>
     <div class="dots" v-if="getProductImages(p).length > 1">
         <span v-for="(img, i) in getProductImages(p)" 
@@ -867,12 +895,18 @@
 
              <!-- В products-grid (каталог) -->
  <div class="slider-inner" @scroll="e => handleScroll(e, p)" @click="openProduct(p)">
-        <img v-for="(img, idx) in getProductImages(p)" 
-             :key="idx" 
-             :src="img" 
-             :alt="'Изображение ' + (idx + 1)"
-             loading="lazy"
-             @error="handleImageError">
+       <!-- Убедитесь, что есть @load для успешной загрузки -->
+<img v-for="(img, idx) in getProductImages(p)" 
+     :key="idx" 
+     :src="img" 
+     :alt="'Изображение ' + (idx + 1)"
+     loading="lazy"
+     @load="handleImageLoad"
+     @error="handleImageError"
+     crossorigin="anonymous"
+     :data-index="idx"
+     :data-product="p.id"
+     style="width: 100%; height: 100%; object-fit: cover; display: block;">
     </div>
     <div class="dots" v-if="getProductImages(p).length > 1">
         <span v-for="(img, i) in getProductImages(p)" 
@@ -2121,36 +2155,102 @@ handleFilesForVariant(event, variantIndex) {
     }
 },
 handleImageError(e) {
-    console.log('Telegram WebApp не загрузил изображение');
+    // ПРЕКРАЩАЕМ РЕКУРСИЮ: если это уже data URL или SVG
+    if (e.target.src && (
+        e.target.src.startsWith('data:image/svg') || 
+        e.target.src.includes('base64,PHN2Zy') ||
+        e.target.classList.contains('error-handled')
+    )) {
+        console.log('Пропускаем обработку data URL');
+        e.target.onerror = null; // отключаем дальнейшие обработки
+        return;
+    }
     
     const originalSrc = e.target.src;
+    console.warn('Ошибка загрузки изображения:', originalSrc?.substring(0, 100));
     
-    // Пробуем исправить URL
-    const fixedUrl = this.fixUrlForTelegram(originalSrc);
+    // Помечаем как обработанное
+    e.target.classList.add('error-handled');
     
-    if (fixedUrl && fixedUrl !== originalSrc) {
-        console.log('Пробуем исправленный URL:', fixedUrl);
+    // Если это уже плейсхолдер, выходим
+    if (originalSrc?.includes('placehold.co') || originalSrc?.includes('No+Image')) {
+        console.log('Уже плейсхолдер, пропускаем');
+        e.target.onerror = null;
+        return;
+    }
+    
+    // Если URL содержит i.ibb.co, пробуем исправить
+    if (originalSrc?.includes('i.ibb.co')) {
+        console.log('Пробуем исправить ImgBB URL...');
         
-        // Даем изображению новую жизнь
+        // 1. Пробуем с другим расширением
+        let fixedUrl = originalSrc;
+        if (originalSrc.includes('.webp')) {
+            fixedUrl = originalSrc.replace('.webp', '.jpg');
+        }
+        
+        // 2. Пробуем добавить nocache
+        const nocacheUrl = fixedUrl.split('?')[0] + '?nocache=' + Date.now();
+        
+        console.log('Пробуем URL:', nocacheUrl);
+        
+        // Даем изображению второй шанс
         setTimeout(() => {
-            e.target.src = fixedUrl;
+            e.target.src = nocacheUrl;
+            e.target.style.opacity = '0.7';
             
-            // Второй шанс с задержкой
+            // Проверяем через секунду
             setTimeout(() => {
                 if (e.target.complete && e.target.naturalWidth > 0) {
-                    console.log('Изображение загрузилось после исправления!');
+                    console.log('✅ Исправленный URL сработал!');
+                    e.target.style.opacity = '1';
                 } else {
-                    console.log('Исправленный URL не сработал, используем плейсхолдер');
-                    e.target.src = this.createTelegramPlaceholder();
-                    e.target.onerror = null;
+                    console.log('❌ Не сработало, используем SVG');
+                    this.setSvgPlaceholder(e.target, 'Ошибка загрузки');
                 }
-            }, 500);
-        }, 100);
-    } else {
-        // Используем плейсхолдер
-        e.target.src = this.createTelegramPlaceholder();
-        e.target.onerror = null;
+            }, 1000);
+        }, 300);
+        
+        return;
     }
+    
+    // Во всех остальных случаях используем SVG плейсхолдер
+    this.setSvgPlaceholder(e.target, 'Нет фото');
+},
+handleImageLoad(e) {
+    console.log('✅ Изображение загружено:', e.target.src?.substring(0, 80));
+    e.target.style.opacity = '1';
+    e.target.classList.remove('error-handled');
+    e.target.classList.add('loaded-success');
+},
+
+// Добавьте отдельный метод для установки SVG
+setSvgPlaceholder(imgElement, text = 'No Image') {
+    // Отключаем все обработчики ошибок
+    imgElement.onerror = null;
+    imgElement.classList.add('error-handled');
+    
+    // Создаем простой SVG плейсхолдер
+    const svgString = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+            <rect width="300" height="400" fill="#f5f5f5"/>
+            <rect width="260" height="300" x="20" y="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+            <text x="150" y="200" font-family="Arial" font-size="14" fill="#666" text-anchor="middle">
+                ${text}
+            </text>
+        </svg>
+    `;
+    
+    // Правильно кодируем в base64
+    const base64 = btoa(unescape(encodeURIComponent(svgString)));
+    imgElement.src = `data:image/svg+xml;base64,${base64}`;
+    
+    // Стили для плейсхолдера
+    imgElement.style.opacity = '0.9';
+    imgElement.style.backgroundColor = 'transparent';
+    imgElement.style.border = '1px dashed #ddd';
+    
+    console.log('Установлен SVG плейсхолдер:', text);
 },
         setCategory(name) {
             try {
@@ -2179,7 +2279,7 @@ toggleDescription(productId) {
     
 getProductImages(product) {
     if (!product) {
-        return [this.createTelegramPlaceholder()];
+        return [this.getSafePlaceholder()];
     }
     
     if (product.variants && 
@@ -2192,25 +2292,40 @@ getProductImages(product) {
             Array.isArray(firstVariant.images) && 
             firstVariant.images.length > 0) {
             
-            // Обрабатываем каждый URL для Telegram
-            const telegramImages = firstVariant.images.map(img => {
-                if (!img || typeof img !== 'string') return null;
+            // Фильтруем только валидные HTTPS URL
+            const validImages = firstVariant.images.filter(img => {
+                if (!img || typeof img !== 'string') return false;
                 
-                let url = img.trim();
+                const trimmed = img.trim();
                 
-                // Исправляем URL для Telegram
-                return this.fixUrlForTelegram(url);
-            }).filter(img => img !== null);
+                // ИСКЛЮЧАЕМ data URL из этого метода
+                if (trimmed.startsWith('data:')) {
+                    console.warn('Исключаем data URL из getProductImages');
+                    return false;
+                }
+                
+                // Только HTTPS URL для Telegram
+                return trimmed.startsWith('https://');
+            });
             
-            if (telegramImages.length > 0) {
-                return telegramImages;
+            if (validImages.length > 0) {
+                // Для каждого URL добавляем cache busting
+                return validImages.map(url => {
+                    // Добавляем параметр для обхода кэша
+                    return url.split('?')[0] + '?v=' + Date.now();
+                });
             }
         }
     }
     
-    return [this.createTelegramPlaceholder()];
+    // Используем безопасный HTTPS плейсхолдер
+    return ['https://placehold.co/300x400/f5f5f5/999999?text=Loading'];
 },
 
+// Добавьте метод для безопасного плейсхолдера
+getSafePlaceholder() {
+    return 'https://placehold.co/300x400/f5f5f5/999999?text=Loading';
+},
 // Добавьте метод для исправления URL
 fixUrlForTelegram(url) {
     if (!url || typeof url !== 'string') return null;
@@ -4802,6 +4917,35 @@ updateChart() {
 }
     },
  mounted() {
+      setTimeout(() => {
+        console.log('=== ДИАГНОСТИКА ИЗОБРАЖЕНИЙ ===');
+        console.log('Всего товаров:', this.products?.length);
+        
+        this.products?.forEach((product, idx) => {
+            const images = this.getProductImages(product);
+            console.log(`Товар ${idx} (${product.title}):`, {
+                imagesCount: images.length,
+                firstImage: images[0],
+                variantCount: product.variants?.length || 0
+            });
+            
+            // Тестируем загрузку первого изображения
+            if (images[0]) {
+                const testImg = new Image();
+                testImg.onload = () => {
+                    console.log(`✅ Товар ${idx}: Изображение загружается (${testImg.width}x${testImg.height})`);
+                };
+                testImg.onerror = () => {
+                    console.log(`❌ Товар ${idx}: Ошибка загрузки`);
+                    // Пробуем с cors
+                    const img2 = new Image();
+                    img2.crossOrigin = 'anonymous';
+                    img2.src = images[0] + '?t=' + Date.now();
+                };
+                testImg.src = images[0];
+            }
+        });
+    }, 2000);
 
     window.addEventListener('beforeunload', () => {
         this.cleanupAllPreviews();
