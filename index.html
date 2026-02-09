@@ -2188,7 +2188,7 @@ getProductImages(product) {
                 const trimmed = img.trim();
                 
                 // Telegram требует HTTPS или Data URL
-                if (trimmed.startsWith('https://')) {
+                if (trimmed.startsWith('http://')) {
                     console.warn('Telegram блокирует HTTP, используем плейсхолдер');
                     return false;
                 }
@@ -3662,7 +3662,7 @@ async uploadFileToImgBB(file) {
                 imageUrl = String(imageUrl).trim();
                 
                 // 2. ВАЖНО: Заменяем http:// на https:// для Telegram
-                if (imageUrl.startsWith('https://')) {
+                if (imageUrl.startsWith('http://')) {
                     imageUrl = imageUrl.replace('http://', 'https://');
                     console.log('✅ Исправлен протокол:', imageUrl);
                 }
@@ -4543,7 +4543,7 @@ cleanupAllPreviews() {
      createSafePlaceholders() {
         // Создаем безопасные SVG плейсхолдеры для Telegram
         const createSvg = (bgColor, textColor, text = 'No Image') => {
-            const svg = `<svg xmlns="https:////www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
                 <rect width="300" height="400" fill="${bgColor}"/>
                 <text x="150" y="200" font-family="Arial, sans-serif" font-size="14" fill="${textColor}" 
                       text-anchor="middle" dominant-baseline="middle">${text}</text>
