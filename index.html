@@ -3863,7 +3863,7 @@ removeFromCart(cartId) {
                 if (this.map) { this.map.destroy(); this.map = null; }
                 
                 // Исправляем ошибку ключа: используем ключ напрямую
-                const currentKey = 'cab82c94-e619-42eb-9814-3361712feaf0';
+                const currentKey = 'a3fb6133-4bcf-46d3-9a05-c7d8b5812144';
                 
                 this.map = new mapgl.Map('map', {
                     center: [37.6175, 55.7558],
@@ -3900,7 +3900,7 @@ removeFromCart(cartId) {
         },
 
       getAddress(lat, lon) {
-    const currentKey = 'cab82c94-e619-42eb-9814-3361712feaf0';
+    const currentKey = 'a3fb6133-4bcf-46d3-9a05-c7d8b5812144';
     // Добавили запрос всех полей, где может прятаться город
     const url = `https://catalog.api.2gis.com/3.0/items/geocode?lat=${lat}&lon=${lon}&radius=50&fields=items.adm_div,items.address,items.full_name&key=${currentKey}`;
 
