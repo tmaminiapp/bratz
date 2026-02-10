@@ -898,48 +898,49 @@
            <!-- В блоке products-grid, замените существующий блок с выбором цвета: -->
 <!-- В блоке products-grid, замените существующий блок с выбором цвета: -->
 <div v-if="p.variants && getVisibleVariants(p).length > 1" 
-     style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
-    <div v-for="(v, vIdx) in getVisibleVariants(p)" 
-         :key="vIdx"
-         @click.stop="selectVisibleColor(p, v)"
-         :style="{
-             width: '12px',
-             height: '12px',
-             borderRadius: '50%',
-             border: '2px solid white',
-             background: getActiveColorIndex(p) === vIdx ? '#000' : '#ccc',
-             cursor: 'pointer',
-             boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-         }"
-         :title="v.color">
-    </div>
-</div>
+             style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
+            <div v-for="(v, vIdx) in getVisibleVariants(p)" 
+                 :key="vIdx"
+                 @click.stop="selectVisibleColor(p, v)"
+                 :style="{
+                     width: '12px',
+                     height: '12px',
+                     borderRadius: '50%',
+                     border: '2px solid white',
+                     background: getActiveColorIndex(p) === vIdx ? '#000' : '#ccc',
+                     cursor: 'pointer',
+                     boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                 }"
+                 :title="v.color">
+            </div>
+        </div>
         </div>
 
-        <div class="card-info">
-            <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
-            <div class="price-row" @click="openProduct(p)">
-                <span class="price">{{p.price}} ₽</span>
-                <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
+       <div class="card-info">
+        <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
+        <div class="price-row" @click="openProduct(p)">
+            <span class="price">{{p.price}} ₽</span>
+            <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
+        </div>
+        
+        <!-- РАЗМЕРЫ ДЛЯ АКТИВНОГО ЦВЕТА -->
+        <div class="card-sizes" v-if="p.variants && getVisibleVariants(p).length > 0">
+            <div v-for="(qty, sz) in (getVisibleVariants(p)[getActiveColorIndex(p)]?.stocks || {})" 
+                 :key="sz"
+                 @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
+                 :class="['size-chip', {
+                    active: p.tempSize === sz,
+                    disabled: qty <= 0
+                 }]">
+                {{ sz }}
             </div>
-            
-        <div class="card-sizes" v-if="p.variants && visibleVariants.length > 0">
-    <!-- Получаем активный ВИДИМЫЙ вариант -->
-    <div v-for="(qty, sz) in (visibleVariants[getActiveColorIndex(p)]?.stocks || {})" 
-         :key="sz"
-         @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
-         :class="['size-chip', {
-            active: p.tempSize === sz,
-            disabled: qty <= 0
-         }]">
-        {{ sz }}
+        </div>
+        
+        <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
+            В КОРЗИНУ
+        </button>
     </div>
 </div>
-            <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
-                В КОРЗИНУ
-            </button>
-        </div>
-    </div>
 </div>
         <div v-if="filteredProducts.length === 0" style="text-align:center; padding: 50px; font-weight: 700;">ТОВАРОВ НЕ НАЙДЕНО</div>
     </div>
@@ -989,8 +990,10 @@
                     <span class="price">{{p.price}} ₽</span>
                 </div>
                 
-               <div class="card-sizes" v-if="p.variants && p.variants[0]">
-    <div v-for="(qty, sz) in (p.variants[0].stocks || {})" 
+             <!-- В разделе favs ЗАМЕНИТЕ -->
+<div class="card-sizes" v-if="p.variants && getVisibleVariants(p).length > 0">
+    <!-- Получаем активный ВИДИМЫЙ вариант -->
+    <div v-for="(qty, sz) in (getVisibleVariants(p)[getActiveColorIndex(p)]?.stocks || {})" 
          :key="sz"
          @click.stop="qty > 0 ? (p.tempSize = sz, vib()) : null"
          :class="['size-chip', {
@@ -1001,7 +1004,6 @@
     </div>
 </div>
                 
-                <!-- Та же кнопка "В КОРЗИНУ" -->
                 <button class="btn-black" style="width: 100%;" @click.stop="quickAddToCart(p)">
                     В КОРЗИНУ
                 </button>
@@ -1690,12 +1692,12 @@
         </div>
         
         
-       <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
+      <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
     <div v-for="(v, idx) in visibleVariants" :key="idx" 
-         @click="currentVariantIndex = idx; selP.tempSize = null; vib();"
-         :class="['color-badge', { active: currentVariantIndex === idx }]"
+         @click="currentVariantIndex = getOriginalIndexFromVisible(selP, idx); selP.tempSize = null; vib();"
+         :class="['color-badge', { active: currentVariantIndex === getOriginalIndexFromVisible(selP, idx) }]"
          style="padding: 8px 16px; border: 1px solid #eee; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s;"
-         :style="{ background: currentVariantIndex === idx ? '#000' : '#fff', color: currentVariantIndex === idx ? '#fff' : '#000' }">
+         :style="{ background: currentVariantIndex === getOriginalIndexFromVisible(selP, idx) ? '#000' : '#fff', color: currentVariantIndex === getOriginalIndexFromVisible(selP, idx) ? '#fff' : '#000' }">
         {{ v.color }}
     </div>
 </div>
@@ -2089,12 +2091,22 @@ selVariant() {
                 }, 0);
             },
     },
-   watch: {
+  watch: {
     products: {
         handler(newProducts) {
-            // При любом изменении товаров корректируем активные цвета
+            // При изменении товаров корректируем активные цвета для скрытых вариантов
             this.$nextTick(() => {
-                this.correctAllActiveColors();
+                newProducts.forEach(product => {
+                    if (product && product.id) {
+                        const currentIndex = this.catalogActiveColors[product.id] || 0;
+                        const visibleVariants = product.variants?.filter(v => !v.hidden) || [];
+                        
+                        // Если текущий индекс указывает на скрытый вариант или вне диапазона
+                        if (currentIndex >= visibleVariants.length) {
+                            this.catalogActiveColors[product.id] = 0;
+                        }
+                    }
+                });
             });
         },
         deep: true
@@ -2404,7 +2416,7 @@ handleImageError(e) {
         e.target.style.fontWeight = 'bold';
     }
 },
-     setCategory(name) {
+    setCategory(name) {
     try {
         this.vib();
         this.currentCat = name || '';
@@ -2443,13 +2455,38 @@ getActiveColorIndex(product) {
     // Получаем видимые варианты
     const visibleVariants = product.variants.filter(v => !v.hidden);
     
-    // Если текущий индекс превышает количество видимых вариантов, сбрасываем
+    // Если нет видимых вариантов
+    if (visibleVariants.length === 0) return 0;
+    
+    // Находим, соответствует ли текущий индекс видимому варианту
     if (currentIndex >= visibleVariants.length) {
         currentIndex = 0;
-        this.$set(this.catalogActiveColors, product.id, currentIndex);
     }
     
+    // Проверяем, не скрыт ли текущий вариант
+    const originalIndex = this.getOriginalIndexFromVisible(product, currentIndex);
+    if (product.variants[originalIndex]?.hidden) {
+        currentIndex = 0;
+    }
+    
+    // В Vue 3 используем прямое присваивание
+    this.catalogActiveColors[product.id] = currentIndex;
     return currentIndex;
+},
+// Получить оригинальный индекс из видимого индекса
+getOriginalIndexFromVisible(product, visibleIndex) {
+    if (!product.variants) return 0;
+    
+    let visibleCount = 0;
+    for (let i = 0; i < product.variants.length; i++) {
+        if (!product.variants[i].hidden) {
+            if (visibleCount === visibleIndex) {
+                return i;
+            }
+            visibleCount++;
+        }
+    }
+    return 0;
 },
 
 // Метод для выбора видимого цвета
@@ -2461,8 +2498,11 @@ selectVisibleColor(product, variant) {
     const visibleIndex = visibleVariants.findIndex(v => v.color === variant.color);
     
     if (visibleIndex !== -1) {
-        // Сохраняем индекс видимого варианта
-        this.$set(this.catalogActiveColors, product.id, visibleIndex);
+        // Сохраняем индекс видимого варианта (прямое присваивание в Vue 3)
+        this.catalogActiveColors[product.id] = visibleIndex;
+        
+        // Сбрасываем выбранный размер при смене цвета
+        product.tempSize = null;
         
         // Принудительно обновляем отображение
         this.$forceUpdate();
@@ -2475,22 +2515,25 @@ selectVisibleColor(product, variant) {
         return [this.defaultPlaceholder];
     }
     
-    // Получаем видимые варианты
+    // Получаем ТОЛЬКО НЕ СКРЫТЫЕ варианты
     const visibleVariants = product.variants.filter(v => !v.hidden);
     
     if (!visibleVariants || visibleVariants.length === 0) {
         return [this.defaultPlaceholder];
     }
     
-    // Используем исправленный метод getActiveColorIndex
+    // Используем активный цвет (только среди видимых)
     const activeIndex = this.getActiveColorIndex(product);
     
+    // Проверяем границы массива
     if (activeIndex >= visibleVariants.length) {
-        return [this.defaultPlaceholder];
+        this.catalogActiveColors[product.id] = 0; // Сбрасываем на первый видимый
+        return visibleVariants[0]?.images || [this.defaultPlaceholder];
     }
     
     const activeVariant = visibleVariants[activeIndex];
     
+    // Берем фото ТОЛЬКО из активного ВИДИМОГО варианта
     if (activeVariant && activeVariant.images && activeVariant.images.length > 0) {
         return activeVariant.images.filter(img => 
             img && typeof img === 'string' && 
@@ -2567,7 +2610,7 @@ correctAllActiveColors() {
             
             // Если индекс указывает на скрытый вариант или вне диапазона
             if (currentIndex >= visibleVariants.length) {
-                this.$set(this.catalogActiveColors, product.id, 0);
+                this.catalogActiveColors[product.id] = 0;
             }
         }
     });
@@ -2689,7 +2732,7 @@ resetActiveColorIfHidden(product) {
     
     // Если текущий индекс больше количества видимых вариантов, сбрасываем на 0
     if (currentIndex >= visibleVariants.length) {
-        this.$set(this.catalogActiveColors, product.id, 0);
+        this.catalogActiveColors[product.id] = 0;
     }
     
     // Также сбрасываем временный размер
@@ -2852,15 +2895,23 @@ async toggleVariantVisibility(product, variantIndex) {
     try {
         const variant = product.variants[variantIndex];
         
-        // Переключаем скрытие для конкретного варианта
+        // Переключаем скрытие
         const newHiddenState = !variant.hidden;
-        this.correctAllActiveColors();
-        
-        // Обновляем локально
         variant.hidden = newHiddenState;
         
-        // Сбрасываем активный цвет если нужно
-        this.resetActiveColorIfHidden(product);
+        // Сбрасываем активный цвет если он стал скрытым
+        const currentIndex = this.catalogActiveColors[product.id] || 0;
+        if (currentIndex >= variantIndex) {
+            // Ищем следующий видимый вариант
+            const visibleVariants = product.variants.filter(v => !v.hidden);
+            if (visibleVariants.length > 0) {
+                // Находим индекс первого видимого варианта
+                const firstVisibleIndex = product.variants.findIndex(v => !v.hidden);
+                this.catalogActiveColors[product.id] = this.getVisibleIndexFromOriginal(product, firstVisibleIndex);
+            } else {
+                this.catalogActiveColors[product.id] = 0;
+            }
+        }
         
         // Сохраняем в Firebase
         const productRef = window.fb.doc(window.db, "products", product.id);
@@ -2874,10 +2925,23 @@ async toggleVariantVisibility(product, variantIndex) {
         
         // Принудительно обновляем отображение
         this.$forceUpdate();
+        
     } catch (e) {
         console.error("Ошибка:", e);
         alert("Не удалось изменить видимость цвета");
     }
+},
+// Получить видимый индекс из оригинального индекса
+getVisibleIndexFromOriginal(product, originalIndex) {
+    if (!product.variants || originalIndex < 0) return 0;
+    
+    let visibleCount = 0;
+    for (let i = 0; i < originalIndex; i++) {
+        if (!product.variants[i].hidden) {
+            visibleCount++;
+        }
+    }
+    return visibleCount;
 },
 addSizeField(vIdx) {
     // Инициализируем массив для этого варианта, если его нет
@@ -3787,7 +3851,7 @@ removeFromCart(cartId) {
             localStorage.setItem('naran_cart_v3', JSON.stringify(this.cart));
         },
 
-        setDelivery(d) {
+         setDelivery(d) {
     this.deliv = d; // Записываем в deliv, так как она у тебя в data()
     this.vib();
     // Если у тебя инициализируется карта при выборе:
@@ -3835,7 +3899,7 @@ removeFromCart(cartId) {
             } catch (e) { console.error("Map error", e); }
         },
 
-       getAddress(lat, lon) {
+      getAddress(lat, lon) {
     const currentKey = 'cab82c94-e619-42eb-9814-3361712feaf0';
     // Добавили запрос всех полей, где может прятаться город
     const url = `https://catalog.api.2gis.com/3.0/items/geocode?lat=${lat}&lon=${lon}&radius=50&fields=items.adm_div,items.address,items.full_name&key=${currentKey}`;
