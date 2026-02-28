@@ -5124,15 +5124,11 @@ async checkout() {
 
         // 👇 ВАЖНО: ОТПРАВКА ДАННЫХ В TELEGRAM
         if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.sendData(JSON.stringify(orderData));
-            console.log("✅ Данные отправлены в Telegram");
-        } else {
-            console.error("❌ Telegram WebApp не доступен");
-            alert("Ошибка: приложение запущено не в Telegram");
-            this.isCheckingOut = false;
-            this.loading = false;
-            return;
-        }
+    window.Telegram.WebApp.sendData(JSON.stringify(orderData));
+    console.log("✅ Данные отправлены в Telegram");
+} else {
+    console.error("❌ Telegram WebApp не доступен");
+}
 
         // Отправляем заказ в Firebase (не ждем ответа)
         if (window.fb?.addDoc) {
