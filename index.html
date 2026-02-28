@@ -1112,10 +1112,17 @@ body.modal-open {
             <div id="map" v-show="deliv" style="width: 100%; height: 300px; background: #f0f0f0; margin: 15px 0;"></div>
             <div v-if="address" style="font-size:12px; font-weight:700; margin-bottom: 20px;">📍 {{ address }}</div>
 
-             <div v-if="deliv" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #666; font-size: 13px;">
-                    <span>📦 Доставка до пункта отправки</span>
-                    <span style="font-weight: 700;">{{ delivery_price }} ₽</span>
-                </div>
+            <!-- Строка с доставкой (всегда видна) -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #666; font-size: 13px; padding: 5px 0; border-bottom: 1px dashed #eee;">
+    <span>📦 Доставка (фиксированная)</span>
+    <span style="font-weight: 700;">{{ delivery_price }} ₽</span>
+</div>
+
+<!-- Если способ доставки выбран, показываем дополнительную информацию -->
+<div v-if="deliv" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #666; font-size: 12px; padding-left: 5px;">
+    <span>🚚 Способ доставки: {{ deliv }}</span>
+    <span style="color: #999;">включено в стоимость</span>
+</div>
 
             <!-- ИТОГО С КЭШИРОВАНИЕМ -->
             <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
@@ -2521,78 +2528,23 @@ async saveUserToFirestore(userData) {
 },
 initTelegramLogin() {
     console.log('🔍 initTelegramLogin вызван!');
-    
-    if (this.user && this.user.is_guest) {
-        console.log('✅ Пользователь гость, показываем виджет');
-        this.showTelegramLogin = true;
-        
-        // Проверяем, не на вкладке ли profile мы сейчас
-        if (this.tab === 'profile') {
-            setTimeout(() => {
-                this.loadTelegramWidget();
-            }, 500);
-        }
-    } else {
-        console.log('❌ Пользователь не гость, виджет не нужен');
-        this.showTelegramLogin = false;
-    }
-},
-logout() {
-    this.user = { is_guest: true };
-    this.isAdmin = false;
-    localStorage.removeItem('naran_user');
-    // Удаляем виджет, если он есть
-    const container = document.getElementById('telegram-login-container');
-    if (container) container.innerHTML = '';
-    // Переинициализируем виджет (он снова появится)
-    this.initTelegramLogin();
-},
-handleTelegramAuth(user) {
-    console.log('✅ Успешный вход через Telegram:', user);
-    
-    // Обновляем данные пользователя
-    this.user = {
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name || '',
-        username: user.username || '',
-        photo_url: user.photo_url || '',
-        is_guest: false
-    };
-    
-    // Проверка на админа
-    if (user.id == this.adminIds) {
-        this.isAdmin = true;
-    }
-    
-    // Сохраняем в localStorage
-    localStorage.setItem('user', JSON.stringify(this.user));
-    
-    // Загружаем заказы пользователя
-    this.loadUserOrders();
-    
-    // Обновляем интерфейс
-    this.$forceUpdate();
-},
-initTelegramLogin() {
-    console.log('🔍 initTelegramLogin вызван!');
     console.log('this.user:', this.user);
     console.log('this.user.is_guest:', this.user?.is_guest);
     console.log('this.botUsername:', this.botUsername);
     console.log('window.Telegram?.WebApp:', window.Telegram?.WebApp);
     
-   if (this.user && this.user.is_guest) {
-    console.log('✅ Пользователь гость, показываем виджет');
-    this.showTelegramLogin = true;
-    
-    // Принудительно загружаем виджет через setTimeout
-    setTimeout(() => {
-      this.loadTelegramWidget();
-    }, 500);
-  } else {
-    console.log('❌ Пользователь не гость, виджет не нужен');
-    this.showTelegramLogin = false;
-  }
+    if (this.user && this.user.is_guest) {
+        console.log('✅ Пользователь гость, показываем виджет');
+        this.showTelegramLogin = true;
+        
+        // Принудительно загружаем виджет через setTimeout
+        setTimeout(() => {
+            this.loadTelegramWidget();
+        }, 500);
+    } else {
+        console.log('❌ Пользователь не гость, виджет не нужен');
+        this.showTelegramLogin = false;
+    }
 
     const container = document.getElementById('telegram-login-container');
     console.log('📦 Контейнер для виджета:', container);
@@ -2623,6 +2575,47 @@ initTelegramLogin() {
     container.appendChild(script);
     console.log('✅ Скрипт виджета добавлен в контейнер');
 },
+logout() {
+    this.user = { is_guest: true };
+    this.isAdmin = false;
+    localStorage.removeItem('naran_user');
+    // Удаляем виджет, если он есть
+    const container = document.getElementById('telegram-login-container');
+    if (container) container.innerHTML = '';
+    // Переинициализируем виджет (он снова появится)
+    this.initTelegramLogin();
+},
+handleTelegramAuth(user) {
+    console.log('✅ Успешный вход через Telegram:', user);
+    
+    // Обновляем данные пользователя
+    this.user = {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name || '',
+        username: user.username || '',
+        photo_url: user.photo_url || '',
+        is_guest: false
+    };
+    
+    // Проверка на админа
+    if (this.adminIds && this.adminIds.includes(user.id)) {
+        this.isAdmin = true;
+        console.log('👑 Пользователь является администратором');
+    } else {
+        this.isAdmin = false;
+    }
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('user', JSON.stringify(this.user));
+    
+    // Загружаем заказы пользователя
+    this.loadUserOrders();
+    
+    // Обновляем интерфейс
+    this.$forceUpdate();
+},
+
 removeEditImage(imgIdx) {
     if (confirm("Удалить это фото из товара?")) {
         this.editImages.splice(imgIdx, 1);
