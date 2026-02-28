@@ -220,23 +220,29 @@
         text-transform: uppercase; 
     }
 
-    .price-row { 
-        display: flex; 
-        align-items: center; 
-        gap: 8px; 
-        margin-bottom: 10px; 
-    }
+   /* ========== PRICE STYLES ========== */
+.price-row { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    margin-bottom: 10px;
+    justify-content: flex-start;  /* Прижимает к левому краю */
+    width: 100%;                  /* Занимает всю ширину */
+    flex-wrap: wrap;             /* Перенос на мобильных если нужно */
+}
 
-    .price { 
-        font-weight: 800; 
-        font-size: 14px; 
-    }
+.price { 
+    font-weight: 800; 
+    font-size: 14px; 
+    line-height: 1.2;           /* Фиксированная высота строки */
+}
 
-    .old-price { 
-        font-size: 11px; 
-        color: var(--gray); 
-        text-decoration: line-through; 
-    }
+.old-price { 
+    font-size: 11px; 
+    color: var(--gray); 
+    text-decoration: line-through;
+    line-height: 1.2;           /* Фиксированная высота строки */
+}
 
     .sale-badge { 
         background: #000; 
@@ -518,6 +524,16 @@
         gap: 8px; 
         margin: 15px 0; 
     }
+    /* Добавьте в конец стилей */
+.telegram-webview .product-image {
+    content-visibility: auto;
+    contain-intrinsic-size: 200px;
+}
+
+.telegram-webview .cart-img {
+    content-visibility: auto;
+    contain-intrinsic-size: 70px 90px;
+}
 
     /* ========== ORDERS ========== */
     .order-card { 
@@ -580,6 +596,7 @@
     transform: scale(0.95);
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
+
 .image-loading {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
@@ -782,6 +799,30 @@
         border-radius: 8px; /* Более мягкие углы на мобильных */
     }
 }
+/* Добавьте в конец стилей */
+.no-transition {
+    transition: none !important;
+}
+
+.catalog-container {
+    will-change: scroll-position;
+}
+/* Для правильной блокировки скролла на мобильных */
+body.modal-open {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Плавные переходы */
+.modal {
+    transition: opacity 0.2s ease;
+}
 </style>
 </head>
 <body>
@@ -817,7 +858,7 @@
                 <span>{{ activeInfo === 'about' ? '−' : '+' }}</span>
             </div>
             <div v-if="activeInfo === 'about'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
-                Товар производится на фабриках Турции и Китая. Качество LUXE, не путайте с дешевым перешивом.Все фото в группе оригинальные: либо на нашей девочке-модели, либо с фабрик. Одежда полностью соответствует заявленным фотографиям и более чем оправдывает каждую копейку. Цены в группе указаны оптовые для всех покупателей.Принимаются брони по 100% предоплате
+                BRATZ - качественная и трендовая одежда по оптовым ценам. Одежда производится на швейных производствах России, Китая и Турции. Все фото соответствуют товару.
             </div>
         </div>
 
@@ -828,7 +869,7 @@
                 <span>{{ activeInfo === 'delivery' ? '−' : '+' }}</span>
             </div>
             <div v-if="activeInfo === 'delivery'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
-                Транспортные расходы оплачиваются заказчиком. Стоимость и срок доставки посылки рассчитываете самостоятельно, руководствуясь тарифами почты и транспортных компаний, опубликованных на их официальных сайтах. При отправке автобусом обязательно укажите его номер, город, стоянку и номер телефона водителя. 
+                Транспортные расходы оплачиваются заказчиком. Стоимость и сроки доставки рассчитываете самостоятельно, руководствуясь тарифами почты и транспортных компаний, опубликованных на их официальных сайтах. 
             </div>
         </div>
 
@@ -839,7 +880,7 @@
                 <span>{{ activeInfo === 'return' ? '−' : '+' }}</span>
             </div>
             <div v-if="activeInfo === 'return'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
-                При самовывозе возвратов и обменов НЕТ! Проверяйте товар на брак на месте или просите посредников. При отправке, получая товар снимайте распаковку на видео. В случае брака решим проблему! Только пишите сразу, 1-2 дня с момента получения.
+                При самовывозе возвратов и обменов НЕТ! Проверяйте товар на брак на месте. При отправке, получая товар снимайте распаковку на видео. В случае брака решим проблему! Только пишите сразу, 1-2 дня с момента получения.
             </div>
         </div>
 
@@ -850,7 +891,7 @@
                 <span>{{ activeInfo === 'address' ? '−' : '+' }}</span>
             </div>
             <div v-if="activeInfo === 'address'" style="padding: 15px 0; font-size: 13px; line-height: 1.6; color: #666; animation: fadeIn 0.3s ease;">
-                г. Москва, 14 км. МКАД, ТЦ Садовод, место 2В-73 корпус Б. Часы работы: ежедневно с 8:00 до 18:00
+                г. Москва, Чагинская 4 стр 13, график работы: ежедневно с 10:00 до 22:00
             </div>
         </div>
 
@@ -895,8 +936,6 @@
             <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
             <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
 
-           <!-- В блоке products-grid, замените существующий блок с выбором цвета: -->
-<!-- В блоке products-grid, замените существующий блок с выбором цвета: -->
 <div v-if="p.variants && getVisibleVariants(p).length > 1" 
              style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
             <div v-for="(v, vIdx) in getVisibleVariants(p)" 
@@ -917,7 +956,9 @@
         </div>
 
        <div class="card-info">
-        <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
+      <div class="card-title" @click="openProduct(p)" style="font-size: 10px; font-weight: 600; height: auto; min-height: 10px; margin-bottom: 4px; line-height: 1.3;">
+        {{p.title}}
+    </div>
         <div class="price-row" @click="openProduct(p)">
             <span class="price">{{p.price}} ₽</span>
             <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
@@ -985,10 +1026,13 @@
             </div>
 
             <div class="card-info">
-                <div class="card-title" @click="openProduct(p)">{{p.title}}</div>
-                <div class="price-row" @click="openProduct(p)">
-                    <span class="price">{{p.price}} ₽</span>
-                </div>
+                <div class="card-title" @click="openProduct(p)" style="font-size: 10px; font-weight: 600; height: auto; min-height: 10px; margin-bottom: 4px; line-height: 1.3;">
+        {{p.title}}
+    </div>
+        <div class="price-row" @click="openProduct(p)">
+            <span class="price">{{p.price}} ₽</span>
+            <span v-if="p.oldPrice" class="old-price">{{p.oldPrice}} ₽</span>
+        </div>
                 
              <!-- В разделе favs ЗАМЕНИТЕ -->
 <div class="card-sizes" v-if="p.variants && getVisibleVariants(p).length > 0">
@@ -1012,94 +1056,105 @@
     </div>
 </div>
                 
-                <div v-if="tab === 'cart'">
-        <h2 class="brand-name" style="font-size: 16px; margin-bottom: 20px;">КОРЗИНА</h2>
-<div v-if="cart.length === 0" style="text-align:center; padding: 50px;">ВАША КОРЗИНА ПУСТА</div>
-<div v-else>
-  <div v-for="item in cart" :key="item.cartId" class="cart-item">
+               <div v-if="tab === 'cart'">
+    <h2 class="brand-name" style="font-size: 16px; margin-bottom: 20px;">КОРЗИНА</h2>
     
-    <img :src="item.img || item.image || ''" 
-     class="cart-img" 
-     @click="openProductFromCart(item)" 
-     style="cursor:pointer; width: 70px; height: 90px; object-fit: cover; border-radius: 8px;">
-     
-
-    <div style="flex:1; margin-left: 12px;">
-        <div @click="openProduct(item)" style="cursor:pointer;">
-            <div style="font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing: 0.5px;">
-                {{item.title}}
-            </div>
-            
-            <div style="font-size:10px; color:gray; margin: 4px 0; font-weight: 600;">
-                РАЗМЕР: {{item.selSize}} | ЦВЕТ: {{item.selColor}}
-            </div>
-            
-            <div style="font-weight:800; font-size: 14px;">{{item.price}} ₽</div>
-        </div>
-
-        <div class="qty-controls" style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
-            <button class="qty-btn" @click="changeQty(item, -1)" 
-                    style="width: 28px; height: 28px; border: 1px solid #eee; background: #fff; border-radius: 4px;">-</button>
-            
-            <span style="font-weight:700; font-size: 13px;">{{item.qty}}</span>
-            
-            <button class="qty-btn" @click="changeQty(item, 1)"
-                    style="width: 28px; height: 28px; border: 1px solid #eee; background: #fff; border-radius: 4px;">+</button>
-        </div>
-    </div>
+    <div v-if="cart.length === 0" style="text-align:center; padding: 50px;">ВАША КОРЗИНА ПУСТА</div>
     
-    <button @click="removeFromCart(item.cartId)" 
-            style="background: none; border: none; color: #ccc; padding: 5px; font-size: 18px;">✕</button>
-</div>
+    <div v-else>
+        <!-- Контейнер с прокруткой для мобильных -->
+        <div style="max-height: 50vh; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+            <div v-for="item in cart" :key="item.cartId" class="cart-item" style="transform: translateZ(0);">
+                <img :src="item.img || item.image || ''" 
+                     class="cart-img" 
+                     @click="openProductFromCart(item)" 
+                     loading="lazy"
+                     style="cursor:pointer; width: 70px; height: 90px; object-fit: cover; border-radius: 8px;">
+                
+                <div style="flex:1; margin-left: 12px;">
+                    <div @click="openProduct(item)" style="cursor:pointer;">
+                        <div style="font-weight:700; font-size:12px; text-transform:uppercase;">
+                            {{ item.title }}
+                        </div>
+                        <div style="font-size:10px; color:gray; margin: 4px 0;">
+                            РАЗМЕР: {{ item.selSize }} | ЦВЕТ: {{ item.selColor }}
+                        </div>
+                        <div style="font-weight:800; font-size: 14px;">{{ item.price }} ₽</div>
+                    </div>
 
-    <div style="margin-top: 30px;">
-        <div class="field">
-            <label>ВАШЕ ИМЯ</label>
-            <input v-model="form.name" class="input-admin" placeholder="ИМЯ">
-        </div>
-        <div class="field">
-            <label>ТЕЛЕФОН (10-11 ЦИФР)</label>
-            <input v-model="form.phone" class="input-admin" type="tel" placeholder="89000000000">
-        </div>
-
-        <label style="font-size:10px; font-weight:800;">СПОСОБ ДОСТАВКИ</label>
-        <div class="delivery-grid">
-            <button v-for="d in ['СДЭК', 'ПОЧТА', '5POST']" :key="d" @click="setDelivery(d)" :class="['cat-tab', {active: deliv === d}]">{{d}}</button>
+                    <div class="qty-controls" style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                        <button class="qty-btn" @click="changeQty(item, -1)">-</button>
+                        <span style="font-weight:700; font-size: 13px;">{{ item.qty }}</span>
+                        <button class="qty-btn" @click="changeQty(item, 1)">+</button>
+                    </div>
+                </div>
+                
+                <button @click="removeFromCart(item.cartId)" style="background: none; border: none; color: #ccc; font-size: 18px;">✕</button>
+            </div>
         </div>
 
-        <div id="map" v-show="deliv"></div>
-        <div v-if="address" style="font-size:12px; font-weight:700; margin-bottom: 20px;">📍 {{address}}</div>
-     <div class="field" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 8px;">
-    <div style="font-size: 13px; font-weight: 700; color: #000; margin-top: 4px;">
-        📦 Доставка до пункта отправки — 200 ₽
+        <div style="margin-top: 30px;">
+            <!-- Форма заказа -->
+            <div class="field">
+                <label>ВАШЕ ИМЯ</label>
+                <input v-model="form.name" class="input-admin" placeholder="ИМЯ">
+            </div>
+            <div class="field">
+                <label>ТЕЛЕФОН (10-11 ЦИФР)</label>
+                <input v-model="form.phone" class="input-admin" type="tel" placeholder="89000000000">
+            </div>
+
+            <label style="font-size:10px; font-weight:800;">СПОСОБ ДОСТАВКИ</label>
+            <div class="delivery-grid">
+                <button v-for="d in ['СДЭК', 'ПОЧТА', '5POST']" :key="d" @click="setDelivery(d)" :class="['cat-tab', {active: deliv === d}]">{{d}}</button>
+            </div>
+
+            <div id="map" v-show="deliv" style="width: 100%; height: 300px; background: #f0f0f0; margin: 15px 0;"></div>
+            <div v-if="address" style="font-size:12px; font-weight:700; margin-bottom: 20px;">📍 {{ address }}</div>
+
+             <div v-if="deliv" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #666; font-size: 13px;">
+                    <span>📦 Доставка до пункта отправки</span>
+                    <span style="font-weight: 700;">{{ delivery_price }} ₽</span>
+                </div>
+
+            <!-- ИТОГО С КЭШИРОВАНИЕМ -->
+            <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; font-weight: 800;">ИТОГО К ОПЛАТЕ:</span>
+                    <span style="font-size: 18px; font-weight: 800;">{{ cachedTotal }} ₽</span>
+                </div>
+            </div>
+
+            <div style="font-size: 9px; color: var(--gray); line-height: 1.2; margin-bottom: 15px; text-align: center;">
+                Нажимая на кнопку, вы соглашаетесь с условиями заказа.
+            </div>
+
+            <button class="btn-black" style="width:100%; height:60px; font-size: 14px;" @click="checkout">
+                ОФОРМИТЬ ЗАКАЗ
+            </button>
+        </div>
     </div>
-    <div style="font-size: 9px; color: #999;"></div>
-</div>
-
-<div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 2px; border: 1px solid #eee;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13px; font-weight: 800;">ИТОГО К ОПЛАТЕ:</span>
-            <span style="font-size: 18px; font-weight: 800;">{{ total().toLocaleString() }} ₽</span>
-        </div>
-    </div>
-
-        <div style="font-size: 9px; color: var(--gray); line-height: 1.2; margin-bottom: 15px; text-align: center;">
-            Нажимая на кнопку, вы соглашаетесь с условиями заказа и даете согласие на обработку персональных данных в соответствии с 152-Ф3 для оформления и доставки заказа.
-        </div>
-
-        <button class="btn-black" style="width:100%; height:60px; font-size: 14px;" @click="checkout">
-            ОФОРМИТЬ ЗАКАЗ
-        </button>
-    </div>
-</div> </div>   <div v-if="tab === 'profile'">
+</div>  <div v-if="tab === 'profile'">
     <div style="text-align:center; margin-bottom: 30px;">
-        <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
-         <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">
+        <img :src="user.photo_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'" 
+             style="width:80px; height:80px; border-radius:50%; border: 1px solid #000; padding: 3px;">
+        <div style="font-weight:800; margin-top:10px; text-transform:uppercase;">
             {{ isAdmin ? 'АДМИНИСТРАТОР' : (user.first_name || 'Клиент') }}
         </div>
 
+        <!-- ВИДЖЕТ ВХОДА - ТОЛЬКО ДЛЯ ГОСТЕЙ -->
+        <div v-if="user.is_guest" id="telegram-login-container" style="
+            display: flex;
+            justify-content: center;
+            min-height: 60px;
+            margin: 15px 0;
+        "></div>
+
+        <!-- КНОПКА ВЫХОДА - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ НЕ-АДМИНОВ -->
+        <button v-if="!isAdmin && !user.is_guest" @click="logout" class="cat-tab" style="margin-top:5px;">ВЫЙТИ</button>
         
-         <button 
+        <!-- КНОПКА ПОДДЕРЖКИ - ДЛЯ ВСЕХ НЕ-АДМИНОВ -->
+        <button 
             v-if="!isAdmin"
             @click="openSupport" 
             class="cat-tab" 
@@ -1108,7 +1163,8 @@
         </button>
     </div>
 
-    <div v-if="!isAdmin">
+    <!-- БЛОК ЗАКАЗОВ - ТОЛЬКО ДЛЯ НЕ-АДМИНОВ -->
+    <div v-if="!isAdmin && !user.is_guest">
         <h3 class="brand-name" style="font-size: 14px; margin-bottom: 15px;">МОИ ЗАКАЗЫ</h3>
         
         <div v-if="myOrders.length === 0" style="padding:20px; text-align:center; font-size:12px; color: var(--gray);">
@@ -1127,9 +1183,9 @@
                 <div style="font-size:10px; color:gray; font-weight: 600;">{{o.date}}</div>
             </div>
         </div>
-    </div> 
+    </div>
     
-    <div v-if="isAdmin" class="admin-section">
+    <div v-if="isAdmin && user && !user.is_guest" class="admin-section">
         <h2 class="brand-name" style="font-size: 14px; margin-bottom: 20px;">АДМИН-ПАНЕЛЬ</h2>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
@@ -1291,13 +1347,9 @@
             </div>
         </div>
 
-        <!-- РАЗМЕРЫ И ОСТАТКИ ДЛЯ ЭТОГО ЦВЕТА -->
-        <!-- ФОТО ДЛЯ ЭТОГО ЦВЕТА (ОТДЕЛЬНО ДЛЯ КАЖДОГО ЦВЕТА) -->
-<!-- ФОТО ДЛЯ ЭТОГО ЦВЕТА (ОТДЕЛЬНО ДЛЯ КАЖДОГО ЦВЕТА) -->
 <div class="field" style="margin-top: 15px;">
     <label>ФОТО ДЛЯ ЦВЕТА "{{ v.color || '...' }}"</label>
     
-    <!-- ЕДИНАЯ КНОПКА ЗАГРУЗКИ -->
     <input 
         type="file" 
         multiple 
@@ -1653,7 +1705,8 @@
                 <button @click="printOrder(o)" style="width: 46px; height: 46px; border-radius: 12px; border: 1px solid #eee; background: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center;">📄</button>
             </div>
         </div>      
-    </div> </div> </main>
+    </div> </div> 
+</main>
 
   <div v-if="selP" class="modal" style="z-index: 5000;">
     <button class="close-modal" @click="closeProductModal()">✕</button>
@@ -1686,13 +1739,34 @@
 
     <div v-if="selP.variants && selP.variants[currentVariantIndex]" style="padding: 25px;">
         
-        <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-            <h2 class="brand-name" style="font-size: 18px; margin:0; text-transform: uppercase;">{{ selP.title }}</h2>
-            <div class="price" style="font-size: 20px; font-weight: 800;">{{ selP.price }} ₽</div>
+       <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 16px;">
+    <h2 class="brand-name" style="font-size: 12px; margin:0; text-transform: uppercase; font-weight: 700;">
+        {{ selP.title }}
+    </h2>
+    
+    <!-- БЛОК С ЦЕНАМИ, СТАРОЙ ЦЕНОЙ И ПРОЦЕНТОМ СКИДКИ -->
+    <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+        <!-- Текущая цена (как было) -->
+        <div class="price" style="font-size: 18px; font-weight: 800;">
+            {{ selP.price }} ₽
         </div>
         
+        <!-- Старая цена (зачеркнутая) - только если есть -->
+        <span v-if="selP.oldPrice" 
+              style="font-size: 14px; color: #8e8e93; text-decoration: line-through; font-weight: 600;">
+            {{ selP.oldPrice }} ₽
+        </span>
         
-      <div style="display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
+        <!-- Процент скидки - только если есть старая цена -->
+        <span v-if="selP.oldPrice" 
+              style="background: #ff3b30; color: white; font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 2px; margin-left: 4px;">
+            -{{ Math.round((1 - selP.price / selP.oldPrice) * 100) }}%
+        </span>
+    </div>
+</div>
+        
+        
+      <div style="display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;">
     <div v-for="(v, idx) in visibleVariants" :key="idx" 
          @click="currentVariantIndex = getOriginalIndexFromVisible(selP, idx); selP.tempSize = null; vib();"
          :class="['color-badge', { active: currentVariantIndex === getOriginalIndexFromVisible(selP, idx) }]"
@@ -1701,8 +1775,6 @@
         {{ v.color }}
     </div>
 </div>
-
-        
 
        <div class="size-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 30px;">
     <template v-for="(qty, sz) in (selP.variants[currentVariantIndex]?.stocks || {})" :key="sz">
@@ -1772,7 +1844,10 @@
                 <span v-else>ВЫБЕРИТЕ РАЗМЕР</span>
             </button>
         </div>
-    </div> </div> <nav class="bottom-nav">
+    </div> 
+</div> 
+    
+    <nav class="bottom-nav">
     <button v-for="btn in nav" :key="btn.id" 
         @click="setTab(btn.id)" 
         :class="['nav-item', {active: tab === btn.id}]"> 
@@ -1783,6 +1858,7 @@
         <span>{{btn.label}}</span>
     </button>
 </nav>
+
 </div>
 
 <script type="module">
@@ -1800,167 +1876,302 @@
         where, 
         getDoc, 
         getDocs,
-        serverTimestamp,  // ← ДОБАВИТЬ ЭТО!
-        Timestamp 
+        setDoc,   
+        serverTimestamp,
+        Timestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAJRStKaq5zzApwFTXLNd16B1jwLwPDHWM",
-        authDomain: "bratz-ef833.firebaseapp.com",
-        projectId: "bratz-ef833",
-        storageBucket: "bratz-ef833.firebasestorage.app",
-        messagingSenderId: "579929073122",
-        appId: "1:579929073122:web:d2925b96b792c581e985bb",
-        measurementId: "G-9BT6TX72EN"
-    };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
+const basePath = window.location.pathname.includes('/') 
+    ? window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)
+    : '/';
+const CONFIG_URL = basePath + 'config.json';
+
+console.log('Базовый путь:', basePath);
+console.log('Полный URL конфига:', CONFIG_URL);
+let ADMIN_ID = null;
+let ADMIN_IDS = null;        // 👈 ДОБАВЛЕНО для массива админов
+let MAP_KEY = null;
+let IMGBB_API_KEY = null;
+let BOT_USERNAME = null;  
+let BOT_TOKEN = null;
+let FIREBASE_CONFIG = null;
+
+async function loadConfig() {
+    console.log('=== ЗАГРУЗКА КОНФИГУРАЦИИ ===');
     
-    // Экспортируем все нужные функции
-    window.db = db;
-    window.storage = storage;
-    window.fb = {
-        // Firestore функции
-        collection: collection,
-        addDoc: addDoc,
-        onSnapshot: onSnapshot,
-        query: query,
-        getDoc: getDoc,
-        orderBy: orderBy,
-        doc: doc,
-        getFirestore: getFirestore,
-        getDocs: getDocs,
-        deleteDoc: deleteDoc,
-        updateDoc: updateDoc,
-        where: where,
-        db: db,
-        serverTimestamp: serverTimestamp, // ← Теперь это правильная функция!
-        Timestamp: Timestamp,
+    // Проверяем, не в локальном ли мы режиме (для разработки)
+    const isLocalMode = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.protocol === 'file:';
+    
+    // ПРОДАКШН РЕЖИМ - загружаем из config.json (безопасно)
+    try {
+        console.log('🌐 ПРОДАКШН РЕЖИМ, загружаем config.json');
+        console.log('URL:', CONFIG_URL);
         
-        // Storage функции
-        getDownloadURL: getDownloadURL,
-        ref: ref,
-        uploadBytes: uploadBytes,
-        storage: storage  // ← Добавлено для полноты
-    };
-</script>
-
-<script>
-    // Глобальный обработчик для всех изображений
-document.addEventListener('error', function(e) {
-    if (e.target.tagName === 'IMG' && e.target.src.includes('via.placeholder.com')) {
-        e.target.src = 'data:image/svg+xml;base64,...';
+        // Таймаут 10 секунд
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            controller.abort('Timeout after 10 seconds');
+        }, 10000);
+        
+        const response = await fetch(CONFIG_URL, {
+            signal: controller.signal,
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('Статус ответа:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const config = await response.json();
+        console.log('✅ Конфигурация успешно загружена из config.json');
+        
+        // 👇 ИЗМЕНЕНО: поддержка массива админов
+        ADMIN_ID = config.adminId;
+        ADMIN_IDS = config.adminIds || [config.adminId];  // Если нет массива, создаем из одного админа
+        MAP_KEY = config.mapKey;
+        IMGBB_API_KEY = config.imgbbKey;
+        BOT_USERNAME = config.botUsername;
+        BOT_TOKEN = config.botToken;
+        FIREBASE_CONFIG = config.firebaseConfig;
+        
+        // Дублируем в window для доступа из Vue
+        window.ADMIN_ID = ADMIN_ID;
+        window.ADMIN_IDS = ADMIN_IDS;           // 👈 ДОБАВЛЕНО
+        window.MAP_KEY = MAP_KEY;
+        window.IMGBB_API_KEY = IMGBB_API_KEY;
+        window.BOT_USERNAME = BOT_USERNAME;
+        window.BOT_TOKEN = BOT_TOKEN;
+        window.FIREBASE_CONFIG = FIREBASE_CONFIG;
+        
+        console.log('✅ Продакшн конфиг загружен');
+        console.log('👥 Администраторы:', ADMIN_IDS);  // 👈 Для проверки
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки конфигурации:', error);
+        
+        // В продакшне не используем запасные ключи из кода!
+        // Просто показываем ошибку
+        const appElement = document.getElementById('app');
+        if (appElement) {
+            appElement.innerHTML = `
+                <div style="text-align:center; padding:50px; font-family: Montserrat;">
+                    <h2 style="color: #ff3b30;">❌ Ошибка подключения</h2>
+                    <p style="margin: 20px 0;">Не удалось загрузить конфигурацию с сервера.</p>
+                    <p style="font-size: 14px; color: #666;">
+                        Проверьте наличие файла <b>config.json</b> на сервере.
+                    </p>
+                    <button onclick="location.reload()" 
+                            style="background: #000; color: #fff; border: none; 
+                                   padding: 15px 30px; margin-top: 20px; 
+                                   font-weight: 800; cursor: pointer;">
+                        🔄 ПОВТОРИТЬ
+                    </button>
+                </div>
+            `;
+        }
+        
+        return false;
     }
-}, true);
-const tg = window.Telegram.WebApp;
-
-Vue.createApp({
-  data() {
-    return {
-        catalogActiveColors: {}, // { productId: colorIndex }
-         productActiveVariantIndex: {},
-        // === КОНФИГУРАЦИЯ ===
-        IMGBB_API_KEY: '4d4ab43d9b15c3dbadb9058518e4db23',
-        IMGBB_UPLOAD_URL: 'https://api.imgbb.com/1/upload',
-        
-        // === ЕДИНОЕ СОСТОЯНИЕ ЗАГРУЗКИ ===
-        uploadState: {
-            isUploading: false,
-            progress: 0,
-            totalFiles: 0,
-            uploadedFiles: 0,
-            errors: []
-        },
-        
-        // === КЭШ И ОПТИМИЗАЦИЯ ===
-        imageCache: new Map(),
-        defaultPlaceholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDMwMCA0MDAiIGZpbGw9IiNmZmYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzAwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==',
-        
-        // === ЛИМИТЫ ===
-        IMAGE_LIMITS: {
-            MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
-            MAX_TOTAL_IMAGES: 10,
-            MAX_WIDTH: 1200,
-            MAX_HEIGHT: 1600,
-            QUALITY: 0.8
-        },
-        
-        // === ВРЕМЕННЫЕ ДАННЫЕ ДЛЯ ФОРМЫ ===
-       tempSizes: [[]], // Первый вариант имеет одно пустое поле
-        newSizeFields: {}, // Для хранения полей ввода размеров
-        
-        // === ОСНОВНЫЕ СОСТОЯНИЯ ===
-        showNewSizeFields: false,
-        editUploading: false,
-        expandedDescriptionId: null,
-        selVariantIdx: 0,
-        tab: 'catalog',
-        currentCat: '',
-        searchQuery: '',
-        searchMode: false,
-        burgerOpen: false,
-        loading: false,
-        showProductList: false,
-        activeInfo: null,
-        
-        // === ДАННЫЕ ===
-        products: [],
-        categories: [],
-        cart: JSON.parse(localStorage.getItem('naran_cart_v3') || '[]'),
-        favorites: JSON.parse(localStorage.getItem('naran_favs_v3') || '[]'),
-        
-        user: {},
-        isAdmin: false,
-        adminIds: [387881523, 5189266423],
-        
-        selP: false,
-        currentVariantIndex: 0,
-        deliv: '',
-        address: '',
-        map: null,
-        form: {
-            name: '',
-            phone: localStorage.getItem('naran_phone') || '',
-            address: ''
-        },
-        
-        // === ДАННЫЕ ДЛЯ ФОРМЫ ТОВАРА ===
-        newP: {
-            title: '',
-            desc: '',
-            price: null,
-            oldPrice: null,
-            category: '',
-            isNew: false,
-            hidden: false,
-            variants: [
-                { 
-                    color: '', 
-                    images: [], 
-                    stocks: {},
-                    // ТОЛЬКО ОДИН МАССИВ ДЛЯ ФАЙЛОВ
-                    fileQueue: []
-                }
-            ]
-        },
-        newCat: '',
-        editId: null,
-        allOrders: [],
-        chart: null,
-        myOrders: [],
-        
-        // === НАВИГАЦИЯ ===
-        nav: [
-            { id: 'catalog', label: 'Каталог', icon: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>' },
-            { id: 'favs', label: 'Избранное', icon: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' },
-            { id: 'cart', label: 'Корзина', icon: '<circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>' },
-            { id: 'profile', label: 'Профиль', icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>' }
-        ]
+}
+// Функция запуска Vue приложения
+function startVueApp() {
+    console.log('=== ЗАПУСК VUE ПРИЛОЖЕНИЯ ===');
+    
+    // Ждем, пока DOM полностью загрузится
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initVue);
+    } else {
+        initVue();
     }
-},
+    
+    function initVue() {
+        // Проверяем, существует ли элемент #app
+        const appElement = document.getElementById('app');
+        if (!appElement) {
+            console.error('❌ Элемент #app не найден в DOM!');
+            return;
+        }
+        
+        console.log('✅ Элемент #app найден, монтируем Vue...');
+        
+        // Передаем значения в глобальную область
+        window.ADMIN_ID = ADMIN_ID;
+        window.MAP_KEY = MAP_KEY;
+        window.IMGBB_API_KEY = IMGBB_API_KEY;
+        window.BOT_TOKEN = BOT_TOKEN;
+        window.FIREBASE_CONFIG = FIREBASE_CONFIG;
+        
+        console.log('Глобальные переменные установлены:');
+        console.log('- window.ADMIN_ID:', window.ADMIN_ID);
+        console.log('- window.MAP_KEY:', window.MAP_KEY ? '✅' : '❌');
+        console.log('- window.IMGBB_API_KEY:', window.IMGBB_API_KEY ? '✅' : '❌');
+        console.log('- window.BOT_TOKEN:', window.BOT_TOKEN ? '✅' : '❌');
+        console.log('- window.FIREBASE_CONFIG:', window.FIREBASE_CONFIG ? '✅' : '❌');
+        
+        // Проверка Firebase конфигурации
+        if (!FIREBASE_CONFIG) {
+            console.error('❌ Firebase конфигурация отсутствует!');
+            appElement.innerHTML = '<div style="text-align:center; padding:50px; color:red;">❌ Firebase конфигурация отсутствует. Проверьте настройки.</div>';
+            return;
+        }
+        
+        try {
+            // Инициализация Firebase
+            const app = initializeApp(FIREBASE_CONFIG);
+            const db = getFirestore(app);
+            const storage = getStorage(app);
+            
+            console.log('✅ Firebase инициализирован');
+            console.log('Project ID:', FIREBASE_CONFIG.projectId);
+            
+            // Экспортируем все нужные функции в глобальную область
+            window.db = db;
+            window.storage = storage;
+            window.fb = {
+                collection: collection,
+                addDoc: addDoc,
+                setDoc: setDoc, 
+                onSnapshot: onSnapshot,
+                query: query,
+                getDoc: getDoc,
+                orderBy: orderBy,
+                doc: doc,
+                getFirestore: getFirestore,
+                getDocs: getDocs,
+                deleteDoc: deleteDoc,
+                updateDoc: updateDoc,
+                where: where,
+                db: db,
+                serverTimestamp: serverTimestamp,
+                Timestamp: Timestamp,
+                
+                getDownloadURL: getDownloadURL,
+                ref: ref,
+                uploadBytes: uploadBytes,
+                storage: storage
+            };
+            
+            console.log('✅ Firebase объекты созданы');
+              const appVm = Vue.createApp({
+                data() {
+                    return {
+                        delivery_price: 200,        // 👈 Стоимость доставки
+        delivery_type: 'доставка',   // 👈 Тип доставки
+        adminIds: window.ADMIN_IDS || [window.ADMIN_ID || 387881523], // 👈 Массив админов
+                         _isLoadingWidget: false,
+                         botUsername: window.BOT_USERNAME || '',
+                        _isRestoring: false, 
+                          _scrollBlocked: false,
+                           _scrollPosition: 0,
+                         scrollTimeout: null,
+                          scrollHandler: null,
+                          savedScrollPosition: 0, 
+                          scrollContainer: 'main.container', 
+                          catalogScrollPosition: 0,
+                            isModalOpen: false,
+                        isTelegramWebView: !!window.Telegram?.WebApp,
+                         isCheckingOut: false,
+                        cachedTotalValue: 0,
+                        lastCartLength: 0,
+                        editImages: [],
+                        adminId: window.ADMIN_ID,
+                        mapKey: window.MAP_KEY,
+                        imgbbKey: window.IMGBB_API_KEY,
+                        botToken: window.BOT_TOKEN,
+                        firebaseConfig: window.FIREBASE_CONFIG,
+                        showCartNotify: false,
+                        catalogActiveColors: {},
+                        productActiveVariantIndex: {},
+                        IMGBB_API_KEY: 'IMGBB_API_KEY',
+                        IMGBB_UPLOAD_URL: 'https://api.imgbb.com/1/upload',
+                        uploadState: {
+                            isUploading: false,
+                            progress: 0,
+                            totalFiles: 0,
+                            uploadedFiles: 0,
+                            errors: []
+                        },
+                        imageCache: new Map(),
+                        defaultPlaceholder: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDMwMCA0MDAiIGZpbGw9IiNmZmYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzAwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==',
+                        IMAGE_LIMITS: {
+                            MAX_FILE_SIZE: 5 * 1024 * 1024,
+                            MAX_TOTAL_IMAGES: 10,
+                            MAX_WIDTH: 1200,
+                            MAX_HEIGHT: 1600,
+                            QUALITY: 0.8
+                        },
+                        tempSizes: [[]],
+                        newSizeFields: {},
+                        showNewSizeFields: false,
+                        editUploading: false,
+                        expandedDescriptionId: null,
+                        selVariantIdx: 0,
+                        tab: 'catalog',
+                        currentCat: '',
+                        searchQuery: '',
+                        searchMode: false,
+                        burgerOpen: false,
+                        loading: false,
+                        showProductList: false,
+                        activeInfo: null,
+                        products: [],
+                        categories: [],
+                        cart: JSON.parse(localStorage.getItem('naran_cart_v3') || '[]'),
+                        favorites: JSON.parse(localStorage.getItem('naran_favs_v3') || '[]'),
+                        user: {},
+                        isAdmin: false,
+                        selP: false,
+                        currentVariantIndex: 0,
+                        deliv: '',
+                        address: '',
+                        map: null,
+                        form: {
+                            name: '',
+                            phone: localStorage.getItem('naran_phone') || '',
+                            address: ''
+                        },
+                        newP: {
+                            title: '',
+                            desc: '',
+                            price: null,
+                            oldPrice: null,
+                            category: '',
+                            isNew: false,
+                            hidden: false,
+                            variants: [
+                                { 
+                                    color: '', 
+                                    images: [], 
+                                    stocks: {},
+                                    fileQueue: []
+                                }
+                            ]
+                        },
+                        newCat: '',
+                        editId: null,
+                        allOrders: [],
+                        chart: null,
+                        myOrders: [],
+                        nav: [
+                            { id: 'catalog', label: 'Каталог', icon: '<rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>' },
+                            { id: 'favs', label: 'Избранное', icon: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' },
+                            { id: 'cart', label: 'Корзина', icon: '<circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>' },
+                            { id: 'profile', label: 'Профиль', icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>' }
+                        ]
+                    }
+                },
     computed: {
         stats() {
     const now = new Date();
@@ -2014,9 +2225,22 @@ Vue.createApp({
     return { todayCount, todayRev, monthCount, monthRev, allCount, allRev };
 },
     cartTotal() {
-    const itemsSum = this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    // Если корзина пуста, общая сумма 0, если нет — сумма товаров + 200
-    return itemsSum > 0 ? itemsSum + 200 : 0;
+        const itemsSum = this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        // Если корзина пуста или не выбран способ доставки - без доставки
+        if (itemsSum === 0 || !this.deliv) return itemsSum;
+        // Иначе товары + доставка
+        return itemsSum + this.delivery_price;
+    },
+cachedTotal() {
+    if (this.cart.length !== this.lastCartLength) {
+        // Пересчитываем только если изменилась длина корзины
+        this.cachedTotalValue = this.calculateTotalWithDelivery();
+        this.lastCartLength = this.cart.length;
+    } else {
+        // Всегда пересчитываем, т.к. доставка могла измениться
+        this.cachedTotalValue = this.calculateTotalWithDelivery();
+    }
+    return this.cachedTotalValue;
 },
     adminProducts() {
         if (!this.products) return [];
@@ -2079,9 +2303,9 @@ selVariant() {
         },
 
         // 2. Считает количество ШТУК в корзине (для красного кружка на иконке)
-        cartCount() {
-            return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        },
+      cartCount() {
+    return this.cart.reduce((sum, item) => sum + (item.qty || 1), 0);
+},
 
         // 3. Считает ВЫРУЧКУ всех заказов (только для админ-панели)
         revenue() {
@@ -2092,6 +2316,16 @@ selVariant() {
             },
     },
   watch: {
+     tab(newVal, oldVal) {
+        console.log('Вкладка изменена на:', newVal);
+        // Загружаем виджет только при переключении на profile и если пользователь гость
+        if (newVal === 'profile' && this.user?.is_guest && !this._isLoadingWidget) {
+            console.log('🔄 Переключились на profile, загружаем виджет');
+            setTimeout(() => {
+                this.loadTelegramWidget();
+            }, 300);
+        }
+    },
     products: {
         handler(newProducts) {
             // При изменении товаров корректируем активные цвета для скрытых вариантов
@@ -2113,22 +2347,249 @@ selVariant() {
     }
 },
     methods: {
-        vib() { tg.HapticFeedback.impactOccurred('light'); },
+     vib() {
+    this.safeHaptic('light');
+},
+loadTelegramWidget() {
+    // Защита от множественных вызовов
+    if (this._isLoadingWidget) {
+        console.log('⏳ Виджет уже загружается, пропускаем...');
+        return;
+    }
+    
+    console.log('🔄 Загрузка виджета Telegram из Vue...');
+    this._isLoadingWidget = true;
+    
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const checkContainer = async () => {
+        const container = document.getElementById('telegram-login-container');
+        
+        if (container) {
+            console.log('✅ Контейнер найден, размер:', container.offsetWidth, 'x', container.offsetHeight);
+            
+            // Проверяем, не загружен ли уже виджет
+            if (container.querySelector('iframe') || container.querySelector('script[src*="telegram-widget"]')) {
+                console.log('✅ Виджет уже загружен, пропускаем');
+                this._isLoadingWidget = false;
+                return;
+            }
+            
+            // Добавляем стили для красоты
+            container.style.border = 'none';
+            container.style.padding = '5px';
+            container.style.minHeight = '70px';
+            container.style.display = 'flex';
+            container.style.justifyContent = 'center';
+            container.style.alignItems = 'center';
+            
+            // Показываем индикатор загрузки
+            container.innerHTML = '<div style="color:#666; font-family: Montserrat;">Загрузка виджета...</div>';
+            
+            // Вызываем глобальную функцию
+            if (window.loadTelegramWidget) {
+                try {
+                    const result = await window.loadTelegramWidget(
+                        this.botUsername || 'naranstore_bot', 
+                        'telegram-login-container'
+                    );
+                    console.log(`✅ Виджет загружен через: ${result}`);
+                } catch (e) {
+                    console.error('❌ Ошибка загрузки виджета:', e);
+                    container.innerHTML = '<div style="color:#ff3b30; font-size:12px;">❌ Не удалось загрузить виджет входа</div>';
+                }
+            } else {
+                console.error('❌ Глобальная функция loadTelegramWidget не найдена');
+                // Ручная загрузка iframe
+                this.loadTelegramIframe();
+            }
+            
+            this._isLoadingWidget = false;
+            
+        } else if (attempts < maxAttempts) {
+            attempts++;
+            console.log(`⏳ Контейнер не найден, попытка ${attempts}/${maxAttempts}...`);
+            setTimeout(checkContainer, 300);
+        } else {
+            console.error('❌ Контейнер не найден после 10 попыток');
+            this._isLoadingWidget = false;
+        }
+    };
+    
+    checkContainer();
+},
+// Загрузить заказы текущего пользователя
+loadUserOrders() {
+    if (!this.user || this.user.is_guest) return;
+    
+    // Фильтруем заказы по ID пользователя
+    this.myOrders = this.allOrders.filter(order => 
+        order.user && order.user.id == this.user.id
+    );
+    console.log(`📦 Загружено ${this.myOrders.length} заказов пользователя`);
+},
+loadTelegramIframe() {
+    console.log('🔄 Загрузка iframe виджета...');
+    const container = document.getElementById('telegram-login-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://oauth.telegram.org/embed/${this.botUsername}?origin=${encodeURIComponent(window.location.origin)}&size=large&request_access=write`;
+    iframe.width = '100%';
+    iframe.height = '65';
+    iframe.style.border = 'none';
+    iframe.style.overflow = 'hidden';
+    iframe.style.borderRadius = '8px';
+    
+    container.appendChild(iframe);
+    console.log('✅ Iframe виджета загружен');
+},
+
+
 total() {
-    let itemsTotal = 0;
-    if (this.cart && this.cart.length > 0) {
-        itemsTotal = this.cart.reduce((sum, item) => {
-            let rawPrice = item.price || 0;
-            let priceNumber = typeof rawPrice === 'string' 
-                ? parseInt(rawPrice.replace(/[^\d]/g, '')) || 0 
-                : Number(rawPrice);
-            let quantity = parseInt(item.count || item.qty || 1);
-            return sum + (priceNumber * quantity);
-        }, 0);
+    if (!this.cart || !Array.isArray(this.cart) || this.cart.length === 0) {
+        return 0;
+    }
+    
+    const itemsTotal = this.cart.reduce((sum, item) => {
+        // Безопасное преобразование цены
+        let price = 0;
+        if (typeof item.price === 'number') {
+            price = item.price;
+        } else if (typeof item.price === 'string') {
+            price = parseFloat(item.price.replace(/[^\d.]/g, '')) || 0;
+        }
+        
+        const qty = parseInt(item.qty || item.count || 1) || 0;
+        return sum + (price * qty);
+    }, 0);
+    
+    return itemsTotal;
+},
+async saveUserToFirestore(userData) {
+    if (!userData || userData.is_guest) return;
+    try {
+        const userRef = doc(window.db, "users", String(userData.id));
+        await setDoc(userRef, {
+            id: userData.id,
+            first_name: userData.first_name || '',
+            last_name: userData.last_name || '',
+            username: userData.username || '',
+            photo_url: userData.photo_url || '',
+            last_seen: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        console.log('✅ Пользователь сохранён в Firestore');
+    } catch (e) {
+        console.error('❌ Ошибка сохранения пользователя:', e);
+    }
+},
+initTelegramLogin() {
+    console.log('🔍 initTelegramLogin вызван!');
+    
+    if (this.user && this.user.is_guest) {
+        console.log('✅ Пользователь гость, показываем виджет');
+        this.showTelegramLogin = true;
+        
+        // Проверяем, не на вкладке ли profile мы сейчас
+        if (this.tab === 'profile') {
+            setTimeout(() => {
+                this.loadTelegramWidget();
+            }, 500);
+        }
+    } else {
+        console.log('❌ Пользователь не гость, виджет не нужен');
+        this.showTelegramLogin = false;
+    }
+},
+logout() {
+    this.user = { is_guest: true };
+    this.isAdmin = false;
+    localStorage.removeItem('naran_user');
+    // Удаляем виджет, если он есть
+    const container = document.getElementById('telegram-login-container');
+    if (container) container.innerHTML = '';
+    // Переинициализируем виджет (он снова появится)
+    this.initTelegramLogin();
+},
+handleTelegramAuth(user) {
+    console.log('✅ Успешный вход через Telegram:', user);
+    
+    // Обновляем данные пользователя
+    this.user = {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name || '',
+        username: user.username || '',
+        photo_url: user.photo_url || '',
+        is_guest: false
+    };
+    
+    // Проверка на админа
+    if (user.id == this.adminId) {
+        this.isAdmin = true;
+    }
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('user', JSON.stringify(this.user));
+    
+    // Загружаем заказы пользователя
+    this.loadUserOrders();
+    
+    // Обновляем интерфейс
+    this.$forceUpdate();
+},
+initTelegramLogin() {
+    console.log('🔍 initTelegramLogin вызван!');
+    console.log('this.user:', this.user);
+    console.log('this.user.is_guest:', this.user?.is_guest);
+    console.log('this.botUsername:', this.botUsername);
+    console.log('window.Telegram?.WebApp:', window.Telegram?.WebApp);
+    
+   if (this.user && this.user.is_guest) {
+    console.log('✅ Пользователь гость, показываем виджет');
+    this.showTelegramLogin = true;
+    
+    // Принудительно загружаем виджет через setTimeout
+    setTimeout(() => {
+      this.loadTelegramWidget();
+    }, 500);
+  } else {
+    console.log('❌ Пользователь не гость, виджет не нужен');
+    this.showTelegramLogin = false;
+  }
+
+    const container = document.getElementById('telegram-login-container');
+    console.log('📦 Контейнер для виджета:', container);
+    
+    if (!container) {
+        console.error('❌ Контейнер #telegram-login-container не найден в DOM!');
+        return;
     }
 
-    // Если корзина не пуста, всегда добавляем 200
-    return itemsTotal > 0 ? (itemsTotal + 200) : 0;
+    // Очищаем контейнер на случай повторного вызова
+    container.innerHTML = '';
+
+    // Создаём скрипт виджета
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', this.botUsername);
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    script.setAttribute('data-request-access', 'write');
+    script.async = true;
+
+    // Глобальный колбэк
+    window.onTelegramAuth = (user) => {
+        console.log('✅ Telegram auth success:', user);
+        this.handleTelegramAuth(user);
+    };
+
+    container.appendChild(script);
+    console.log('✅ Скрипт виджета добавлен в контейнер');
 },
 removeEditImage(imgIdx) {
     if (confirm("Удалить это фото из товара?")) {
@@ -2366,56 +2827,23 @@ async uploadVariantFiles(variantIndex) {
     this.uploadState.isUploading = false;
     return uploadedUrls;
 },
-handleImageError(e) {
-    // Проверяем, не пытаемся ли мы заменить уже замененное
-    if (e.target.src && e.target.src.includes('data:image/svg')) {
-        return; // Уже заменили, выходим
-    }
+
+handleImageError(event) {
+    const img = event.target;
     
-    // Создаем простой SVG плейсхолдер
-    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
-        <rect width="300" height="400" fill="#f5f5f5"/>
-        <text x="150" y="200" font-family="Arial" font-size="14" fill="#666" text-anchor="middle">
-            No Image
-        </text>
-    </svg>`;
+    // Если уже заменяли - выходим
+    if (img.src.includes('base64')) return;
     
-    // Правильное кодирование в base64
-    try {
-        // Метод для корректного кодирования
-        const encodeSVG = (svg) => {
-            // Убираем лишние пробелы и переносы
-            const cleaned = svg.replace(/\s+/g, ' ').trim();
-            // Кодируем
-            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(cleaned)));
-        };
-        
-        const dataUrl = encodeSVG(svgString);
-        
-        // Заменяем битое изображение
-        e.target.src = dataUrl;
-        
-        // Предотвращаем дальнейшие ошибки
-        e.target.onerror = null;
-        
-        // Добавляем стили для плейсхолдера
-        e.target.style.opacity = '0.8';
-        e.target.style.backgroundColor = '#f9f9f9';
-        
-    } catch (error) {
-        console.warn('Ошибка создания SVG:', error);
-        // Fallback на текстовый placeholder
-        e.target.src = '';
-        e.target.alt = 'No Image';
-        e.target.style.backgroundColor = '#eee';
-        e.target.style.display = 'flex';
-        e.target.style.alignItems = 'center';
-        e.target.style.justifyContent = 'center';
-        e.target.style.color = '#999';
-        e.target.style.fontSize = '12px';
-        e.target.style.fontWeight = 'bold';
-    }
+    // Заменяем на плейсхолдер
+    img.src = this.defaultPlaceholder;
+    
+    // Добавляем класс для стилизации
+    img.classList.add('image-error');
+    
+    // Отключаем дальнейшие обработчики ошибок
+    img.onerror = null;
 },
+
     setCategory(name) {
     try {
         this.vib();
@@ -2545,21 +2973,6 @@ selectVisibleColor(product, variant) {
     
     return [this.defaultPlaceholder];
 },
-handleImageError(event) {
-    const img = event.target;
-    
-    // Если уже заменяли - выходим
-    if (img.src.includes('base64')) return;
-    
-    // Заменяем на плейсхолдер
-    img.src = this.defaultPlaceholder;
-    
-    // Добавляем класс для стилизации
-    img.classList.add('image-error');
-    
-    // Отключаем дальнейшие обработчики ошибок
-    img.onerror = null;
-},
 
     getShortDescription(fullDesc) {
         if (!fullDesc) return 'Нажмите для просмотра описания';
@@ -2617,20 +3030,6 @@ correctAllActiveColors() {
 },
 // Удаление файла по I
 
-countTotalImages() {
-    let count = 0;
-    
-    if (!this.newP.variants) return 0;
-    
-    this.newP.variants.forEach(variant => {
-        if (variant.images) count += variant.images.length;
-        if (variant.localFiles) count += variant.localFiles.length;
-        if (variant.uploadingFiles) count += variant.uploadingFiles.length;
-    });
-    
-    return count;
-},
-
 // Сохранить размеры варианта в Firebase
 async saveVariantSizes(product, variantIndex) {
     try {
@@ -2679,13 +3078,7 @@ removeSizeFromVariant(product, variantIndex, sizeName) {
         this.vib();
     }
 },
-// Удалить фото из варианта
-removeVariantImage(vIdx, imgIdx) {
-        if (confirm("Удалить это фото?")) {
-            this.newP.variants[vIdx].images.splice(imgIdx, 1);
-            this.vib();
-        }
-    },
+
 
     removeVariant(vIdx) {
         if (confirm(`Удалить цвет "${this.newP.variants[vIdx].color || 'без названия'}"?`)) {
@@ -2836,8 +3229,8 @@ showTempMessage(text) {
         }
     }, 2000);
 },
-       setTab(id) {
-    if (this.vib) this.vib(); 
+    setTab(id) {
+    this.vib(); 
     this.tab = id;
 
     if (id === 'favs') {
@@ -2846,16 +3239,21 @@ showTempMessage(text) {
         });
     }
 
-    // Если перешли в профиль, рисуем график
     if (id === 'profile') {
         this.$nextTick(() => {
-            // Даем достаточно времени для рендеринга DOM
             setTimeout(() => {
-                if (this.isAdmin) { // Важно: проверяем, что это админ
+                if (this.isAdmin) {
                     this.updateChart();
                 }
-            }, 300); // Увеличиваем время ожидания
+            }, 300);
         });
+    }
+    
+    // При возврате в каталог - восстанавливаем позицию
+    if (id === 'catalog' && this.catalogScrollPosition > 0) {
+        setTimeout(() => {
+            window.scrollTo(0, this.catalogScrollPosition);
+        }, 50);
     }
 },
 // Проверяет, выбран ли размер у товара
@@ -2889,6 +3287,32 @@ getProductSizes(p) {
     if (!p) return [];
     const stocks = this.getStocksObject(p);
     return Object.keys(stocks);
+},
+calculateTotal() {
+    if (!this.cart || !this.cart.length) return 0;
+    
+    let total = 0;
+    for (let i = 0; i < this.cart.length; i++) {
+        const item = this.cart[i];
+        const price = typeof item.price === 'number' ? item.price : 
+                     (parseFloat(String(item.price).replace(/[^\d.]/g, '')) || 0);
+        const qty = item.qty || 1;
+        total += price * qty;
+    }
+    return total;
+},
+calculateTotalWithDelivery() {
+    // Сумма товаров
+    const itemsTotal = this.calculateTotal();
+    
+    // Если корзина пуста - без доставки
+    if (itemsTotal === 0) return 0;
+    
+    // Если не выбран способ доставки - только товары
+    if (!this.deliv) return itemsTotal;
+    
+    // Иначе товары + доставка
+    return itemsTotal + (this.delivery_price || 0);
 },
 // В methods: добавьте новый метод
 async toggleVariantVisibility(product, variantIndex) {
@@ -3140,9 +3564,9 @@ async handleEditFiles(e) {
     if (!this.editNewFiles) this.editNewFiles = [];
     
     // Проверка лимита
-    const totalImages = this.countTotalImages();
-    if (totalImages + files.length > this.MAX_TOTAL_IMAGES) {
-        alert(`Максимум ${this.MAX_TOTAL_IMAGES} изображений. Сейчас: ${totalImages}`);
+     const totalImages = this.countTotalImages();
+    if (totalImages + files.length > this.IMAGE_LIMITS.MAX_TOTAL_IMAGES) {
+        alert(`Максимум ${this.IMAGE_LIMITS.MAX_TOTAL_IMAGES} изображений. Сейчас: ${totalImages}`);
         return;
     }
     
@@ -3416,33 +3840,6 @@ removeSavedSize(vIdx, sizeName) {
         this.vib();
     }
 },
-
-// При добавлении нового варианта цвета
-addVariant() {
-    const newIndex = this.newP.variants.length;
-    
-    // Добавляем новый вариант
-    this.newP.variants.push({
-        color: '',
-        images: [],
-        stocks: {}
-    });
-    
-    // Инициализируем tempSizes для нового варианта
-    // Используем Vue.set для реактивности
-    if (!this.tempSizes[newIndex]) {
-        this.tempSizes[newIndex] = [];
-    } else {
-        this.tempSizes.splice(newIndex, 0, []);
-    }
-    
-    // Добавляем первое пустое поле для размера
-    this.tempSizes[newIndex].push({
-        name: '',
-        qty: 0,
-        savedName: ''
-    });
-},
 // В методе editProduct добавьте:
 initTempSizesForEdit(variant) {
     const sizes = variant.stocks || {};
@@ -3495,55 +3892,40 @@ openProductFromCart(item) {
         this.openProduct(fullProduct);
     }
 },
+// ЗАМЕНИТЕ метод getProductImages() на этот:
 getProductImages(product) {
-    if (!product) {
-        return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
+    if (!product || !product.id || !product.variants) {
+        return [this.defaultPlaceholder];
     }
     
-    // 1. ПЕРВЫЙ ПРИОРИТЕТ: Новый формат с вариантами цветов
-    if (product.variants && 
-        Array.isArray(product.variants) && 
-        product.variants.length > 0) {
-        
-        // Берем первый вариант (первый цвет)
-        const firstVariant = product.variants[0];
-        
-        if (firstVariant.images && 
-            Array.isArray(firstVariant.images) && 
-            firstVariant.images.length > 0) {
-            
-            // Возвращаем ВСЕ изображения первого варианта
-            // Упрощаем: не фильтруем, доверяем данным из базы
-            return firstVariant.images.filter(img => 
-                img && typeof img === 'string' && img.trim() !== ''
-            );
-        }
+    // Получаем ТОЛЬКО НЕ СКРЫТЫЕ варианты
+    const visibleVariants = product.variants.filter(v => !v.hidden);
+    if (!visibleVariants || visibleVariants.length === 0) {
+        return [this.defaultPlaceholder];
     }
     
-    // 2. ВТОРОЙ ПРИОРИТЕТ: Старый формат (images)
-    if (product.images && 
-        Array.isArray(product.images) && 
-        product.images.length > 0) {
-        
-        return product.images.filter(img => 
-            img && typeof img === 'string' && img.trim() !== ''
+    // ⚡ ВАЖНО: НЕ вызываем getActiveColorIndex(), используем catalogActiveColors напрямую
+    let activeIndex = this.catalogActiveColors[product.id] || 0;
+    
+    // Проверяем границы массива
+    if (activeIndex >= visibleVariants.length) {
+        activeIndex = 0;
+        // Просто обновляем, без рекурсии
+        this.catalogActiveColors[product.id] = 0;
+    }
+    
+    const activeVariant = visibleVariants[activeIndex];
+    if (activeVariant && activeVariant.images && activeVariant.images.length > 0) {
+        return activeVariant.images.filter(img => 
+            img && typeof img === 'string' && 
+            (img.startsWith('http://') || 
+             img.startsWith('https://') || 
+             img.startsWith('data:image/'))
         );
     }
     
-    // 3. ТРЕТИЙ ПРИОРИТЕТ: Единое поле image
-    if (product.image && typeof product.image === 'string') {
-        return [product.image.trim()];
-    }
-    
-    // 4. ЧЕТВЕРТЫЙ ПРИОРИТЕТ: Единое поле img
-    if (product.img && typeof product.img === 'string') {
-        return [product.img.trim()];
-    }
-    
-    // 5. ПОСЛЕДНИЙ ВАРИАНТ: Плейсхолдер (ОБЯЗАТЕЛЬНО правильный URL)
-    return ['https://placehold.co/300x400/f5f5f5/999999?text=No+Image'];
+    return [this.defaultPlaceholder];
 },
-
        handleScroll(e, p) {
     if (!p) return;
     const images = this.getProductImages(p);
@@ -3555,9 +3937,27 @@ getProductImages(product) {
     }
 },
 
-     openProduct(p) {
+ openProduct(p) {
+    // Сохраняем позицию ПЕРЕД открытием
+    if (this.tab === 'catalog' && !this.selP) {
+        this._scrollPosition = window.scrollY;
+        this.catalogScrollPosition = this._scrollPosition;
+        console.log('📌 Сохранена позиция каталога:', this.catalogScrollPosition);
+    }
     
-    window.scrollTo(0,0);
+    // Блокируем скролл для всех устройств
+    this._scrollBlocked = true;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${this._scrollPosition}px`;
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    
+    // Устанавливаем флаг открытой модалки
+    this.isModalOpen = true;
+    
+    window.scrollTo(0, 0);
+    
     // 1. Находим первый НЕ скрытый вариант
     let firstVisibleIndex = 0;
     if (p.variants && Array.isArray(p.variants)) {
@@ -3569,13 +3969,10 @@ getProductImages(product) {
         }
     }
     
-    // 1. Сначала сбрасываем индекс
     this.currentVariantIndex = firstVisibleIndex;
 
-    // 2. Делаем глубокую копию
     let productCopy = JSON.parse(JSON.stringify(p));
 
-    // 3. ПРОВЕРКА: Если товар старый
     if (!productCopy.variants || !Array.isArray(productCopy.variants) || productCopy.variants.length === 0) {
         productCopy.variants = [{
             color: productCopy.color || 'Стандарт',
@@ -3591,13 +3988,9 @@ getProductImages(product) {
         }
     }
 
-    // 4. Гарантируем наличие индекса анимации
     productCopy.aIdx = 0;
-
-    // 5. Сохраняем в selP (это покажет модальное окно через v-if="selP")
     this.selP = productCopy;
 
-    // 6. Выбор размера по умолчанию
     const firstVar = this.selP.variants[0];
     if (firstVar && firstVar.stocks) {
         const availableSize = Object.keys(firstVar.stocks).find(sz => firstVar.stocks[sz] > 0);
@@ -3606,12 +3999,10 @@ getProductImages(product) {
         this.selP.tempSize = null;
     }
 
-    // 7. Блокируем прокрутку основной страницы
-    document.body.style.overflow = 'hidden';
-
-    // 8. Вибрация
     if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        document.body.classList.add('telegram-webview');
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
     }
 },
         isFav(p) { return p && this.favorites.includes(p.id); },
@@ -3627,12 +4018,10 @@ getProductImages(product) {
             localStorage.setItem('naran_favs_v3', JSON.stringify(this.favorites));
         },
 
-    addToCart(p) {
+ addToCart(p) {
     if (!p) return;
 
     try {
-        // 1. ОПРЕДЕЛЯЕМ ВАРИАНТ (ЦВЕТ)
-        // Гарантируем, что индекс — это число, чтобы избежать ошибок с массивом
         const vIdx = Number(this.currentVariantIndex) || 0;
         const variant = (p.variants && p.variants[vIdx]) ? p.variants[vIdx] : null;
 
@@ -3641,29 +4030,21 @@ getProductImages(product) {
             return;
         }
 
-        // ИСПРАВЛЕНО: Проверяем оба варианта написания (stock и stocks) без дублей
         const currentStock = variant.stock || variant.stocks || {};
 
-        // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
         let finalSize = p.tempSize;
-        
-        // Если размер не выбран, берем первый доступный из объекта stock
         if (!finalSize) {
             finalSize = Object.keys(currentStock).find(sz => currentStock[sz] > 0);
         }
 
-        // Проверка: есть ли такой размер и не пуст ли склад
         if (!finalSize || !currentStock[finalSize] || currentStock[finalSize] <= 0) {
             alert('Этого размера сейчас нет в наличии');
             return;
         }
 
-        // 3. УНИКАЛЬНЫЙ ID (ID + Цвет + Размер)
-        // Заменяем пробелы на подчеркивания в ID для стабильности ссылок
         const finalColor = variant.color || 'Стандарт';
         const cartId = `${p.id}_${finalColor}_${finalSize}`.replace(/\s+/g, '_');
 
-        // 4. ОБНОВЛЕНИЕ ИЛИ ДОБАВЛЕНИЕ
         const exist = this.cart.find(i => i.cartId === cartId);
 
         if (exist) {
@@ -3679,7 +4060,6 @@ getProductImages(product) {
                 cartId: cartId,
                 title: p.title || 'Товар',
                 price: Number(p.price) || 0,
-                // Безопасно берем фото именно этого варианта
                 img: (variant.images && variant.images[0]) ? variant.images[0] : (p.images ? p.images[0] : ''),
                 selSize: finalSize,
                 selColor: finalColor,
@@ -3687,32 +4067,64 @@ getProductImages(product) {
             });
         }
         
-        // 5. ЭФФЕКТЫ И СОХРАНЕНИЕ
         this.saveCart();
+
+        // Сохраняем позицию
+        const savedPosition = this._scrollPosition || this.catalogScrollPosition;
+        console.log('📌 Сохраненная позиция перед закрытием:', savedPosition);
         
-        // Тактильный отклик Telegram
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-        }
-
+        // Сбрасываем все
+        this._scrollBlocked = false;
+        this.selP = null;
+        if (p) p.tempSize = null; 
+        this.currentVariantIndex = 0;
+        
+        // Разблокируем скролл
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+        
+        this._isRestoring = true;
+        
         this.showCartNotify = true;
-        setTimeout(() => { this.showCartNotify = false; }, 2000);
+        setTimeout(() => { 
+            this.showCartNotify = false; 
+        }, 2000);
 
-        // 6. ЗАКРЫТИЕ МОДАЛКИ И СБРОС ВЫБОРА
+        // ⭐ ЕДИНСТВЕННОЕ МЕСТО ВОССТАНОВЛЕНИЯ
         setTimeout(() => {
-            this.selP = null;
-            // Сбрасываем временный размер у объекта, чтобы при следующем открытии он был чист
-            if (p) p.tempSize = null; 
-            // Сбрасываем выбор цвета на первый по умолчанию
-            this.currentVariantIndex = 0; 
-        }, 300);
+            if (this.tab === 'catalog' && savedPosition > 0) {
+                window.scrollTo({
+                    top: savedPosition,
+                    behavior: 'instant'
+                });
+                console.log('✅ Восстановлена позиция:', savedPosition);
+            }
+            
+            setTimeout(() => {
+                this._isRestoring = false;
+                this._scrollPosition = 0;
+            }, 300);
+        }, 150);
+
+        try {
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                const version = window.Telegram.WebApp.version || '6.0';
+                if (parseFloat(version) >= 6.1) {
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                }
+            }
+        } catch (e) {}
 
     } catch (err) {
-        // Защита от "белого экрана": если внутри функции что-то пойдет не так,
-        // ошибка выведется в консоль, а не "уронит" всё приложение.
         console.error("Ошибка в addToCart:", err);
+        this._isRestoring = false;
+        this._scrollBlocked = false;
     }
 },
+
 getSizes(p) {
     if (p.variants && p.variants[0] && p.variants[0].stocks) {
         return Object.keys(p.variants[0].stocks);
@@ -3729,15 +4141,18 @@ selectFirstAvailableSize(variant) {
     this.selP.tempSize = size || null;
 },
 removePhoto(index) {
-    // Освобождаем память браузера
-    URL.revokeObjectURL(this.newP.localFiles[index].preview);
-    this.newP.localFiles.splice(index, 1);
+    if (this.newP.localFiles && this.newP.localFiles[index]) {
+        if (this.newP.localFiles[index].preview) {
+            URL.revokeObjectURL(this.newP.localFiles[index].preview);
+        }
+        this.newP.localFiles.splice(index, 1);
+    }
 },
 quickAddToCart(p) {
+    this.saveScrollPosition();
     if (!p) return;
     this.vib();
 
-    // Получаем активный ВИДИМЫЙ вариант
     const visibleVariants = this.getVisibleVariants(p);
     const activeIndex = this.getActiveColorIndex(p);
     const variant = visibleVariants[activeIndex];
@@ -3746,35 +4161,25 @@ quickAddToCart(p) {
         return this.openProduct(p);
     }
     
-    // Используем variant вместо p.variants[0]
     const currentStock = variant.stocks || variant.stock || {};
 
-    // 2. ОПРЕДЕЛЯЕМ РАЗМЕР
-    // Если клиент кликнул на чип в каталоге — берем его (tempSize)
-    // Если нет — ищем первый размер, где остаток > 0
     let selSize = p.tempSize;
     if (!selSize) {
         selSize = Object.keys(currentStock).find(sz => currentStock[sz] > 0);
     }
 
-    // Если размеров нет в наличии — открываем карточку товара, чтобы клиент сам посмотрел
     if (!selSize || currentStock[selSize] <= 0) {
         return this.openProduct(p);
     }
 
-    // 3. ПРОВЕРКА СКРЫТЫХ РАЗМЕРОВ (если у тебя есть такая логика)
     if (p.hiddenSizes && p.hiddenSizes.includes(String(selSize))) {
         return; 
     }
 
-    // 4. ФОРМИРУЕМ УНИКАЛЬНЫЙ ID (ID товара + Цвет + Размер)
     const cartId = `${p.id}_${variant.color}_${selSize}`;
-    
-    // 5. ДОБАВЛЕНИЕ В КОРЗИНУ
     const exist = this.cart.find(i => i.cartId === cartId);
     
     if (exist) {
-        // Проверяем, не превышаем ли мы остаток на складе
         if (exist.qty < (currentStock[selSize] || 99)) {
             exist.qty++;
         } else {
@@ -3784,61 +4189,138 @@ quickAddToCart(p) {
             return;
         }
     } else {
-        // Добавляем новый товар в корзину
         this.cart.push({ 
-        id: p.id,
-        cartId: cartId,
-        title: p.title,
-        price: Number(p.price),
-        // Берем фото из активного ВИДИМОГО варианта
-        img: variant.images[0] || (p.images ? p.images[0] : ''),
-        selSize: selSize,
-        selColor: variant.color,
-        qty: 1
-    });
+            id: p.id,
+            cartId: cartId,
+            title: p.title,
+            price: Number(p.price),
+            img: variant.images[0] || (p.images ? p.images[0] : ''),
+            selSize: selSize,
+            selColor: variant.color,
+            qty: 1
+        });
     }
 
     this.saveCart();
     
-    // Telegram фидбек
     if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        try {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        } catch (e) {}
     }
     
-    // Анимация плашки "Добавлено"
     this.showCartNotify = true;
     setTimeout(() => { this.showCartNotify = false; }, 2000);
+    
+    // Отключаем автосохранение перед восстановлением
+    this._isRestoring = true;
+    
+    setTimeout(() => {
+        this.restoreScrollPosition();
+    }, 50);
 },
-      changeQty(item, delta) {
-    // 1. Находим товар в общем списке products, чтобы проверить актуальный склад
-    const product = this.products.find(p => p.id === item.id);
-    if (!product) return;
-
-    // 2. Находим нужный склад (stock) для выбранного цвета
-    const variant = product.variants.find(v => v.color === item.selColor);
-    if (!variant) return;
-
-    const maxStock = variant.stocks[item.selSize] || 0;
-
-    if (delta > 0) {
-        // Проверяем, есть ли еще место на складе
-        if (item.qty < maxStock) {
-            item.qty++;
-            this.vib('light');
-        } else {
-            // Можно показать маленькое уведомление "Больше нет в наличии"
-            if(window.Telegram?.WebApp) window.Telegram.WebApp.showAlert("К сожалению, это всё, что есть в наличии");
-        }
+  changeQty(item, delta) {
+    // Для Telegram WebView используем более щадящий режим
+    if (this.isTelegramWebView) {
+        // Микрозадержка для снятия нагрузки с интерфейса
+        setTimeout(() => {
+            this._processQtyChange(item, delta);
+        }, 10);
     } else {
-        // Уменьшаем или удаляем
-        if (item.qty > 1) {
-            item.qty--;
-            this.vib('light');
-        } else {
-            this.removeFromCart(item.cartId);
+        this._processQtyChange(item, delta);
+    }
+},
+saveScrollPosition() {
+    // Сохраняем ТОЛЬКО если не заблокирован скролл
+    if (this.tab === 'catalog' && !this._isRestoring && !this._scrollBlocked) {
+        const saved = window.scrollY;
+        if (saved > 0) {
+            this.catalogScrollPosition = saved;
+            this._scrollPosition = saved;
+            console.log('📌 Сохранена позиция каталога:', this.catalogScrollPosition);
         }
     }
+},
+restoreScrollPosition() {
+    if (this.catalogScrollPosition > 0) {
+        console.log('📌 Восстанавливаю после действия:', this.catalogScrollPosition);
+        
+        // Устанавливаем флаг восстановления
+        this._isRestoring = true;
+        
+        // Используем requestAnimationFrame для синхронизации с рендерингом
+        requestAnimationFrame(() => {
+            window.scrollTo({
+                top: Math.round(this.catalogScrollPosition),
+                behavior: 'instant'
+            });
+            
+            // Проверяем, что скролл действительно изменился
+            setTimeout(() => {
+                // Проверяем, не было ли новых скроллов во время восстановления
+                if (window.scrollY !== Math.round(this.catalogScrollPosition)) {
+                    window.scrollTo(0, Math.round(this.catalogScrollPosition));
+                }
+                
+                // Снимаем флаг через 100мс, но только если не было новых вызовов
+                setTimeout(() => {
+                    this._isRestoring = false;
+                    console.log('✅ Восстановление завершено');
+                }, 100);
+            }, 50);
+        });
+    }
+},
+_processQtyChange(item, delta) {
+    const newQty = (item.qty || 1) + delta;
+    
+    if (newQty <= 0) {
+        this.removeFromCart(item.cartId);
+        return;
+    }
+    
+    item.qty = newQty;
+    
+    if (item.qtyTimeout) {
+        clearTimeout(item.qtyTimeout);
+    }
+    
+    // Увеличиваем задержку для Telegram WebView
+    const delay = this.isTelegramWebView ? 800 : 500;
+    
+    item.qtyTimeout = setTimeout(() => {
+        this.validateAndSaveCart(item);
+        delete item.qtyTimeout;
+    }, delay);
+    
+    this.vib('light');
+},
+
+// Новый метод для валидации и сохранения
+async validateAndSaveCart(item) {
+    // Находим товар в общем списке
+    const product = this.products.find(p => p.id === item.id);
+    if (!product) return;
+    
+    // Находим вариант по цвету
+    const variant = product.variants.find(v => v.color === item.selColor);
+    if (!variant) return;
+    
+    const maxStock = variant.stocks?.[item.selSize] || 0;
+    
+    // Проверяем, не превышен ли лимит
+    if (item.qty > maxStock) {
+        item.qty = maxStock;
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.showAlert(`Доступно только ${maxStock} шт.`);
+        }
+    }
+    
+    // Сохраняем корзину
     this.saveCart();
+    
+    // ОПТИМИЗАЦИЯ 6: Кэшируем итоговую сумму
+    this.cachedTotalValue = this.calculateTotal();
 },
 
 removeFromCart(cartId) {
@@ -3847,60 +4329,133 @@ removeFromCart(cartId) {
     this.vib('medium');
 },
 
-        saveCart() {
+        // ЗАМЕНИТЕ существующий saveCart на этот:
+saveCart() {
+    // Используем requestAnimationFrame для отложенной записи
+    if (this.cartSaveTimeout) {
+        clearTimeout(this.cartSaveTimeout);
+    }
+    
+    this.cartSaveTimeout = setTimeout(() => {
+        try {
             localStorage.setItem('naran_cart_v3', JSON.stringify(this.cart));
-        },
+        } catch (e) {
+            console.error('Ошибка сохранения корзины:', e);
+        }
+    }, 100);
+},
 
-         setDelivery(d) {
-    this.deliv = d; // Записываем в deliv, так как она у тебя в data()
+        setDelivery(d) {
+    this.deliv = d;
     this.vib();
-    // Если у тебя инициализируется карта при выборе:
-    if (this.initMap) this.initMap();
-        },
 
-        initMap() {
-            try {
-                if (this.map) { this.map.destroy(); this.map = null; }
-                
-                // Исправляем ошибку ключа: используем ключ напрямую
-                const currentKey = 'a3fb6133-4bcf-46d3-9a05-c7d8b5812144';
-                
-                this.map = new mapgl.Map('map', {
-                    center: [37.6175, 55.7558],
-                    zoom: 13,
-                    key: currentKey
-                });
+    this.cachedTotalValue = this.calculateTotalWithDelivery();
+    
+    // Задержка перед инициализацией карты
+    setTimeout(() => {
+        if (this.deliv && document.getElementById('map')) {
+            if (typeof mapgl !== 'undefined') {
+                this.initMap();
+            } else {
+                console.log('⏳ Библиотека 2GIS еще загружается, ждем...');
+                setTimeout(() => {
+                    if (typeof mapgl !== 'undefined') {
+                        this.initMap();
+                    } else {
+                        console.warn('⚠️ 2GIS не загрузилась, показываем демо-режим');
+                        this.address = this.deliv + ': Москва, Красная площадь, 1';
+                    }
+                }, 1000);
+            }
+        }
+    }, 100);
+},
 
-                const setPos = (lat, lon) => {
-                    this.map.setCenter([lon, lat]);
-                    this.map.setZoom(15);
-                    this.getAddress(lat, lon);
-                };
+       // ЗАМЕНИТЕ метод initMap() на этот:
+initMap() {
+    // Защита от множественных инициализаций
+    if (this.mapInitializing) return;
+    this.mapInitializing = true;
+    
+    // ⭐ ПРОВЕРЯЕМ, ЗАГРУЗИЛАСЬ ЛИ БИБЛИОТЕКА
+    if (typeof mapgl === 'undefined') {
+        console.warn('⏳ 2GIS карта еще не загрузилась, пробуем через 500мс');
+        
+        // Пробуем еще раз через 500мс
+        setTimeout(() => {
+            this.mapInitializing = false;
+            this.initMap();
+        }, 500);
+        return;
+    }
+    
+    try {
+        if (this.map) { 
+            this.map.destroy(); 
+            this.map = null; 
+        }
+        
+        const currentKey = this.mapKey || window.MAP_KEY;
+        if (!currentKey) {
+            console.error('❌ Ключ 2GIS не найден');
+            this.mapInitializing = false;
+            return;
+        }
+        
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) {
+            this.mapInitializing = false;
+            return;
+        }
+        
+        // ⭐ СОЗДАЕМ КАРТУ С ДОПОЛНИТЕЛЬНЫМИ НАСТРОЙКАМИ
+        this.map = new mapgl.Map('map', {
+            center: [37.6175, 55.7558],
+            zoom: 13,
+            key: currentKey,
+            language: 'ru', // Добавляем язык
+            scaleControl: true, // Добавляем контроль масштаба
+            zoomControl: true
+        });
 
-                // ИСПРАВЛЕНИЕ: Проверяем наличие Telegram перед вызовом
-                // Если мы в браузере на ПК, код просто пойдет дальше без ошибки
-                if (window.Telegram?.WebApp?.initData !== "") {
-                    try {
-                        window.Telegram.WebApp.requestLocation((data) => {
-                            if (data?.location) setPos(data.location.latitude, data.location.longitude);
-                        });
-                    } catch (e) { console.log("TG Geo skip"); }
-                } 
-                
-                // Всегда пробуем стандартный браузерный метод (он работает на ПК)
-                navigator.geolocation.getCurrentPosition(
-                    (p) => setPos(p.coords.latitude, p.coords.longitude),
-                    (err) => console.log("Гео не поддерживается браузером")
-                );
+        const setPos = (lat, lon) => {
+            if (!this.map) return;
+            this.map.setCenter([lon, lat]);
+            this.map.setZoom(15);
+            this.getAddress(lat, lon);
+        };
 
-                this.map.on('click', (e) => {
-                    this.getAddress(e.lngLat[1], e.lngLat[0]);
-                });
-            } catch (e) { console.error("Map error", e); }
-        },
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (p) => setPos(p.coords.latitude, p.coords.longitude),
+                (err) => {
+                    console.log("Геолокация не поддерживается или отклонена", err);
+                    // Если геолокация не работает, показываем Москву по умолчанию
+                    this.getAddress(55.7558, 37.6175);
+                },
+                { timeout: 5000, maximumAge: 60000 }
+            );
+        } else {
+            // Если геолокация вообще не поддерживается
+            this.getAddress(55.7558, 37.6175);
+        }
 
+        this.map.on('click', (e) => {
+            if (e.lngLat) {
+                this.getAddress(e.lngLat[1], e.lngLat[0]);
+            }
+        });
+        
+        console.log('✅ Карта 2GIS успешно инициализирована');
+        
+    } catch (e) { 
+        console.error("❌ Ошибка инициализации карты:", e); 
+    } finally {
+        setTimeout(() => { this.mapInitializing = false; }, 1000);
+    }
+},
       getAddress(lat, lon) {
-    const currentKey = 'a3fb6133-4bcf-46d3-9a05-c7d8b5812144';
+   const currentKey = this.mapKey;
     // Добавили запрос всех полей, где может прятаться город
     const url = `https://catalog.api.2gis.com/3.0/items/geocode?lat=${lat}&lon=${lon}&radius=50&fields=items.adm_div,items.address,items.full_name&key=${currentKey}`;
 
@@ -3949,12 +4504,12 @@ removeFromCart(cartId) {
         .catch(err => console.error("2GIS error", err));
 },
 
-        openSupport() { window.open('https://t.me/@Asya_Candy_Bratz', '_blank'); },
+        openSupport() { window.open('https://t.me/@optania', '_blank'); },
         
  
  async uploadToImgBB(file, fileObj) {
     return new Promise((resolve, reject) => {
-        const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
+     const imgbbKey = this.imgbbKey;
         
         // 1. Создаем FormData
         const formData = new FormData();
@@ -3999,7 +4554,20 @@ async uploadFileToImgBB(file) {
     console.log(`=== ЗАГРУЗКА В IMGBB: ${file.name} ===`);
     console.log(`Размер: ${(file.size / 1024).toFixed(1)}KB, Тип: ${file.type}`);
     
-    const imgbbKey = '4d4ab43d9b15c3dbadb9058518e4db23';
+    const imgbbKey = this.imgbbKey;
+    
+    // Проверка наличия ключа
+    if (!imgbbKey) {
+        console.error('❌ ImgBB API ключ не найден!');
+        // Попробуем получить из window как запасной вариант
+        const windowKey = window.IMGBB_API_KEY;
+        if (windowKey) {
+            console.log('✅ Найден ключ в window.IMGBB_API_KEY');
+            this.imgbbKey = windowKey; // Сохраняем в data
+        } else {
+            throw new Error('ImgBB API ключ не настроен');
+        }
+    }
     
     // Сначала сжимаем изображение
     const compressedFile = await this.compressImageFast(file);
@@ -4010,47 +4578,45 @@ async uploadFileToImgBB(file) {
     
     try {
         console.log('Отправка запроса к ImgBB...');
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, {
+        
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey || this.imgbbKey}`, {
             method: 'POST',
             body: formData
         });
         
         console.log('Статус ответа:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Ошибка HTTP:', errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
         const result = await response.json();
         
-        // ВАЖНО: Выводим полный ответ для отладки
         console.log('=== ПОЛНЫЙ ОТВЕТ IMGBB ===');
         console.log(JSON.stringify(result, null, 2));
-        console.log('=========================');
         
         if (result.success) {
-            // ImgBB возвращает URL в разных полях
-            console.log('Доступные поля в data:', Object.keys(result.data || {}));
-            
+            // ImgBB возвращает URL в разных полях, проверяем все варианты
             const imageUrl = result.data?.url || 
                             result.data?.display_url || 
-                            result.data?.image?.url || 
-                            (result.data?.thumb ? result.data.thumb.url : null) ||
-                            (result.data?.medium ? result.data.medium.url : null);
+                            result.data?.image?.url ||
+                            result.data?.thumb?.url;
             
             if (imageUrl) {
                 console.log('✅ Найден URL:', imageUrl);
                 
-                // Проверяем валидность URL
-                if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-                    console.warn('⚠️ URL не начинается с http/https, исправляем...');
-                    const correctedUrl = `https://${imageUrl}`;
-                    console.log('Исправленный URL:', correctedUrl);
-                    return correctedUrl;
+                // Убедимся что URL начинается с http
+                let finalUrl = imageUrl;
+                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                    finalUrl = 'https://' + finalUrl;
+                    console.log('🔧 Исправлен URL:', finalUrl);
                 }
                 
-                return imageUrl;
+                return finalUrl;
             } else {
-                console.error('❌ ImgBB не вернул URL. Структура ответа:');
-                console.log('- data.url:', result.data?.url);
-                console.log('- data.display_url:', result.data?.display_url);
-                console.log('- data.image:', result.data?.image);
-                console.log('- data.thumb:', result.data?.thumb);
+                console.error('❌ ImgBB не вернул URL. Доступные поля:', Object.keys(result.data || {}));
                 throw new Error('ImgBB не вернул URL изображения');
             }
         } else {
@@ -4060,15 +4626,13 @@ async uploadFileToImgBB(file) {
     } catch (error) {
         console.error('❌ Ошибка загрузки в ImgBB:', error);
         
-        // Fallback на Data URL
-        if (compressedFile.size < 100 * 1024) {
+        // Fallback на Data URL для маленьких файлов
+        if (file.size < 100 * 1024) {
             console.log('🔄 Использую Data URL как fallback');
-            return await this.fileToDataURL(compressedFile);
+            return await this.fileToDataURL(file);
         }
         
-        // Если файл большой, используем placeholder
-        console.log('🔄 Использую placeholder');
-        return 'https://placehold.co/300x400/ffffff/000000?text=No+Image';
+        throw error;
     }
 },
 // Быстрое сжатие изображения
@@ -4081,7 +4645,11 @@ compressImageFast(file) {
         }
         
         const img = new Image();
-        img.onload = () => {
+        
+        // ИСПРАВЛЕНО: сохраняем this в переменную
+        const self = this;
+        
+        img.onload = function() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
@@ -4104,7 +4672,6 @@ compressImageFast(file) {
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
             
-            // Сохраняем как JPEG с качеством 75%
             canvas.toBlob((blob) => {
                 const compressedFile = new File([blob], file.name, {
                     type: 'image/jpeg',
@@ -4112,6 +4679,11 @@ compressImageFast(file) {
                 });
                 resolve(compressedFile);
             }, 'image/jpeg', 0.75);
+        };
+        
+        img.onerror = function() {
+            console.warn('Ошибка загрузки изображения, использую оригинал');
+            resolve(file);
         };
         
         img.src = URL.createObjectURL(file);
@@ -4366,6 +4938,49 @@ updateFavListWithTempSize() {
         }
     });
 },
+// Метод handleScrollSave должен быть таким:
+handleScrollSave() {
+    // Игнорируем если скролл заблокирован или идет восстановление
+    if (this._isRestoring || this._scrollBlocked || this.selP || this.tab !== 'catalog') {
+        return;
+    }
+    
+    if (this.scrollTimer) clearTimeout(this.scrollTimer);
+    
+    this.scrollTimer = setTimeout(() => {
+        const currentScroll = window.scrollY;
+        if (currentScroll > 0 && !this._isRestoring && !this._scrollBlocked) {
+            this.catalogScrollPosition = Math.round(currentScroll);
+            this._scrollPosition = this.catalogScrollPosition;
+            console.log('📌 Сохранена позиция:', this.catalogScrollPosition);
+        }
+    }, 300);
+},
+clearAllTimers() {
+    const timers = ['scrollTimer', 'cartSaveTimeout', 'scrollTimeout'];
+    timers.forEach(timerName => {
+        if (this[timerName]) {
+            clearTimeout(this[timerName]);
+            this[timerName] = null;
+        }
+    });
+},
+safeHaptic(type = 'light') {
+    try {
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            const version = window.Telegram.WebApp.version || '6.0';
+            if (parseFloat(version) >= 6.1) {
+                if (type === 'success') {
+                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                } else {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
+                }
+            }
+        }
+    } catch (e) {
+        // Игнорируем
+    }
+},
 
 // Вспомогательный метод для Data URL
 fileToDataURL(file) {
@@ -4390,29 +5005,6 @@ fileToDataURL(file) {
     });
 },
 
-
-        async deleteProduct(id) {
-            const msg = "⚠️ Удалить заказ навсегда?";
-    
-    // Проверка: как спрашивать подтверждение
-    const runDelete = async () => {
-        try {
-            await window.fb.deleteDoc(window.fb.doc(window.db, "orders", docId));
-            if (window.tg && window.tg.HapticFeedback) window.tg.HapticFeedback.notificationOccurred('success');
-        } catch (e) {
-            console.error(e);
-            alert("Ошибка удаления: " + e.message);
-        }
-    };
-
-    if (window.tg && window.tg.showConfirm) {
-        // Если в телеграме
-        window.tg.showConfirm(msg, (yes) => { if (yes) runDelete(); });
-    } else {
-        // Если на компьютере
-        if (confirm(msg)) runDelete();
-    }
-},
 
 
 async deleteProductWithConfirm(productId) {
@@ -4444,126 +5036,253 @@ async manageCategory(action, id) {
 
 // Метод для кнопок "В пути" и "Готов"
 async checkout() {
+    // Защита от двойного нажатия
+    if (this.isCheckingOut) return;
+    
     this.vib();
     
+    // Валидация
     if (!this.form.name || !this.form.phone || !this.address) {
-        return alert("Заполните имя, телефон и адрес доставки!");
+        alert("Заполните имя, телефон и адрес доставки!");
+        return;
     }
-    if (this.cart.length === 0) return alert("Корзина пуста!");
+    if (this.cart.length === 0) {
+        alert("Корзина пуста!");
+        return;
+    }
 
+    // Блокируем кнопку
+    this.isCheckingOut = true;
     this.loading = true;
     
     try {
-        const tgUser = window.tg?.initDataUnsafe?.user;
-        const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
+        const tgUser = (this.user && !this.user.is_guest) ? this.user : null;
+        const userId = tgUser?.id || 0;
+      const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
 
-        // --- ГЕНЕРАЦИЯ НОВОГО ФОРМАТА НОМЕРА (ДДММ-Рандом) ---
+        // Генерация номера заказа
         const now = new Date();
         const day = String(now.getDate()).padStart(2, '0');
         const month = String(now.getMonth() + 1).padStart(2, '0');
-        const randomDigits = Math.floor(1000 + Math.random() * 9000); // 4 случайные цифры
-        const newOrderId = `${day}${month}-${randomDigits}`; 
-        // ----------------------------------------------------
+        const randomDigits = Math.floor(1000 + Math.random() * 9000);
+        const newOrderId = `${day}${month}-${randomDigits}`;
 
-        // СНИЖЕНИЕ ОСТАТКОВ
-        for (let item of this.cart) {
-            const pRef = window.fb.doc(window.db, "products", item.id);
-            const pSnap = await window.fb.getDoc(pRef);
-            if (pSnap.exists()) {
-                let d = pSnap.data();
-                const sz = String(item.selSize || item.size);
-                const qty = Number(item.qty || 1);
-                if (d.variants && d.variants.length > 0) {
-                    let vds = [...d.variants];
-                    let vIdx = vds.findIndex(v => v.color === (item.selColor || item.color));
-                    if (vIdx > -1) {
-                        let targetVariant = vds[vIdx];
-                        let currentStocks = targetVariant.stocks || targetVariant.stock || {};
-                        if (currentStocks[sz] !== undefined) {
-                            currentStocks[sz] = Math.max(0, Number(currentStocks[sz]) - qty);
-                            await window.fb.updateDoc(pRef, { variants: vds });
-                        }
-                    }
-                } 
+        // Копируем корзину (чтобы изменения не влияли на оригинал)
+        const cartCopy = [...this.cart];
+       const finalTotal = this.calculateTotalWithDelivery();
+
+        // Подготавливаем данные заказа
+        const orderData = {
+            order_id: newOrderId,
+            customer_name: this.form.name,
+            customer_phone: this.form.phone,
+            address: this.address,
+            delivery: this.deliv,
+            items: cartCopy.map(i => ({
+                id: i.id,
+                title: i.title,
+                count: i.qty || 1,
+                color: i.selColor || i.color || '-',
+                size: i.selSize || i.size || '-',
+                price: i.price
+            })),
+            order_total: finalTotal,
+            status: 'Новый',
+            createdAt: window.fb?.serverTimestamp ? window.fb.serverTimestamp() : new Date(),
+            user: {
+                 id: userId,
+                username: username
             }
+        };
+
+        // Отправляем заказ в Firebase (не ждем ответа)
+        if (window.fb?.addDoc) {
+            window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData)
+                .catch(e => console.error("❌ Ошибка Firebase:", e));
         }
 
-        const finalTotal = this.total(); 
+        // Отправляем уведомление в Telegram (не ждем)
+        this.sendTelegramNotification(orderData, username, finalTotal);
 
-       const orderData = {
-        order_id: newOrderId,
-        customer_name: this.form.name,
-        customer_phone: this.form.phone,
-        address: this.address,
-        delivery_type: 'доставка',
-        delivery_price: 200,
-        items: this.cart.map(i => ({
-            id: i.id,
-            title: i.title,
-            count: i.qty || 1,
-            color: i.selColor || i.color || '-',
-            size: i.selSize || i.size || '-',
-            price: i.price
-        })),
-        order_total: finalTotal, 
-        status: 'Новый',
-        // ИСПРАВЛЕННЫЙ ВАРИАНТ: serverTimestamp нужно вызвать как функцию
-        createdAt: window.fb.serverTimestamp(), // ← ВЫЗВАТЬ ФУНКЦИЮ!
-        user: {
-            id: tgUser?.id || 0,
-            username: username
-        }
-    };
+        // Обновляем остатки в фоне
+        this.updateStocksInBackground(cartCopy);
 
-        await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData);
-        
-        // УВЕДОМЛЕНИЕ АДМИНА
-        const botToken = '8313765701:AAG4pb1Pr351VLYTfUuuCzumMk6y96E_mdQ';
-        const adminId = 387881523; 
-        let itemsText = orderData.items.map(i => `• ${i.title} (${i.color}, ${i.size}) x${i.count}`).join('\n');
-        
-        let adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
-                       `👤 Клиент: ${orderData.customer_name} (${username})\n` +
-                       `📞 Тел: ${orderData.customer_phone}\n` +
-                       `📍 Адрес: ${orderData.address}\n\n` +
-                       `📋 Состав:\n${itemsText}\n\n` +
-                       `💰 Итого: *${finalTotal} ₽*`;
-
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: adminId, text: adminMsg, parse_mode: 'Markdown' })
-        }).catch(e => console.error("Ошибка:", e));
-
-        alert(`Заказ #${orderData.order_id} оформлен!`);
-        
+        // ОЧИЩАЕМ ВСЕ ДАННЫЕ КОРЗИНЫ
         this.cart = [];
         this.saveCart();
-        this.tab = 'catalog'; 
+        
+        // Сбрасываем все таймеры
+        this.cart.forEach(item => {
+            if (item.qtyTimeout) {
+                clearTimeout(item.qtyTimeout);
+                delete item.qtyTimeout;
+            }
+        });
+
+        // Сбрасываем форму
+        this.form.name = '';
+        this.form.phone = localStorage.getItem('naran_phone') || '';
+        this.address = '';
+        this.deliv = '';
+
+        // Показываем успех
+        alert(`✅ Заказ #${newOrderId} оформлен!`);
+        
+        // Переходим в каталог
+        this.tab = 'catalog';
         
     } catch (e) {
-        console.error("Ошибка:", e);
+        console.error("❌ Ошибка:", e);
         alert("Произошла ошибка: " + e.message);
     } finally {
-        this.loading = false;
+        // ВАЖНО: Всегда сбрасываем состояние загрузки
+        setTimeout(() => {
+            this.isCheckingOut = false;
+            this.loading = false;
+        }, 300);
+    }
+},
+
+sendTelegramNotification(orderData, username, finalTotal) {
+    if (!this.botToken || !this.adminId) return;
+    
+    const itemsText = orderData.items.map(i => 
+        `• ${i.title} (${i.color}, ${i.size}) x${i.count} — ${i.price} ₽/шт.`
+    ).join('\n');
+    
+    // Добавляем информацию о доставке
+    const deliveryInfo = this.deliv ? `\n🚚 Доставка: ${this.deliv} — ${this.delivery_price} ₽` : '';
+    
+    const adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
+                    `👤 Клиент: ${orderData.customer_name} ${username ? '(' + username + ')' : ''}\n` +
+                    `📞 Тел: ${orderData.customer_phone}\n` +
+                    `📍 Адрес: ${orderData.address}\n` +
+                    `🚚 Доставка: ${orderData.delivery}${deliveryInfo}\n\n` +
+                    `📋 Состав:\n${itemsText}\n\n` +
+                    `💰 *ИТОГО К ОПЛАТЕ: ${finalTotal} ₽*`;
+
+    // Отправляем админу
+    fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            chat_id: this.adminId, 
+            text: adminMsg, 
+            parse_mode: 'Markdown' 
+        })
+    }).catch(e => console.error("❌ Ошибка Telegram:", e));
+    
+    // Отправляем клиенту (если есть ID)
+    if (orderData.user && orderData.user.id) {
+        const clientMsg = `✅ *Заказ №${orderData.order_id} оформлен!*\n\n` +
+                         `Спасибо за покупку в BRATZ!\n` +
+                         `Статус заказа можно отслеживать в профиле.\n\n` +
+                         `💰 Сумма к оплате: *${finalTotal} ₽*`;
+        
+        fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                chat_id: orderData.user.id, 
+                text: clientMsg, 
+                parse_mode: 'Markdown' 
+            })
+        }).catch(e => console.error("❌ Ошибка отправки клиенту:", e));
+    }
+},
+// Вынесите обновление остатков в отдельный метод
+async updateStocksInBackground(cartCopy) {
+    for (let item of cartCopy) {
+        try {
+            const pRef = window.fb.doc(window.db, "products", item.id);
+            const pSnap = await window.fb.getDoc(pRef);
+            
+            if (pSnap.exists()) {
+                const data = pSnap.data();
+                if (data.variants?.length > 0) {
+                    const variants = [...data.variants];
+                    const vIdx = variants.findIndex(v => v.color === (item.selColor || item.color));
+                    
+                    if (vIdx > -1 && variants[vIdx].stocks?.[item.selSize] !== undefined) {
+                        variants[vIdx].stocks[item.selSize] = Math.max(0, 
+                            variants[vIdx].stocks[item.selSize] - (item.qty || 1)
+                        );
+                        
+                        await window.fb.updateDoc(pRef, { variants });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("❌ Ошибка обновления остатков:", e);
+        }
+    }
+},
+// ВМЕСТО удаленного checkout() добавьте:
+async sendOrderToBot() {
+    try {
+        const orderData = {
+            order_id: this.generateOrderId(),
+            customer_name: this.form.name,
+            customer_phone: this.form.phone,
+            address: this.address,
+            delivery: this.deliv,
+            total: this.total(),
+            items: this.cart.map(i => ({
+                title: i.title,
+                size: i.selSize,
+                color: i.selColor,
+                price: i.price,
+                count: i.qty
+            }))
+        };
+        
+        // Отправляем данные в Telegram WebApp
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.sendData(JSON.stringify(orderData));
+            this.cart = [];
+            this.saveCart();
+        }
+    } catch (error) {
+        console.error('Error sending order:', error);
+        alert('Ошибка отправки заказа');
     }
 },
 closeProductModal() {
-    // Разблокируем прокрутку
+    // Сохраняем позицию
+    const savedPosition = this._scrollPosition || this.catalogScrollPosition;
+    console.log('📌 Сохраненная позиция при закрытии:', savedPosition);
+    
+    // Сбрасываем все
+    this._scrollBlocked = false;
+    this.selP = null;
+    this.currentVariantIndex = 0;
+    this.openedProduct = null;
+    this.selVariantIdx = 0;
+    
+    // Разблокируем скролл
     document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
     
-    // Вибрация
-    if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
+    this._isRestoring = true;
     
-    // Очищаем с небольшой задержкой для избежания мерцания
+    // ⭐ ЕДИНСТВЕННОЕ МЕСТО ВОССТАНОВЛЕНИЯ
     setTimeout(() => {
-        this.selP = null;
-        this.currentVariantIndex = 0;
-        this.openedProduct = null;
-        this.selVariantIdx = 0;
-    }, 50);
+        if (this.tab === 'catalog' && savedPosition > 0) {
+            window.scrollTo({
+                top: savedPosition,
+                behavior: 'instant'
+            });
+            console.log('✅ Восстановлена позиция:', savedPosition);
+        }
+        
+        setTimeout(() => {
+            this._isRestoring = false;
+            this._scrollPosition = 0;
+        }, 300);
+    }, 150);
 },
 async updateStatus(order, newStatus) {
     if (order.status === newStatus) return;
@@ -4574,8 +5293,7 @@ async updateStatus(order, newStatus) {
         await window.fb.updateDoc(orderRef, { status: newStatus });
         
         // --- БЛОК УВЕДОМЛЕНИЙ ---
-        const botToken = '8313765701:AAG4pb1Pr351VLYTfUuuCzumMk6y96E_mdQ';
-        
+       const botToken = this.botToken;
         // Создаем список тех, кто получит сообщение
         const recipients = [];
         
@@ -4584,10 +5302,9 @@ async updateStatus(order, newStatus) {
         if (customerId) recipients.push(customerId);
         
         // 2. Добавляем твои дополнительные ID (админы, менеджеры)
-        const extraIds = [641527014, 387881523]; // ЗАМЕНИ ЭТИ ЦИФРЫ НА НУЖНЫЕ ID
-        extraIds.forEach(id => {
-            if (!recipients.includes(id)) recipients.push(id);
-        });
+        this.adminIds.forEach(adminId => {
+    if (!recipients.includes(adminId)) recipients.push(adminId);
+});
 
         let message = "";
         if (newStatus === 'Отправлен') {
@@ -4617,7 +5334,7 @@ async updateStatus(order, newStatus) {
         }
         // --- КОНЕЦ БЛОКА УВЕДОМЛЕНИЙ ---
 
-        if (window.tg?.HapticFeedback) window.tg.HapticFeedback.impactOccurred('medium');
+        if (window.Telegram.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
 
     } catch (e) {
         console.error("Ошибка обновления:", e);
@@ -4662,8 +5379,8 @@ async deleteOrder(docId) {
     const proceedDelete = async () => {
         try {
             await window.fb.deleteDoc(window.fb.doc(window.db, "orders", docId));
-            if (window.tg && window.tg.version && parseFloat(window.tg.version) >= 6.1) {
-                window.tg.HapticFeedback.notificationOccurred('success');
+            if (window.Telegram.WebApp && window.Telegram.WebApp.version && parseFloat(window.Telegram.WebApp.version) >= 6.1) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
             }
         } catch (e) {
             alert("Не удалось удалить: " + e.message);
@@ -4671,13 +5388,12 @@ async deleteOrder(docId) {
     };
 
     // Универсальный запрос подтверждения (ПК + ТГ)
-    if (window.tg && window.tg.showConfirm && parseFloat(window.tg.version) >= 6.2) {
-        window.tg.showConfirm(confirmText, (yes) => { if (yes) proceedDelete(); });
+    if (window.Telegram.WebApp && window.Telegram.WebApp.showConfirm && parseFloat(window.Telegram.WebApp.version) >= 6.2) {
+        window.Telegram.WebApp.showConfirm(confirmText, (yes) => { if (yes) proceedDelete(); });
     } else {
         if (confirm(confirmText)) proceedDelete();
     }
 },
-
        printOrder(o) {
     try {
         if (this.vib) this.vib(); 
@@ -4714,18 +5430,7 @@ async deleteOrder(docId) {
                 </tr>
             `).join('');
 
-            // ДОБАВЛЯЕМ СТРОКУ ДОСТАВКИ (в том же стиле)
-            itemsHtml += `
-                <tr style="border-bottom: 2px solid #000;">
-                    <td style="padding: 20px 0;">
-                        <div style="font-weight: 800; font-size: 18px; text-transform: uppercase;">ДОСТАВКА КУРЬЕРОМ</div>
-                        <div style="font-size: 14px; color: #888; font-weight: 700;">ФИКСИРОВАННАЯ СТАВКА</div>
-                    </td>
-                    <td style="padding: 20px 0; text-align: right; vertical-align: middle;">
-                        <div style="font-weight: 800; font-size: 20px;">200 ₽</div>
-                    </td>
-                </tr>
-            `;
+           
         } else {
             itemsHtml = `<tr><td colspan="2" style="padding: 40px 0; font-size: 16px;">${o.items_text || 'Список товаров пуст'}</td></tr>`;
         }
@@ -4767,30 +5472,40 @@ async deleteOrder(docId) {
                             <p style="font-size: 18px; font-weight: 700; margin: 5px 0;">${o.customer_name || 'Не указан'} ${username}</p>
                             <p style="margin: 0; font-weight: 400;">${o.customer_phone || '---'}</p>
                         </div>
-                        <div style="text-align: right;">
-                            <small style="color:#888; font-weight:700; text-transform: uppercase; font-size: 10px;">Способ доставки</small>
-                            <p style="font-size: 18px; font-weight: 700; margin: 5px 0;">${o.delivery_type || 'Доставка курьером'}</p>
-                        </div>
+                       
                     </div>
                     <div class="address-box">
                         <small style="color:#888; font-weight:700; text-transform: uppercase; font-size: 10px;">Адрес доставки:</small>
                         <p style="font-size: 22px; font-weight: 800; margin: 10px 0 0 0;">${o.address || 'Не указан'}</p>
                     </div>
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Описание товаров и услуг</th>
-                                <th style="text-align: right;">Сумма</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemsHtml}
-                        </tbody>
-                    </table>
-                    <div class="total-section">
-                        <div style="font-weight: 700; color: #888; font-size: 14px; margin-bottom: 5px;">ИТОГО К ОПЛАТЕ (С УЧЕТОМ ДОСТАВКИ)</div>
-                        <h2>${o.order_total || 0} ₽</h2>
-                    </div>
+    <thead>
+        <tr>
+            <th>Описание товаров и услуг</th>
+            <th style="text-align: right;">Сумма</th>
+        </tr>
+    </thead>
+    <tbody>
+        ${itemsHtml}
+        <!-- Строка с доставкой -->
+        <tr style="border-bottom: 2px solid #f0f0f0;">
+            <td style="padding: 20px 0;">
+                <div style="font-weight: 600; font-size: 16px; text-transform: uppercase;">
+                    🚚 Доставка (${o.delivery || 'не указана'})
+                </div>
+            </td>
+            <td style="padding: 20px 0; text-align: right; vertical-align: middle;">
+                <div style="font-weight: 600; font-size: 18px;">
+                    ${this.delivery_price || 200} ₽
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<div class="total-section">
+    <div style="font-weight: 700; color: #888; font-size: 14px; margin-bottom: 5px;">ИТОГО К ОПЛАТЕ (с доставкой)</div>
+    <h2>${o.order_total || 0} ₽</h2>
+</div>
                 </div>
                 <script>
                     window.onload = function() { 
@@ -4807,6 +5522,7 @@ async deleteOrder(docId) {
         alert("Ошибка при формировании чека.");
     }
 },
+
 cleanupAllPreviews() {
         // Очистка всех preview URL
         const cleanupArray = (arr) => {
@@ -5011,152 +5727,300 @@ updateChart() {
     }
 }
     },
- mounted() {
+mounted() {
+    console.log('=== VUE APP MOUNTED ===');
+    window.app = this;
+    
+    // Очистка превью при закрытии
     window.addEventListener('beforeunload', () => {
         this.cleanupAllPreviews();
     });
-    const tg = window.Telegram.WebApp || {};
-     console.log('ImgBB Key:', '4d4ab43d9b15c3dbadb9058518e4db23');
+    
+    // === ПРОВЕРКА ВСЕХ КЛЮЧЕЙ ===
+    console.log('=== ПРОВЕРКА КОНФИГУРАЦИИ ===');
+    console.log('this.adminId:', this.adminId);
+    console.log('this.mapKey:', this.mapKey ? '✅ установлен' : '❌ отсутствует');
+    console.log('this.imgbbKey:', this.imgbbKey ? '✅ установлен' : '❌ отсутствует');
+    console.log('this.botToken:', this.botToken ? '✅ установлен' : '❌ отсутствует');
+    console.log('this.firebaseConfig:', this.firebaseConfig ? '✅ установлен' : '❌ отсутствует');
+    console.log('this.botUsername:', this.botUsername);
+    
+    console.log('window.ADMIN_ID:', window.ADMIN_ID);
+    console.log('window.MAP_KEY:', window.MAP_KEY ? '✅' : '❌');
+    console.log('window.IMGBB_API_KEY:', window.IMGBB_API_KEY ? '✅' : '❌');
+    console.log('window.BOT_TOKEN:', window.BOT_TOKEN ? '✅' : '❌');
+    console.log('window.FIREBASE_CONFIG:', window.FIREBASE_CONFIG ? '✅' : '❌');
+    console.log('window.BOT_USERNAME:', window.BOT_USERNAME);
+    
+   // После копирования ключей добавьте:
+if (!this.adminIds && window.ADMIN_IDS) {
+    console.log('🔄 Копируем adminIds из window:', window.ADMIN_IDS);
+    this.adminIds = window.ADMIN_IDS;
+} else if (!this.adminIds) {
+    this.adminIds = [this.adminId || 387881523];
+}
+
+    if (!this.mapKey && window.MAP_KEY) {
+        console.log('🔄 Копируем mapKey из window');
+        this.mapKey = window.MAP_KEY;
+    }
+
+    if (!this.imgbbKey && window.IMGBB_API_KEY) {
+        console.log('🔄 Копируем imgbbKey из window');
+        this.imgbbKey = window.IMGBB_API_KEY;
+    }
+
+    if (!this.botToken && window.BOT_TOKEN) {
+        console.log('🔄 Копируем botToken из window');
+        this.botToken = window.BOT_TOKEN;
+    }
+
+    if (!this.botUsername && window.BOT_USERNAME) {
+        console.log('🔄 Копируем botUsername из window:', window.BOT_USERNAME);
+        this.botUsername = window.BOT_USERNAME;
+    }
+
+    if (!this.firebaseConfig && window.FIREBASE_CONFIG) {
+        console.log('🔄 Копируем firebaseConfig из window');
+        this.firebaseConfig = window.FIREBASE_CONFIG;
+    }
+    
+    console.log('=== ПОСЛЕ КОПИРОВАНИЯ ===');
+    console.log('this.adminId:', this.adminId);
+    console.log('this.imgbbKey:', this.imgbbKey ? '✅' : '❌');
+    console.log('this.botUsername:', this.botUsername);
+    console.log('this.firebaseConfig:', this.firebaseConfig ? '✅' : '❌');
+    
     // 1. Безопасная инициализация Telegram
     if (window.Telegram?.WebApp) {
         try {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
-            console.log('Telegram WebApp initialized');
+            console.log('✅ Telegram WebApp initialized');
         } catch (e) {
             console.warn("Telegram WebApp error:", e);
         }
     }
     
-    // 2. Данные пользователя с fallback
-    this.user = window.Telegram?.WebApp?.initDataUnsafe?.user || { 
-        id: 387881523, 
-        first_name: 'Admin_Test' 
-    };
+    // 2. ЗАГРУЗКА ПОЛЬЗОВАТЕЛЯ (ТОЛЬКО ОДИН РАЗ!)
+    // Сначала проверяем, есть ли пользователь в Telegram WebApp
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        // Если открыто в Telegram
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        this.user = {
+            id: tgUser.id,
+            first_name: tgUser.first_name || '',
+            username: tgUser.username || '',
+            photo_url: tgUser.photo_url || '',
+            is_guest: false
+        };
+        console.log('✅ Пользователь из Telegram WebApp:', this.user);
+    } else {
+        // Если не в Telegram - пробуем загрузить из localStorage
+        const savedUser = localStorage.getItem('naran_user');
+        if (savedUser) {
+            try {
+                const parsed = JSON.parse(savedUser);
+                this.user = parsed;
+                console.log('✅ Пользователь загружен из localStorage:', this.user);
+            } catch (e) {
+                console.error('Ошибка парсинга savedUser:', e);
+                this.user = { 
+                    id: null, 
+                    first_name: 'Гость',
+                    is_guest: true 
+                };
+            }
+        } else {
+            // Если ничего нет - создаем гостя
+            this.user = { 
+                id: null, 
+                first_name: 'Гость',
+                is_guest: true 
+            };
+        }
+    }
+    
+    // 3. Проверяем, админ ли пользователь
+    this.isAdmin = (this.user && !this.user.is_guest && Number(this.user.id) === Number(this.adminId));
+    
+    // 4. Сохраняем пользователя в Firestore (если это не гость)
+    if (this.user && !this.user.is_guest) {
+        this.saveUserToFirestore(this.user);
+    }
+    
+    // 5. Инициализируем виджет Telegram Login (только для гостей вне Telegram)
+    if (this.user && this.user.is_guest) {
+        console.log('👤 Пользователь гость, инициализируем виджет...');
+        console.log('botUsername:', this.botUsername);
+        console.log('window.Telegram?.WebApp:', window.Telegram?.WebApp);
+        
+        this.$nextTick(() => {
+            this.initTelegramLogin();
+        });
+    } else {
+        console.log('👤 Пользователь уже авторизован, виджет не нужен');
+    }
     
     console.log('User:', this.user);
-    
-    // 3. Проверка админа
-    this.isAdmin = this.adminIds.includes(Number(this.user.id));
     console.log('Is admin:', this.isAdmin);
+    console.log('Admin ID:', this.adminId);
+    console.log('User ID:', this.user.id);
     
-    // 4. Восстановление из localStorage
+    // 👇 ЗАГРУЗКА ЗАКАЗОВ ПОЛЬЗОВАТЕЛЯ (ЕСЛИ АВТОРИЗОВАН)
+    if (this.user && !this.user.is_guest) {
+        this.loadUserOrders();
+    }
+    
+    // Восстанавливаем сохраненный адрес
     const savedAddr = localStorage.getItem('naran_last_addr');
     if (savedAddr) this.address = savedAddr;
     
     this.$watch(() => this.products, () => {
-        // При изменении списка товаров очищаем кэш выбора цветов
         this.catalogActiveColors = {};
     }, { deep: true });
     
-    // 5. Инициализация Firebase с защитой от повторных вызовов
+    // 👇 ДОБАВЛЕННЫЙ ОБРАБОТЧИК СООБЩЕНИЙ ОТ TELEGRAM IFRAME
+    window.addEventListener('message', function(event) {
+        if (event.origin === 'https://oauth.telegram.org') {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.event === 'auth' && window.onTelegramLogin) {
+                    console.log('📩 Получено сообщение от Telegram iframe:', data);
+                    window.onTelegramLogin(data.user);
+                }
+            } catch (e) {
+                console.error('Ошибка обработки сообщения от Telegram:', e);
+            }
+        }
+    });
+    
+    // 6. Инициализация Firebase с защитой от повторных вызовов
     let firebaseInitAttempts = 0;
     const MAX_ATTEMPTS = 10;
-    
+
     const initFirebaseData = () => {
         if (firebaseInitAttempts >= MAX_ATTEMPTS) {
-            console.error("Failed to initialize Firebase after", MAX_ATTEMPTS, "attempts");
+            console.error("❌ Failed to initialize Firebase after", MAX_ATTEMPTS, "attempts");
             return;
         }
         
         firebaseInitAttempts++;
         
-        if (window.db && window.fb && window.fb.onSnapshot) {
-            console.log("Firebase initialized, attempt", firebaseInitAttempts);
+        if (!window.fb || !window.db) {
+            console.log("⏳ Firebase еще не инициализирован, попытка", firebaseInitAttempts);
+            setTimeout(initFirebaseData, 500);
+            return;
+        }
+        
+        if (window.fb && window.fb.onSnapshot) {
+            console.log("✅ Firebase initialized, attempt", firebaseInitAttempts);
             
-            // Сохраняем функции отписки для очистки
             this.unsubscribers = [];
             
-            // 5.1. Товары
-            const unsubProducts = window.fb.onSnapshot(
-                window.fb.query(
-                    window.fb.collection(window.db, "products"), 
-                    window.fb.orderBy("createdAt", "desc")
-                ), 
-                snap => {
-                    this.products = snap.docs.map(doc => ({ 
-                        id: doc.id, 
-                        ...doc.data(), 
-                        aIdx: 0 
-                    }));
-                    console.log('Products loaded:', this.products.length);
-                    
-                    this.$nextTick(() => {
-                        if (this.tab === 'profile') {
-                            this.calculateListHeight();
-                        }
-                    });
-                },
-                err => console.error("Products error:", err)
-            );
-            this.unsubscribers.push(unsubProducts);
-            
-            // 5.2. Категории
-            const unsubCategories = window.fb.onSnapshot(
-                window.fb.collection(window.db, "categories"), 
-                snap => {
-                    this.categories = snap.docs.map(doc => ({ 
-                        id: doc.id, 
-                        ...doc.data() 
-                    }));
-                    console.log('Categories loaded:', this.categories.length);
-                },
-                err => console.error("Categories error:", err)
-            );
-            this.unsubscribers.push(unsubCategories);
-            
-            // 5.3. ЗАКАЗЫ (ВАЖНО - ДОБАВЛЯЕМ ЭТОТ СЛУШАТЕЛЬ!)
-            const unsubOrders = window.fb.onSnapshot(
-                window.fb.query(
-                    window.fb.collection(window.db, "orders"),
-                    window.fb.orderBy("createdAt", "desc")
-                ),
-                snap => {
-                    this.allOrders = snap.docs.map(doc => {
-                        const data = doc.data();
-                        return {
-                            id: doc.id,
-                            ...data,
-                            // Добавляем дополнительные поля для удобства
-                            displayDate: data.createdAt?.toDate 
-                                ? data.createdAt.toDate().toLocaleDateString('ru-RU')
-                                : new Date().toLocaleDateString('ru-RU')
-                        };
-                    });
-                    console.log('Orders loaded:', this.allOrders.length);
-                    console.log('Sample order:', this.allOrders[0]);
-                    
-                    // Если мы на вкладке профиля и админ - обновляем график
-                    if (this.tab === 'profile' && this.isAdmin) {
+            // 6.1. Товары
+            try {
+                const unsubProducts = window.fb.onSnapshot(
+                    window.fb.query(
+                        window.fb.collection(window.db, "products"), 
+                        window.fb.orderBy("createdAt", "desc")
+                    ), 
+                    snap => {
+                        this.products = snap.docs.map(doc => ({ 
+                            id: doc.id, 
+                            ...doc.data(), 
+                            aIdx: 0 
+                        }));
+                        console.log('✅ Products loaded:', this.products.length);
+                        
                         this.$nextTick(() => {
-                            setTimeout(() => {
-                                console.log('Auto-updating chart after orders load...');
-                                this.updateChart();
-                            }, 800);
+                            if (this.tab === 'profile') {
+                                this.calculateListHeight();
+                            }
                         });
+                    },
+                    err => console.error("❌ Products error:", err)
+                );
+                this.unsubscribers.push(unsubProducts);
+            } catch (e) {
+                console.error("Error setting up products listener:", e);
+            }
+            
+            // 6.2. Категории
+            try {
+                const unsubCategories = window.fb.onSnapshot(
+                    window.fb.collection(window.db, "categories"), 
+                    snap => {
+                        this.categories = snap.docs.map(doc => ({ 
+                            id: doc.id, 
+                            ...doc.data() 
+                        }));
+                        console.log('✅ Categories loaded:', this.categories.length);
+                    },
+                    err => console.error("❌ Categories error:", err)
+                );
+                this.unsubscribers.push(unsubCategories);
+            } catch (e) {
+                console.error("Error setting up categories listener:", e);
+            }
+            
+            // 6.3. ЗАКАЗЫ
+            try {
+                const unsubOrders = window.fb.onSnapshot(
+                    window.fb.query(
+                        window.fb.collection(window.db, "orders"),
+                        window.fb.orderBy("createdAt", "desc")
+                    ),
+                    snap => {
+                        this.allOrders = snap.docs.map(doc => {
+                            const data = doc.data();
+                            return {
+                                id: doc.id,
+                                ...data,
+                                displayDate: data.createdAt?.toDate 
+                                    ? data.createdAt.toDate().toLocaleDateString('ru-RU')
+                                    : new Date().toLocaleDateString('ru-RU')
+                            };
+                        });
+                        console.log('✅ Orders loaded:', this.allOrders.length);
+                        
+                        // 👇 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ЗАКАЗОВ ПОЛЬЗОВАТЕЛЯ ПРИ ОБНОВЛЕНИИ
+                        if (this.user && !this.user.is_guest) {
+                            this.loadUserOrders();
+                        }
+                        
+                        if (this.tab === 'profile' && this.isAdmin) {
+                            this.$nextTick(() => {
+                                setTimeout(() => {
+                                    console.log('Auto-updating chart after orders load...');
+                                    this.updateChart();
+                                }, 800);
+                            });
+                        }
+                    },
+                    err => {
+                        console.error("❌ Orders error:", err);
+                        this.allOrders = [];
                     }
-                },
-                err => {
-                    console.error("Orders error:", err);
-                    // Если коллекции orders не существует, создаем пустой массив
-                    this.allOrders = [];
-                }
-            );
-            this.unsubscribers.push(unsubOrders);
+                );
+                this.unsubscribers.push(unsubOrders);
+            } catch (e) {
+                console.error("Error setting up orders listener:", e);
+            }
             
         } else {
-            console.log("Waiting for Firebase... attempt", firebaseInitAttempts);
-            setTimeout(initFirebaseData, 300);
+            console.log("⏳ Waiting for Firebase... attempt", firebaseInitAttempts);
+            setTimeout(initFirebaseData, 500);
         }
     };
-    
+
     // Запускаем инициализацию Firebase
+    console.log('🚀 Запуск инициализации Firebase...');
     initFirebaseData();
     
-    // 6. Обработчики событий
+    // 7. Обработчики событий
     this.resizeHandler = () => {
         this.calculateListHeight();
-        // При ресайзе обновляем график если он есть
         if (this.tab === 'profile' && this.isAdmin && this.chart) {
             setTimeout(() => {
                 if (this.chart) {
@@ -5166,41 +6030,235 @@ updateChart() {
         }
     };
     window.addEventListener('resize', this.resizeHandler);
-},
-
+    
+    // Сохраняем ссылку на обработчик скролла
+    this.scrollHandler = this.handleScrollSave.bind(this);
+    window.addEventListener('scroll', this.scrollHandler, { passive: true });
+    
+    // Инициализируем переменные для скролла
+    this.scrollTimer = null;
+    this._restoreAttempts = 0;
+    
+    // Восстанавливаем позицию при возврате на вкладку каталог
+    this.$watch('tab', (newVal, oldVal) => {
+        if (newVal === 'catalog') {
+            // Небольшая задержка для стабилизации DOM
+            setTimeout(() => {
+                if (this.catalogScrollPosition > 0 && !this._isRestoring) {
+                    console.log('📌 Вкладка каталог активирована, восстановление позиции:', this.catalogScrollPosition);
+                    this._isRestoring = true;
+                    
+                    window.scrollTo({
+                        top: this.catalogScrollPosition,
+                        behavior: 'instant'
+                    });
+                    
+                    setTimeout(() => {
+                        this._isRestoring = false;
+                    }, 300);
+                }
+            }, 100);
+        }
+    });
+    
+    // 👇 WATCH ДЛЯ АВТОМАТИЧЕСКОЙ ЗАГРУЗКИ ЗАКАЗОВ ПРИ ИЗМЕНЕНИИ allOrders
+    this.$watch('allOrders', () => {
+        if (this.user && !this.user.is_guest) {
+            this.loadUserOrders();
+        }
+    }, { deep: true });
+    
+    // Восстанавливаем позицию после загрузки товаров
+    this.$watch('products', (newProducts) => {
+        if (newProducts.length > 0 && this.tab === 'catalog' && this.catalogScrollPosition > 0 && !this._isRestoring) {
+            this.$nextTick(() => {
+                setTimeout(() => {
+                    console.log('📌 Восстановление после загрузки товаров:', this.catalogScrollPosition);
+                    this._isRestoring = true;
+                    window.scrollTo(0, this.catalogScrollPosition);
+                    
+                    setTimeout(() => {
+                        this._isRestoring = false;
+                    }, 300);
+                }, 100);
+            });
+        }
+    }, { deep: true });
+    
+    console.log('=== MOUNTED ЗАВЕРШЕН ===');
+}, 
 
 beforeDestroy() {
+    console.log('=== BEFORE DESTROY ===');
+    
     // 1. Отписываемся от Firebase слушателей
-    if (this.unsubscribers) {
+    if (this.unsubscribers && Array.isArray(this.unsubscribers)) {
         this.unsubscribers.forEach(unsub => {
             try {
-                if (typeof unsub === 'function') unsub();
+                if (typeof unsub === 'function') {
+                    unsub();
+                }
             } catch (e) {
                 console.error("Error unsubscribing:", e);
             }
         });
+        this.unsubscribers = [];
     }
     
     // 2. Уничтожаем график
     if (this.chart && typeof this.chart.destroy === 'function') {
-        this.chart.destroy();
-    }
-    
-    // 3. Удаляем обработчики событий
-    if (this.resizeHandler) {
-        window.removeEventListener('resize', this.resizeHandler);
-    }
-    
-    // Удаляем обработчик ресайза для графика
-    window.removeEventListener('resize', () => {
-        if (this.chart) {
-            this.chart.resize();
+        try {
+            this.chart.destroy();
+            this.chart = null;
+        } catch (e) {
+            console.error("Error destroying chart:", e);
         }
-    });
+    }
+    
+    // 3. Очищаем все таймеры
+    if (this.scrollTimer) {
+        clearTimeout(this.scrollTimer);
+        this.scrollTimer = null;
+    }
+    
+    if (this.cartSaveTimeout) {
+        clearTimeout(this.cartSaveTimeout);
+        this.cartSaveTimeout = null;
+    }
+    
+    if (this.scrollTimeout) {
+        clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = null;
+    }
+    
+    // 4. Удаляем обработчики событий
+    if (this.resizeHandler) {
+        try {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
+        } catch (e) {
+            console.error("Error removing resize handler:", e);
+        }
+    }
+    
+    // ⭐ ИСПРАВЛЕНО: Удаляем обработчик скролла по ссылке
+    if (this.scrollHandler) {
+        try {
+            window.removeEventListener('scroll', this.scrollHandler);
+            this.scrollHandler = null;
+        } catch (e) {
+            console.error("Error removing scroll handler:", e);
+        }
+    }
+    
+    // 5. Очищаем все превью URL
+    try {
+        this.cleanupAllPreviews();
+    } catch (e) {
+        console.error("Error cleaning previews:", e);
+    }
+    
+    // 6. Сбрасываем флаги
+    this._isRestoring = false;
+    this.isCheckingOut = false;
+    this.loading = false;
+    
+    console.log('=== BEFORE DESTROY ЗАВЕРШЕН ===');
 }
 
 }).mount('#app');
-</script>
+console.log('✅ Vue приложение запущено');
+            
+        } catch (error) {
+            console.error('❌ Ошибка инициализации:', error);
+            appElement.innerHTML = `<div style="text-align:center; padding:50px; color:red;">❌ Ошибка: ${error.message}</div>`;
+        }
+    }
+}
 
+(async function init() {
+    console.log('=== ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ===');
+    const configLoaded = await loadConfig();
+    
+    if (configLoaded) {
+        console.log('✅ Конфигурация загружена, запускаем Vue приложение');
+        startVueApp();
+    } else {
+        const checkElement = () => {
+            const appElement = document.getElementById('app');
+            if (appElement) {
+                appElement.innerHTML = '<div style="text-align:center; padding:50px; color:red;">❌ Не удалось загрузить конфигурацию. Убедитесь, что сервер запущен.</div>';
+            } else {
+                setTimeout(checkElement, 100);
+            }
+        };
+        checkElement();
+    }
+})();
+</script>
+<!-- Глобальная функция для обработки авторизации Telegram -->
+<script>
+// Определяем глобальную функцию ДО всего
+window.onTelegramLogin = function(user) {
+    console.log('✅ Telegram авторизация:', user);
+    if (window.app && window.app.handleTelegramAuth) {
+        window.app.handleTelegramAuth(user);
+    } else {
+        localStorage.setItem('telegram_pending_user', JSON.stringify(user));
+    }
+}
+
+// Функция для загрузки виджета (будет доступна глобально)
+window.loadTelegramWidget = function(botUsername, containerId) {
+    return new Promise((resolve, reject) => {
+        console.log('🔄 Загрузка виджета Telegram...');
+        
+        const container = document.getElementById(containerId);
+        if (!container) {
+            console.error('❌ Контейнер не найден');
+            return reject('Контейнер не найден');
+        }
+        
+        // Очищаем контейнер
+        container.innerHTML = '';
+        
+        // Пробуем загрузить обычный скрипт
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://telegram.org/js/telegram-widget.js?22';
+        script.setAttribute('data-telegram-login', botUsername);
+        script.setAttribute('data-size', 'large');
+        script.setAttribute('data-radius', '10');
+        script.setAttribute('data-onauth', 'onTelegramLogin(user)');
+        script.setAttribute('data-request-access', 'write');
+        
+        script.onload = () => {
+            console.log('✅ Виджет загружен через скрипт');
+            resolve('script');
+        };
+        
+        script.onerror = (e) => {
+            console.warn('⚠️ Ошибка загрузки скрипта, пробуем iframe...');
+            
+            // Если скрипт не загрузился, используем iframe
+            container.innerHTML = '';
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://oauth.telegram.org/embed/${botUsername}?origin=${encodeURIComponent(window.location.origin)}&size=large&request_access=write`;
+            iframe.width = '100%';
+            iframe.height = '65';
+            iframe.style.border = 'none';
+            iframe.style.overflow = 'hidden';
+            iframe.style.borderRadius = '8px';
+            
+            container.appendChild(iframe);
+            console.log('✅ Виджет загружен через iframe');
+            resolve('iframe');
+        };
+        
+        container.appendChild(script);
+    });
+}
+</script>
 </body>
 </html>
