@@ -1,0 +1,48 @@
+# Конфигурационные файлы (НИКОГДА НЕ ПУБЛИКОВАТЬ!)
+config.json
+*.config.json
+.env
+.env.*
+*.env
+
+# Firebase ключи (ОЧЕНЬ ВАЖНО!)
+bratz.json
+*-firebase-key.json
+*.pem
+*.key
+service-account*.json
+
+# Системные файлы Mac
+.DS_Store
+Thumbs.db
+*.log
+
+# Локальные настройки редакторов
+.vscode/
+.idea/
+*.sublime-*
+
+# Python (виртуальное окружение и кэш)
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Логи бота
+bot.log
+*.log
+
+# Файлы с секретами
+*.secret
+secrets.*
+
+# Базы данных
+*.db
+*.sqlite
+*.sqlite3
