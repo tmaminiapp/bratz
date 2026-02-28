@@ -1886,7 +1886,7 @@ body.modal-open {
 const basePath = window.location.pathname.includes('/') 
     ? window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1)
     : '/';
-const CONFIG_URL = basePath + '/bratz/config.json';
+const CONFIG_URL = basePath + 'config.json';
 
 console.log('Базовый путь:', basePath);
 console.log('Полный URL конфига:', CONFIG_URL);
@@ -1905,6 +1905,38 @@ async function loadConfig() {
     const isLocalMode = window.location.hostname === 'localhost' || 
                         window.location.hostname === '127.0.0.1' ||
                         window.location.protocol === 'file:';
+
+     // ЛОКАЛЬНЫЙ РЕЖИМ - ключи прямо в коде (только для разработки!)
+    if (isLocalMode) {
+        console.log('📱 ЛОКАЛЬНЫЙ РЕЖИМ РАЗРАБОТКИ');
+        
+        // ВАШИ РЕАЛЬНЫЕ ДАННЫЕ (только для локальной разработки)
+        ADMIN_ID = 387881523;
+        ADMIN_IDS=387881523,5189266423;
+        MAP_KEY = 'a3fb6133-4bcf-46d3-9a05-c7d8b5812144';
+        IMGBB_API_KEY = '4d4ab43d9b15c3dbadb9058518e4db23';
+        BOT_USERNAME = 'bratzmsc_bot'; 
+        BOT_TOKEN = '8313765701:AAFSw0QCgjlTVe41ixCSMfmY8sU57tD6PzU';
+        FIREBASE_CONFIG = {
+        apiKey: "AIzaSyC6fihIMtOYZuPh-db3Tc6eiRgSikzydVw",
+        authDomain: "bratz-ef833.firebaseapp.com",
+        projectId: "bratz-ef833",
+        storageBucket: "bratz-ef833.firebasestorage.app",
+        messagingSenderId: "901156477154",
+        appId: "1:901156477154:web:9bf2d604496726b59ae6bb"
+        };
+        
+        // Дублируем в window для доступа из Vue
+        window.ADMIN_ID = ADMIN_ID;
+        window.MAP_KEY = MAP_KEY;
+        window.IMGBB_API_KEY = IMGBB_API_KEY;
+        window.BOT_USERNAME = BOT_USERNAME;
+        window.BOT_TOKEN = BOT_TOKEN;
+        window.FIREBASE_CONFIG = FIREBASE_CONFIG;
+        
+        console.log('✅ Локальный конфиг загружен');
+        return true;
+    }
     
     // ПРОДАКШН РЕЖИМ - загружаем из config.json (безопасно)
     try {
@@ -6262,4 +6294,3 @@ window.loadTelegramWidget = function(botUsername, containerId) {
 </script>
 </body>
 </html>
-
