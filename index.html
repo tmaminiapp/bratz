@@ -5132,9 +5132,6 @@ async checkout() {
         // Показываем успех
         alert(`✅ Заказ #${newOrderId} оформлен!`);
         
-        // Переходим в каталог
-        this.tab = 'catalog';
-        
     } catch (e) {
         console.error("❌ Ошибка:", e);
         alert("Произошла ошибка: " + e.message);
