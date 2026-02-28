@@ -2101,8 +2101,8 @@ function startVueApp() {
                     return {
                         delivery_price: 200,        // 👈 Стоимость доставки
         delivery_type: 'доставка',   // 👈 Тип доставки
-        adminId: 387881523,  // 👈 ПРОСТО ЧИСЛО, не массив!
-adminIds: [387881523, 5189266423],  // 👈 МАССИВ админов
+                 adminId: window.ADMIN_ID || 387881523,                    // для одного админа
+        adminIds: window.ADMIN_IDS || [387881523, 5189266423],    //
                          _isLoadingWidget: false,
                          botUsername: window.BOT_USERNAME || '',
                         _isRestoring: false, 
@@ -2119,7 +2119,6 @@ adminIds: [387881523, 5189266423],  // 👈 МАССИВ админов
                         cachedTotalValue: 0,
                         lastCartLength: 0,
                         editImages: [],
-                        adminId: window.ADMIN_ID,
                         mapKey: window.MAP_KEY,
                         imgbbKey: window.IMGBB_API_KEY,
                         botToken: window.BOT_TOKEN,
@@ -2562,7 +2561,7 @@ handleTelegramAuth(user) {
     };
     
     // Проверка на админа
-    if (user.id == this.adminId) {
+    if (user.id == this.adminIds) {
         this.isAdmin = true;
     }
     
@@ -5177,13 +5176,12 @@ async checkout() {
 },
 
 sendTelegramNotification(orderData, username, finalTotal) {
-    if (!this.botToken || !this.adminId) return;
+    if (!this.botToken || !this.adminIds) return;
     
     const itemsText = orderData.items.map(i => 
         `• ${i.title} (${i.color}, ${i.size}) x${i.count} — ${i.price} ₽/шт.`
     ).join('\n');
     
-    // Добавляем информацию о доставке
     const deliveryInfo = this.deliv ? `\n🚚 Доставка: ${this.deliv} — ${this.delivery_price} ₽` : '';
     
     const adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
@@ -5194,16 +5192,18 @@ sendTelegramNotification(orderData, username, finalTotal) {
                     `📋 Состав:\n${itemsText}\n\n` +
                     `💰 *ИТОГО К ОПЛАТЕ: ${finalTotal} ₽*`;
 
-    // Отправляем админу
-    fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            chat_id: this.adminId, 
-            text: adminMsg, 
-            parse_mode: 'Markdown' 
-        })
-    }).catch(e => console.error("❌ Ошибка Telegram:", e));
+    // 👇 ОТПРАВКА ВСЕМ АДМИНАМ
+    this.adminIds.forEach(adminId => {
+        fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                chat_id: adminId, 
+                text: adminMsg, 
+                parse_mode: 'Markdown' 
+            })
+        }).catch(e => console.error(`❌ Ошибка отправки админу ${adminId}:`, e));
+    });
     
     // Отправляем клиенту (если есть ID)
     if (orderData.user && orderData.user.id) {
