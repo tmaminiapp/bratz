@@ -5083,7 +5083,7 @@ async checkout() {
     try {
         const tgUser = (this.user && !this.user.is_guest) ? this.user : null;
         const userId = tgUser?.id || 0;
-      const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
+        const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
 
         // Генерация номера заказа
         const now = new Date();
@@ -5094,7 +5094,7 @@ async checkout() {
 
         // Копируем корзину (чтобы изменения не влияли на оригинал)
         const cartCopy = [...this.cart];
-       const finalTotal = this.calculateTotalWithDelivery();
+        const finalTotal = this.calculateTotalWithDelivery();
 
         // Подготавливаем данные заказа
         const orderData = {
@@ -5113,12 +5113,26 @@ async checkout() {
             })),
             order_total: finalTotal,
             status: 'Новый',
-            createdAt: window.fb?.serverTimestamp ? window.fb.serverTimestamp() : new Date(),
+            createdAt: new Date().toISOString(),
             user: {
-                 id: userId,
+                id: userId,
                 username: username
             }
         };
+
+        console.log("📤 Отправка данных в Telegram WebApp:", orderData);
+
+        // 👇 ВАЖНО: ОТПРАВКА ДАННЫХ В TELEGRAM
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.sendData(JSON.stringify(orderData));
+            console.log("✅ Данные отправлены в Telegram");
+        } else {
+            console.error("❌ Telegram WebApp не доступен");
+            alert("Ошибка: приложение запущено не в Telegram");
+            this.isCheckingOut = false;
+            this.loading = false;
+            return;
+        }
 
         // Отправляем заказ в Firebase (не ждем ответа)
         if (window.fb?.addDoc) {
@@ -5126,7 +5140,7 @@ async checkout() {
                 .catch(e => console.error("❌ Ошибка Firebase:", e));
         }
 
-        // Отправляем уведомление в Telegram (не ждем)
+        // Отправляем уведомление в Telegram админам
         this.sendTelegramNotification(orderData, username, finalTotal);
 
         // Обновляем остатки в фоне
@@ -5195,7 +5209,16 @@ sendTelegramNotification(orderData, username, finalTotal) {
                 text: adminMsg, 
                 parse_mode: 'Markdown' 
             })
-        }).catch(e => console.error(`❌ Ошибка отправки админу ${adminId}:`, e));
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                console.log(`✅ Уведомление отправлено админу ${adminId}`);
+            } else {
+                console.error(`❌ Ошибка от Telegram для админа ${adminId}:`, data);
+            }
+        })
+        .catch(e => console.error(`❌ Ошибка отправки админу ${adminId}:`, e));
     });
     
     // Отправляем клиенту (если есть ID)
