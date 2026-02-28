@@ -46,3 +46,9 @@ secrets.*
 *.db
 *.sqlite
 *.sqlite3
+
+# Добавленные строки для безопасности
+.github/secrets/
+*.local.json
+build/
+dist/
