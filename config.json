@@ -1,0 +1,15 @@
+{
+    "adminId": 387881523,
+    "adminIds": [387881523, 5189266423],
+    "mapKey": "a3fb6133-4bcf-46d3-9a05-c7d8b5812144",
+    "imgbbKey": "4d4ab43d9b15c3dbadb9058518e4db23",
+    "botUsername": "bratzmsc_bot",
+    "firebaseConfig": {
+        "apiKey": "AIzaSyC6fihIMtOYZuPh-db3Tc6eiRgSikzydVw",
+        "authDomain": "bratz-ef833.firebaseapp.com",
+        "projectId": "bratz-ef833",
+        "storageBucket": "bratz-ef833.firebasestorage.app",
+        "messagingSenderId": "901156477154",
+        "appId": "1:901156477154:web:9bf2d604496726b59ae6bb"
+    }
+}
