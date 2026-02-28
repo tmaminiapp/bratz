@@ -5179,7 +5179,16 @@ async checkout() {
 },
 
 sendTelegramNotification(orderData, username, finalTotal) {
-    if (!this.botToken || !this.adminIds) return;
+    if (!this.botToken || !this.adminIds) {
+        console.log('❌ Нет botToken или adminIds');
+        return;
+    }
+    
+    // 👇 ДОБАВЬТЕ ЭТУ ПРОВЕРКУ
+    if (!Array.isArray(this.adminIds) || this.adminIds.length === 0) {
+        console.log('❌ adminIds пуст или не массив');
+        return;
+    }
     
     const itemsText = orderData.items.map(i => 
         `• ${i.title} (${i.color}, ${i.size}) x${i.count} — ${i.price} ₽/шт.`
@@ -5206,16 +5215,15 @@ sendTelegramNotification(orderData, username, finalTotal) {
                 parse_mode: 'Markdown' 
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok) {
-                console.log(`✅ Уведомление отправлено админу ${adminId}`);
+        .then(response => {
+            if (!response.ok) {
+                console.error(`❌ Ошибка отправки админу ${adminId}:`, response.status);
             } else {
-                console.error(`❌ Ошибка от Telegram для админа ${adminId}:`, data);
+                console.log(`✅ Уведомление отправлено админу ${adminId}`);
             }
         })
         .catch(e => console.error(`❌ Ошибка отправки админу ${adminId}:`, e));
-    });
+    }); 
     
     // Отправляем клиенту (если есть ID)
     if (orderData.user && orderData.user.id) {
