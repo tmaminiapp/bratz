@@ -37,7 +37,7 @@ if IS_LOCAL:
     print(f"🔗 Откройте в браузере: http://localhost:{PORT}")
 else:
     # На сервере: GitHub Pages
-    WEBAPP_URL = 'https://tmaminiapp.github.io/bratzmsc/'
+    WEBAPP_URL = 'https://tmaminiapp.github.io/bratz/'
     STATIC_DIR = None
     print(f"\n🌍 ПРОДАКШН РЕЖИМ")
     print(f"🔗 Сайт на GitHub: {WEBAPP_URL}")
