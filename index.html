@@ -836,6 +836,30 @@ body.modal-open {
 .modal {
     transition: opacity 0.2s ease;
 }
+.category-chip {
+    display: inline-flex;
+    align-items: center;
+    background: #000;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    user-select: none;
+}
+
+.category-chip:hover {
+    background: #333; /* Темно-серый при наведении, не красный */
+}
+
+.category-chip:active {
+    background: #ff3b30; /* Красный только в момент нажатия */
+    transform: scale(0.95); /* Легкое уменьшение для эффекта нажатия */
+}
 </style>
 </head>
 <body>
@@ -1266,22 +1290,7 @@ body.modal-open {
     <span v-for="c in categories" 
           :key="c.id" 
           @click="manageCategory('del', c.id)"
-          style="
-              display: inline-flex;
-              align-items: center;
-              background: #000;
-              color: #fff;
-              font-size: 11px;
-              font-weight: 600;
-              padding: 4px 10px;
-              border-radius: 4px;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              text-transform: uppercase;
-              letter-spacing: 0.3px;
-          "
-          @mouseover="e => e.currentTarget.style.background = '#333'"  /* Темно-серый при наведении */
-          @mouseout="e => e.currentTarget.style.background = '#000'">  /* Возвращаем черный */
+          class="category-chip">
         {{ c.name }}
         <span style="margin-left: 6px; font-size: 12px;">✕</span>
     </span>
