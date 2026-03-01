@@ -1193,7 +1193,13 @@ body.modal-open {
     </div>
     
     <div v-if="isAdmin && user && !user.is_guest" class="admin-section">
-        <h2 class="brand-name" style="font-size: 14px; margin-bottom: 20px;">АДМИН-ПАНЕЛЬ</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 class="brand-name" style="font-size: 14px; margin: 0;">АДМИН-ПАНЕЛЬ</h2>
+        <button @click="showAdminPanel = !showAdminPanel" 
+                style="background: none; border: none; font-size: 24px; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 24px; font-weight: 800;">{{ showAdminPanel ? '−' : '+' }}</span>
+        </button>
+    </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
              <div style="background: var(--light); color: var(--dark); padding: 16px; border-radius: 15px;">
