@@ -1262,13 +1262,10 @@ body.modal-open {
         <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
         <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
     </div>
-     <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px;">
     <span v-for="c in categories" 
           :key="c.id" 
           @click="manageCategory('del', c.id)"
-          @mousedown="e => e.currentTarget.style.background = '#ff3b30'"  /* Красный при нажатии */
-          @mouseup="e => e.currentTarget.style.background = '#000'"      /* Обратно черный */
-          @mouseleave="e => e.currentTarget.style.background = '#000'"   /* Если мышь ушла во время нажатия */
           style="
               display: inline-flex;
               align-items: center;
@@ -1279,13 +1276,12 @@ body.modal-open {
               padding: 4px 10px;
               border-radius: 4px;
               cursor: pointer;
-              transition: all 0.1s ease;
+              transition: all 0.2s ease;
               text-transform: uppercase;
               letter-spacing: 0.3px;
-              user-select: none;  /* Запрещаем выделение текста */
           "
-          @mouseover="e => e.currentTarget.style.background = '#333'"
-          @mouseout="e => e.currentTarget.style.background = '#000'">
+          @mouseover="e => e.currentTarget.style.background = '#333'"  /* Темно-серый при наведении */
+          @mouseout="e => e.currentTarget.style.background = '#000'">  /* Возвращаем черный */
         {{ c.name }}
         <span style="margin-left: 6px; font-size: 12px;">✕</span>
     </span>
