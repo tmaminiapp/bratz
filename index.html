@@ -244,13 +244,26 @@
     line-height: 1.2;           /* Фиксированная высота строки */
 }
 
-    .sale-badge { 
-        background: #000; 
-        color: #fff; 
-        font-size: 9px; 
-        padding: 2px 4px; 
-        font-weight: 800; 
-    }
+   .sale-badge, .new-badge {
+    background: #000;
+    color: #fff;
+    font-size: 9px;
+    padding: 2px 4px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-radius: 2px; /* прямоугольные края как у sale */
+    position: absolute;
+    z-index: 5;
+}
+
+.sale-badge {
+    background: #000;
+}
+
+.new-badge {
+    background: #34c759; /* зеленый фон */
+}
 
     /* ========== SIZES ========== */
     .card-sizes { 
@@ -933,28 +946,9 @@ body.modal-open {
                           :key="i" 
                           :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
     </div>
-           <div v-if="p.oldPrice" 
-     style="position:absolute; top:10px; left:10px; background:#000; color:#fff; font-size:10px; font-weight:800; padding:4px 8px; border-radius:4px; z-index:5; text-transform:uppercase; letter-spacing:0.5px;">
-    SALE
-</div>
+            <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
+            <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
 
-<div v-if="p.isNew" 
-     :style="{ 
-         position: 'absolute', 
-         top: p.oldPrice ? '35px' : '10px', 
-         left: '10px', 
-         background: '#34c759', 
-         color: '#fff', 
-         fontSize: '10px', 
-         fontWeight: '800', 
-         padding: '4px 8px', 
-         borderRadius: '4px', 
-         zIndex: 5,
-         textTransform: 'uppercase',
-         letterSpacing: '0.5px'
-     }">
-    NEW
-</div>
 <div v-if="p.variants && getVisibleVariants(p).length > 1" 
              style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;">
             <div v-for="(v, vIdx) in getVisibleVariants(p)" 
@@ -1040,8 +1034,18 @@ body.modal-open {
           :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
 </div>
 
-                <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
-                <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
+               <!-- SALE бейдж -->
+<div v-if="p.oldPrice" class="sale-badge" style="top:10px; left:10px;">SALE</div>
+
+<!-- NEW бейдж с таким же стилем, зеленым фоном и автоматическим позиционированием -->
+<div v-if="p.isNew" 
+     class="new-badge" 
+     :style="{ 
+         top: p.oldPrice ? '35px' : '10px', 
+         left: '10px' 
+     }">
+    NEW
+</div>
             </div>
 
             <div class="card-info">
