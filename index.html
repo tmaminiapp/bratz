@@ -1044,8 +1044,20 @@ body.modal-open {
           :class="['dot', {active: i === (p.aIdx || 0)}]"></span>
 </div>
 
-                <div v-if="p.oldPrice" class="sale-badge" style="position:absolute; top:10px; left:10px;">SALE</div>
-                <div v-if="p.isNew" class="new-badge" :style="{ position: 'absolute', top: p.oldPrice ? '35px' : '10px', left: '10px', background: '#000', color: '#fff', fontSize: '10px', fontWeight: '800', padding: '4px 8px', borderRadius: '4px', zIndex: 5 }">NEW</div>
+               <!-- SALE -->
+<div v-if="p.oldPrice" 
+     class="sale-badge" 
+     style="position:absolute; top:10px; left:10px;">
+    SALE
+</div>
+
+<!-- NEW -->
+<div v-if="p.isNew" 
+     class="new-badge" 
+     style="position:absolute; left:10px;"
+     :style="{ top: p.oldPrice ? '35px' : '10px' }">
+    NEW
+</div>
             </div>
 
             <div class="card-info">
