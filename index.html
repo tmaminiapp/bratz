@@ -1262,9 +1262,28 @@ body.modal-open {
         <input v-model="newCat" class="input-admin" placeholder="НАЗВАНИЕ">
         <button class="btn-black" @click="manageCategory('add')" style="padding: 10px;">+</button>
     </div>
-    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:10px;">
-        <span v-for="c in categories" :key="c.id" class="sale-badge" @click="manageCategory('del', c.id)">
-            {{c.name}} ✕
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px;">
+        <span v-for="c in categories" 
+              :key="c.id" 
+              @click="manageCategory('del', c.id)"
+              style="
+                  display: inline-flex;
+                  align-items: center;
+                  background: #000;
+                  color: #fff;
+                  font-size: 11px;
+                  font-weight: 600;
+                  padding: 4px 10px;
+                  border-radius: 4px;
+                  cursor: pointer;
+                  transition: all 0.2s ease;
+                  text-transform: uppercase;
+                  letter-spacing: 0.3px;
+              "
+              @mouseover="e => e.currentTarget.style.background = '#ff3b30'"
+              @mouseout="e => e.currentTarget.style.background = '#000'">
+            {{ c.name }}
+            <span style="margin-left: 6px; font-size: 12px;">✕</span>
         </span>
     </div>
 </div>
