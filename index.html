@@ -5028,6 +5028,7 @@ async manageCategory(action, id) {
 },
 
 // Метод для кнопок "В пути" и "Готов"
+// Метод для кнопок "В пути" и "Готов"
 async checkout() {
     // Защита от двойного нажатия
     if (this.isCheckingOut) return;
@@ -5051,7 +5052,7 @@ async checkout() {
     try {
         const tgUser = (this.user && !this.user.is_guest) ? this.user : null;
         const userId = tgUser?.id || 0;
-        const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
+      const username = tgUser?.username ? `@${tgUser.username}` : 'нет ника';
 
         // Генерация номера заказа
         const now = new Date();
@@ -5060,7 +5061,7 @@ async checkout() {
         const randomDigits = Math.floor(1000 + Math.random() * 9000);
         const newOrderId = `${day}${month}-${randomDigits}`;
 
-        // Копируем корзину
+        // Копируем корзину (чтобы изменения не влияли на оригинал)
         const cartCopy = [...this.cart];
         const finalTotal = this.cachedTotal || this.total();
 
@@ -5083,27 +5084,24 @@ async checkout() {
             status: 'Новый',
             createdAt: window.fb?.serverTimestamp ? window.fb.serverTimestamp() : new Date(),
             user: {
-                id: userId,
+                 id: userId,
                 username: username
             }
         };
 
-        // 👇 1. СНАЧАЛА ОТПРАВЛЯЕМ УВЕДОМЛЕНИЯ
-        console.log('📨 Отправка уведомлений...');
-        
-        // Отправляем в Firebase
+        // Отправляем заказ в Firebase (не ждем ответа)
         if (window.fb?.addDoc) {
-            await window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData)
+            window.fb.addDoc(window.fb.collection(window.db, "orders"), orderData)
                 .catch(e => console.error("❌ Ошибка Firebase:", e));
         }
 
-        // Отправляем в Telegram
-        await this.sendTelegramNotification(orderData, username, finalTotal);
-        
+        // Отправляем уведомление в Telegram (не ждем)
+        this.sendTelegramNotification(orderData, username, finalTotal);
+
         // Обновляем остатки в фоне
         this.updateStocksInBackground(cartCopy);
 
-        // 👇 2. ПОТОМ ОЧИЩАЕМ КОРЗИНУ
+        // ОЧИЩАЕМ ВСЕ ДАННЫЕ КОРЗИНЫ
         this.cart = [];
         this.saveCart();
         
@@ -5121,51 +5119,90 @@ async checkout() {
         this.address = '';
         this.deliv = '';
 
-        // 👇 3. ПОКАЗЫВАЕМ УВЕДОМЛЕНИЕ ОБ УСПЕХЕ
-        this.showOrderSuccess(orderData);
+        // Показываем успех
+        alert(`✅ Заказ #${newOrderId} оформлен!`);
         
-        // 👇 4. ВАЖНО: НЕ ПЕРЕКЛЮЧАЕМ ВКЛАДКУ!
-        // this.tab = 'catalog'; // 👈 УДАЛИТЬ ЭТУ СТРОКУ!
-        
-        // Оставляем пользователя в корзине (tab = 'cart')
-        // Он увидит пустую корзину с сообщением об успехе
+        // Переходим в каталог
+        this.tab = 'catalog';
         
     } catch (e) {
         console.error("❌ Ошибка:", e);
         alert("Произошла ошибка: " + e.message);
     } finally {
-        // Сбрасываем состояние загрузки
+        // ВАЖНО: Всегда сбрасываем состояние загрузки
         setTimeout(() => {
             this.isCheckingOut = false;
             this.loading = false;
         }, 300);
     }
 },
-
-sendTelegramNotification(orderData, username, finalTotal) {
-    if (!this.botToken || !this.adminId) return;
+async sendTelegramNotification(orderData, username, finalTotal) {
+    if (!this.botToken) {
+        console.error('❌ botToken отсутствует');
+        return;
+    }
+    
+    // Получаем список админов (ИСПРАВЛЕНО)
+    const adminIds = this.adminIds || window.ADMIN_IDS || [387881523, 5189266423];
+    console.log('📨 Отправка уведомлений админам:', adminIds);
     
     const itemsText = orderData.items.map(i => 
-        `• ${i.title} (${i.color}, ${i.size}) x${i.count}`
+        `• ${i.title} (${i.color}, ${i.size}) x${i.count} — ${i.price} ₽`
     ).join('\n');
     
-    const adminMsg = `🛍 *НОВЫЙ ЗАКАЗ №${orderData.order_id}*\n` +
-                    `👤 Клиент: ${orderData.customer_name} (${username})\n` +
+    const adminMsg = `🛍 <b>НОВЫЙ ЗАКАЗ №${orderData.order_id}</b>\n` +
+                    `👤 Клиент: ${orderData.customer_name} ${username ? '(' + username + ')' : ''}\n` +
                     `📞 Тел: ${orderData.customer_phone}\n` +
                     `📍 Адрес: ${orderData.address}\n` +
                     `🚚 Доставка: ${orderData.delivery}\n\n` +
                     `📋 Состав:\n${itemsText}\n\n` +
-                    `💰 Итого: *${finalTotal} ₽*`;
+                    `💰 <b>ИТОГО: ${finalTotal} ₽</b>`;
 
-    fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            chat_id: this.adminId, 
-            text: adminMsg, 
-            parse_mode: 'Markdown' 
-        })
-    }).catch(e => console.error("❌ Ошибка Telegram:", e));
+    // Отправка ВСЕМ админам
+    for (const adminId of adminIds) {
+        try {
+            const response = await fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    chat_id: adminId, 
+                    text: adminMsg, 
+                    parse_mode: 'HTML' 
+                })
+            });
+            
+            if (response.ok) {
+                console.log(`✅ Уведомление отправлено админу ${adminId}`);
+            } else {
+                console.error(`❌ Ошибка админу ${adminId}:`, await response.text());
+            }
+        } catch (e) {
+            console.error(`❌ Ошибка отправки админу ${adminId}:`, e);
+        }
+    }
+    
+    // Отправка клиенту
+    if (orderData.user?.id) {
+        const clientMsg = `✅ <b>Заказ №${orderData.order_id} оформлен!</b>\n\n` +
+                         `Спасибо за покупку в BRATZ!\n` +
+                         `Статус заказа можно отслеживать в профиле.\n\n` +
+                         `💰 Сумма к оплате: <b>${finalTotal} ₽</b>`;
+        
+        try {
+            await fetch(`https://api.telegram.org/bot${this.botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    chat_id: orderData.user.id, 
+                    text: clientMsg, 
+                    parse_mode: 'HTML' 
+                })
+            });
+            console.log(`✅ Уведомление отправлено клиенту ${orderData.user.id}`);
+        } catch (e) {
+            console.error("❌ Ошибка отправки клиенту:", e);
+        }
+    }
 },
 // Вынесите обновление остатков в отдельный метод
 async updateStocksInBackground(cartCopy) {
@@ -5269,50 +5306,70 @@ async updateStatus(order, newStatus) {
         const orderRef = window.fb.doc(window.db, "orders", order.id);
         await window.fb.updateDoc(orderRef, { status: newStatus });
         
-        // --- БЛОК УВЕДОМЛЕНИЙ ---
+        // --- ИСПРАВЛЕННЫЙ БЛОК УВЕДОМЛЕНИЙ ---
         const botToken = this.botToken;
-        // Создаем список тех, кто получит сообщение
+        if (!botToken) {
+            console.error('❌ botToken отсутствует');
+            return;
+        }
+        
+        // Собираем получателей
         const recipients = [];
         
         // 1. Добавляем ID клиента
-        const customerId = order.user_id || (order.user ? order.user.id : null);
-        if (customerId) recipients.push(customerId);
+        const customerId = order.user?.id || order.user_id;
+        if (customerId) {
+            recipients.push(customerId);
+            console.log('👤 Клиент ID:', customerId);
+        }
         
-        // 2. Добавляем твои дополнительные ID (админы, менеджеры)
-        const extraIds = [this.adminId]; // ЗАМЕНИ ЭТИ ЦИФРЫ НА НУЖНЫЕ ID
-        extraIds.forEach(id => {
-            if (!recipients.includes(id)) recipients.push(id);
+        // 2. Добавляем ВСЕХ админов (ИСПРАВЛЕНО)
+        const adminIds = this.adminIds || window.ADMIN_IDS || [387881523, 5189266423];
+        adminIds.forEach(id => {
+            if (!recipients.includes(id)) {
+                recipients.push(id);
+            }
         });
+        
+        console.log('📨 Получатели:', recipients);
 
         let message = "";
         if (newStatus === 'Отправлен') {
-            message = `🚀 *Заказ №${order.order_id} отправлен!*\n\n📦 Статус обновлен на: ${newStatus}`;
+            message = `📦 <b>Заказ №${order.order_id} отправлен!</b>\n\nСтатус обновлен на: ${newStatus}`;
         } else if (newStatus === 'Доставлен') {
-            message = `✅ *Заказ №${order.order_id} доставлен!*\n\nСтатус: ${newStatus}`;
+            message = `✅ <b>Заказ №${order.order_id} доставлен!</b>\n\nСтатус: ${newStatus}`;
         }
 
         if (message && recipients.length > 0) {
-            // Рассылаем всем из списка recipients
+            // Рассылаем всем
             for (const targetId of recipients) {
                 try {
-                    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             chat_id: targetId,
                             text: message,
-                            parse_mode: 'Markdown'
+                            parse_mode: 'HTML'
                         })
                     });
-                    console.log(`Отправлено на ID: ${targetId}`);
+                    
+                    if (response.ok) {
+                        console.log(`✅ Отправлено на ID: ${targetId}`);
+                    } else {
+                        const error = await response.text();
+                        console.error(`❌ Ошибка для ${targetId}:`, error);
+                    }
                 } catch (err) {
-                    console.error(`Ошибка отправки для ${targetId}:`, err);
+                    console.error(`❌ Ошибка отправки для ${targetId}:`, err);
                 }
             }
         }
-        // --- КОНЕЦ БЛОКА УВЕДОМЛЕНИЙ ---
+        // --- КОНЕЦ БЛОКА ---
 
-        if (window.Telegram.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+        if (window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+        }
 
     } catch (e) {
         console.error("Ошибка обновления:", e);
@@ -5321,7 +5378,6 @@ async updateStatus(order, newStatus) {
         order.isUpdating = false;
     }
 },
-
 calculateListHeight() {
     // 1. Проверка условий: работает только когда список открыт и пользователь - админ
     if (this.showProductList && this.isAdmin) {
